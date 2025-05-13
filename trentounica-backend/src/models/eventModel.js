@@ -8,6 +8,8 @@ const eventSchema = new mongoose.Schema({
   location: { type: String, required: true },
   price: { type: Number, default: 0 },
   organizer: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  isPublic: { type: Boolean, default: true }, //per eventi pubblici/privati
+  
 });
 
 module.exports = mongoose.model('Event', eventSchema);
