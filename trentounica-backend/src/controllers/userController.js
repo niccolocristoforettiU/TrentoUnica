@@ -30,8 +30,8 @@ exports.register = async (req, res) => {
 // Login utente
 exports.login = async (req, res) => {
   try {
-    const { email, password } = req.body;
-    const user = await User.findOne({ email });
+    const { email, password, role } = req.body;
+    const user = await User.findOne({ email, role });
 
     if (!user) {
       return res.status(401).json({ message: 'Credenziali non valide' });
@@ -43,12 +43,12 @@ exports.login = async (req, res) => {
     }
 
     const token = jwt.sign(
-      { userId: user._id },
+      { userId: user._id, role: user.role },
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRES_IN || '1h' }
     );
 
-    res.status(200).json({ token });
+    res.status(200).json({ token, role: user.role });
   } catch (error) {
     res.status(500).json({ message: 'Errore durante il login', error: error.message });
   }
