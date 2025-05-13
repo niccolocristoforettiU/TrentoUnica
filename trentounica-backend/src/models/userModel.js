@@ -4,13 +4,20 @@ const mongoose = require('mongoose');
 const userSchema = new mongoose.Schema({
   name: { type: String, required: true, trim: true },
   email: { 
-    type: String, 
-    required: true, 
-    unique: true, 
-    lowercase: true, 
-    trim: true,
-    match: /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-  },
+  type: String, 
+  required: true, 
+  unique: true, 
+  lowercase: true, 
+  trim: true,
+  match: /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/,
+  validate: {
+    validator: function(value) {
+      return /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(value);
+    },
+    message: 'L\'email non è valida. Deve essere nel formato testo@testo.estensione.'
+  }
+},
+
   password: { 
     type: String, 
     required: true, 
