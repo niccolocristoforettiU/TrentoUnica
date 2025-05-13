@@ -1,0 +1,50 @@
+# File di sistema macOS
+.DS_Store
+Thumbs.db
+
+# Dipendenze Node.js (backend)
+node_modules/
+
+# Directory di build (backend)
+dist/
+build/
+
+# File di configurazione locale e variabili d'ambiente
+.env
+.env.local
+.env.*.local
+.env.development
+.env.production
+.env.test
+
+# File di log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.log
+
+# Directory e file dell'editor
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# File di configurazione locali (Visual Studio Code)
+.vscode/settings.json
+.vscode/tasks.json
+.vscode/launch.json
+
+# File di database locali (se utilizzi SQLite)
+*.sqlite
+*.sqlite3
+*.db
+*.db-journal
+
+# File di upload temporanei (se gestisci file nel backend)
+uploads/
+tmp/
+temp/
