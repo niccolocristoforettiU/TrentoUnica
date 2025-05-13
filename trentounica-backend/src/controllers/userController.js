@@ -6,8 +6,12 @@ const jwt = require('jsonwebtoken');
 // Registrazione utente
 exports.register = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, ripetiPassword } = req.body;
     
+    // Controllo se le password coincidono
+    if (password !== ripetiPassword) {
+      return res.status(400).json({ message: 'Le password non coincidono' });
+    }
     // Controllo se l'email esiste già
     const existingUser = await User.findOne({ email });
     if (existingUser) {
