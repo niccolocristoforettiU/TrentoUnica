@@ -1,5 +1,5 @@
 // src/server.js
-require('dotenv').config();
+require('dotenv').config({ path: require('path').resolve(__dirname, '../.env') });
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
@@ -11,10 +11,7 @@ if (!process.env.JWT_SECRET || !process.env.MONGODB_URI) {
   process.exit(1);
 }
 
-mongoose.connect(process.env.MONGODB_URI, { 
-  useNewUrlParser: true, 
-  useUnifiedTopology: true 
-})
+mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log("Connesso al database MongoDB"))
   .catch((err) => {
     console.error("Errore di connessione a MongoDB:", err);
