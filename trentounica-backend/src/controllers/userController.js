@@ -70,15 +70,20 @@ exports.getProfile = async (req, res) => {
 // Aggiornare il profilo utente (Protetto)
 exports.updateProfile = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, newPassword, confirmPassword } = req.body;
     const updates = {};
 
     if (name) updates.name = name;
     if (email) updates.email = email;
 
-    // Aggiorna la password solo se viene fornita
-    if (password) {
-      const hashedPassword = await bcrypt.hash(password, 10);
+    // Controllo se le nuove password coincidono
+    if (newPassword || confirmPassword) {
+      if (newPassword !== confirmPassword) {
+        return res.status(400).json({ message: 'Le nuove password non coincidono' });
+      }
+
+      // Hash della nuova password
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
       updates.password = hashedPassword;
     }
 
