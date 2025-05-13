@@ -3,8 +3,23 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
-const mongoose = require('./config/database');
+const mongoose = require('mongoose');
 const { authenticate } = require('./middlewares/authMiddleware');
+
+if (!process.env.JWT_SECRET || !process.env.MONGODB_URI) {
+  console.error("ERRORE: Il file .env non è configurato correttamente. Verifica JWT_SECRET e MONGODB_URI.");
+  process.exit(1);
+}
+
+mongoose.connect(process.env.MONGODB_URI, { 
+  useNewUrlParser: true, 
+  useUnifiedTopology: true 
+})
+  .then(() => console.log("Connesso al database MongoDB"))
+  .catch((err) => {
+    console.error("Errore di connessione a MongoDB:", err);
+    process.exit(1);
+  });
 
 const app = express();
 
@@ -49,7 +64,7 @@ app.use((err, req, res, next) => {
 });
 
 // Avviare il server
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.SERVER_PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
