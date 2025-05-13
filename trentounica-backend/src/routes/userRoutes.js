@@ -16,4 +16,13 @@ router.get('/profile', authenticate, userController.getProfile);
 // Rotta per aggiornare il profilo utente (Protetta con JWT)
 router.put('/profile', authenticate, userController.updateProfile);
 
+// Rotte per dashboard specifiche
+router.get('/client/dashboard', authenticate, authorizeRole('client'), (req, res) => {
+  res.json({ message: 'Benvenuto nel dashboard del cliente!' });
+});
+
+router.get('/organizer/dashboard', authenticate, authorizeRole('organizer'), (req, res) => {
+  res.json({ message: 'Benvenuto nel dashboard dell\'organizzatore!' });
+});
+
 module.exports = router;
