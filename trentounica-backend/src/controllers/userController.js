@@ -6,8 +6,12 @@ const jwt = require('jsonwebtoken');
 // Registrazione utente
 exports.register = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, ripetiPassword } = req.body;
     
+    // Controllo se le password coincidono
+    if (password !== ripetiPassword) {
+      return res.status(400).json({ message: 'Le password non coincidono' });
+    }
     // Controllo se l'email esiste già
     const existingUser = await User.findOne({ email });
     if (existingUser) {
@@ -26,8 +30,8 @@ exports.register = async (req, res) => {
 // Login utente
 exports.login = async (req, res) => {
   try {
-    const { email, password } = req.body;
-    const user = await User.findOne({ email });
+    const { email, password, role } = req.body;
+    const user = await User.findOne({ email, role });
 
     if (!user) {
       return res.status(401).json({ message: 'Credenziali non valide' });
@@ -39,12 +43,12 @@ exports.login = async (req, res) => {
     }
 
     const token = jwt.sign(
-      { userId: user._id },
+      { userId: user._id, role: user.role },
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRES_IN || '1h' }
     );
 
-    res.status(200).json({ token });
+    res.status(200).json({ token, role: user.role });
   } catch (error) {
     res.status(500).json({ message: 'Errore durante il login', error: error.message });
   }
@@ -66,15 +70,20 @@ exports.getProfile = async (req, res) => {
 // Aggiornare il profilo utente (Protetto)
 exports.updateProfile = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, newPassword, confirmPassword } = req.body;
     const updates = {};
 
     if (name) updates.name = name;
     if (email) updates.email = email;
 
-    // Aggiorna la password solo se viene fornita
-    if (password) {
-      const hashedPassword = await bcrypt.hash(password, 10);
+    // Controllo se le nuove password coincidono
+    if (newPassword || confirmPassword) {
+      if (newPassword !== confirmPassword) {
+        return res.status(400).json({ message: 'Le nuove password non coincidono' });
+      }
+
+      // Hash della nuova password
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
       updates.password = hashedPassword;
     }
 
