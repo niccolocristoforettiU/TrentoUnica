@@ -3,7 +3,7 @@ const User = require('../models/userModel');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
-// Registrazione utente
+// controllers/userController.js
 exports.register = async (req, res) => {
   try {
     const { name, email, password, ripetiPassword } = req.body;
@@ -12,20 +12,37 @@ exports.register = async (req, res) => {
     if (password !== ripetiPassword) {
       return res.status(400).json({ message: 'Le password non coincidono' });
     }
+
+    // Controlla che la password rispetti i criteri prima dell'hashing
+    const isValid = (
+        password.length >= 8 &&
+        password.length <= 20 &&
+        /[a-z]/.test(password) &&    // Almeno una lettera minuscola
+        /[A-Z]/.test(password) &&    // Almeno una lettera maiuscola
+        /[0-9]/.test(password) &&    // Almeno un numero
+        /[^a-zA-Z0-9]/.test(password) // Almeno un carattere speciale
+    );
+
+    if (!isValid) {
+      return res.status(400).json({ message: "La password deve avere tra 8 e 20 caratteri, con almeno una lettera minuscola, una lettera maiuscola, un numero e un carattere speciale." });
+    }
+
     // Controllo se l'email esiste già
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ message: 'Email già registrata' });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const user = new User({ name, email, password: hashedPassword });
+    // Crea un nuovo utente
+    const user = new User({ name, email, password });
     await user.save();
-    res.status(201).json({ message: 'User registered successfully' });
+    res.status(201).json({ message: 'Registrazione avvenuta con successo' });
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: 'Errore durante la registrazione', error: error.message });
   }
 };
+
 
 // Login utente
 exports.login = async (req, res) => {
