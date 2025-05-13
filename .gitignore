@@ -1,0 +1,25 @@
+# Node Modules (Frontend e Backend)
+node_modules/
+trentounica-frontend/node_modules/
+trentounica-backend/node_modules/
+
+# Build Files (Frontend e Backend)
+trentounica-frontend/dist/
+trentounica-backend/dist/
+.trash/
+.idea/
+.vscode/
+.DS_Store
+
+# Environment Variables (Frontend e Backend)
+trentounica-frontend/.env
+trentounica-backend/.env
+.env.local
+.env.*.local
+
+# Log Files (Tutti i Tipi)
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.gz
