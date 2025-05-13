@@ -9,6 +9,9 @@ TrentoUnica/
 │   ├── src/                    --> Codice sorgente del frontend (Vue.js)
 │   ├── public/                 --> File statici (index.html, favicon)
 │   ├── package.json            --> Configurazione delle dipendenze del frontend
+│   ├── babel.config.js         --> Configurazione di Babel
+│   ├── vue.config.js           --> Configurazione del progetto Vue.js
+│   ├── jsconfig.json           --> Configurazione degli alias per il codice
 │   └── .gitignore              --> File per ignorare node_modules e configurazioni locali
 │
 ├── trentounica-backend/        --> Cartella del progetto Express (backend)
@@ -19,8 +22,9 @@ TrentoUnica/
 │   │   ├── routes/             --> Rotte API (userRoutes, eventRoutes, ecc.)
 │   │   └── middlewares/        --> Middleware (Autenticazione JWT, ecc.)
 │   ├── package.json            --> Configurazione delle dipendenze del backend
+│   ├── package-lock.json       --> Blocco delle dipendenze del backend
 │   ├── .gitignore              --> File per ignorare node_modules e configurazioni locali
-│   └── .env                    --> Variabili d'ambiente
+│   └── .env.example            --> File di esempio per le variabili d'ambiente
 │
 ├── 1Deriverable.pdf            --> Documento di specifiche del progetto (Parte 1)
 ├── 2Deriverable.pdf            --> Documento di specifiche del progetto (Parte 2)
