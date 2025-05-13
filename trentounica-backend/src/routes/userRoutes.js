@@ -2,7 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/userController');
-const { authenticate } = require('../middlewares/authMiddleware');
+const { authenticate, authorizeRole } = require('../middlewares/authMiddleware');
 
 // Rotta di registrazione
 router.post('/register', userController.register);
