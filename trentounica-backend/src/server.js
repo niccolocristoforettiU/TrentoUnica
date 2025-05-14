@@ -36,7 +36,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use('/api/users', require('./routes/userRoutes'));
 app.use('/api/events', require('./routes/eventRoutes'));
 app.use('/api/bookings', require('./routes/bookingRoutes'));
-app.use("/api/calendars", require("./routes/calendarRoutes"));
+app.use("/api/calendar", require("./routes/calendarRoutes"));
 
 // Rotta protetta per testare JWT
 app.get('/api/protected', authenticate, (req, res) => {

@@ -3,6 +3,7 @@ import { createRouter, createWebHistory } from 'vue-router';
 import HomePage from '@/views/Home.vue';
 import UserLogin from '@/views/Login.vue';
 import UserRegister from '@/views/Register.vue';
+import AppCalendar from "../components/AppCalendar.vue";
 
 const routes = [
   {
@@ -20,6 +21,11 @@ const routes = [
     name: 'Register',
     component: UserRegister,
   },
+  { 
+    path: "/Appcalendar",
+    name: 'AppCalendar',
+    component: AppCalendar ,
+  }
 ];
 
 const router = createRouter({

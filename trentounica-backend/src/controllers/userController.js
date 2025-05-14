@@ -49,8 +49,8 @@ exports.register = async (req, res) => {
 // Login utente
 exports.login = async (req, res) => {
   try {
-    const { email, password, role } = req.body;
-    const user = await User.findOne({ email, role });
+    const { email, password } = req.body;
+    const user = await User.findOne({ email });
 
     if (!user) {
       return res.status(401).json({ message: 'Credenziali non valide' });
