@@ -3,7 +3,8 @@ const User = require('../models/userModel');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
-// controllers/userController.js
+// src/controllers/userController.js
+
 exports.register = async (req, res) => {
   try {
     const { name, email, password, ripetiPassword } = req.body;
@@ -17,10 +18,10 @@ exports.register = async (req, res) => {
     const isValid = (
         password.length >= 8 &&
         password.length <= 20 &&
-        /[a-z]/.test(password) &&    // Almeno una lettera minuscola
-        /[A-Z]/.test(password) &&    // Almeno una lettera maiuscola
-        /[0-9]/.test(password) &&    // Almeno un numero
-        /[^a-zA-Z0-9]/.test(password) // Almeno un carattere speciale
+        /[a-z]/.test(password) &&
+        /[A-Z]/.test(password) &&
+        /[0-9]/.test(password) &&
+        /[^a-zA-Z0-9]/.test(password)
     );
 
     if (!isValid) {
@@ -33,9 +34,10 @@ exports.register = async (req, res) => {
       return res.status(400).json({ message: 'Email già registrata' });
     }
 
-    // Crea un nuovo utente
+    // Crea un nuovo utente (NON criptare manualmente)
     const user = new User({ name, email, password });
     await user.save();
+
     res.status(201).json({ message: 'Registrazione avvenuta con successo' });
   } catch (error) {
     console.error(error);
