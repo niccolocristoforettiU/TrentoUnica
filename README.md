@@ -51,7 +51,8 @@ TrentoUnica/
 │   │   ├── controllers/        --> Controller per la gestione delle API
 │   │   ├── models/             --> Modelli (Mongoose per MongoDB)
 │   │   ├── routes/             --> Rotte API (userRoutes, eventRoutes, ecc.)
-│   │   └── middlewares/        --> Middleware (Autenticazione JWT, ecc.)
+│   │   ├── middlewares/        --> Middleware (Autenticazione JWT, ecc.)
+│   │   └── data/               --> Cartella per i file JSON di configurazione
 │   ├── index.js                --> File principale del server Express
 │   ├── package.json            --> Configurazione delle dipendenze del backend
 │   ├── package-lock.json       --> Blocco delle dipendenze del backend
