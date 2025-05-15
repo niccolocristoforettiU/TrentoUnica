@@ -6,6 +6,7 @@ const eventSchema = new mongoose.Schema({
   description: { type: String },
   date: { type: Date, required: true },
   location: { type: String, required: true },
+  locationId: { type: String, required: true },
   price: { type: Number, default: 0 },
   organizer: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   isPublic: { type: Boolean, default: true }, //per eventi pubblici/privati
