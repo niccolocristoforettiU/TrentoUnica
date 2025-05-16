@@ -11,19 +11,6 @@ TrentoUnica/
 │   │   ├── views/              --> Pagine Vue.js
 │   │   ├── router/             --> Configurazione del router Vue.js
 │   │   ├── store/              --> Gestione dello stato Vuex (se usato)
-# TrentoUnica
-
-TrentoUnica è una piattaforma di gestione eventi basata su Vue.js (Frontend) e Express (Backend).
-
-## Struttura del Progetto
-```plaintext
-TrentoUnica/
-├── trentounica-frontend/       --> Cartella del progetto Vue.js (frontend)
-│   ├── src/                    --> Codice sorgente del frontend (Vue.js)
-│   │   ├── components/         --> Componenti Vue.js
-│   │   ├── views/              --> Pagine Vue.js
-│   │   ├── router/             --> Configurazione del router Vue.js
-│   │   ├── store/              --> Gestione dello stato Vuex (se usato)
 │   │   ├── assets/             --> File statici (immagini, stili)
 │   │   ├── composables/        --> Funzioni riutilizzabili (Composition API)
 │   │   ├── utils/              --> Utility functions (helper functions)
