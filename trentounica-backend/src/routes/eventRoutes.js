@@ -7,6 +7,7 @@ const eventController = require('../controllers/eventController');
 // Ottenere tutte le location disponibili per la creazione degli eventi (solo per organizer)
 router.get('/locations', authenticate, authorizeRole('organizer'), eventController.getLocations);
 
+
 // Elenco eventi
 router.get('/', authenticate, eventController.getAllEvents);
 
