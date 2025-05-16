@@ -60,6 +60,7 @@ exports.createEvent = async (req, res) => {
 };
 
 
+
 // Ottenere tutte le location disponibili per la creazione degli eventi
 exports.getLocations = (req, res) => {
   try {
