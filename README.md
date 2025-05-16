@@ -1,3 +1,9 @@
+# TrentoUnica
+
+TrentoUnica è una piattaforma di gestione eventi basata su Vue.js (Frontend) e Express (Backend).
+
+## Struttura del Progetto
+```plaintext
 TrentoUnica/
 ├── trentounica-frontend/       --> Cartella del progetto Vue.js (frontend)
 │   ├── src/                    --> Codice sorgente del frontend (Vue.js)
@@ -57,3 +63,8 @@ TrentoUnica/
 ├── 1Deriverable.pdf            --> Documento di specifiche del progetto (Parte 1)
 ├── 2Deriverable.pdf            --> Documento di specifiche del progetto (Parte 2)
 └── README.md                   --> Documentazione del progetto
+```
+
+Nota: Il progetto è organizzato in due ambienti distinti:
+- Frontend (Vue.js) con dipendenze specifiche nella cartella `trentounica-frontend`.
+- Backend (Express) con dipendenze specifiche nella cartella `trentounica-backend`.
