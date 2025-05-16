@@ -1,8 +1,11 @@
 // src/routes/eventRoutes.js
 const express = require('express');
 const router = express.Router();
-const { authenticate } = require('../middlewares/authMiddleware');
+const { authenticate, authorizeRole } = require('../middlewares/authMiddleware');
 const eventController = require('../controllers/eventController');
+
+// Creazione evento (solo per organizer autorizzati in location)
+router.post('/', authenticate, authorizeRole('organizer'), eventController.createEvent);
 
 // Elenco eventi
 router.get('/', authenticate, eventController.getAllEvents);
