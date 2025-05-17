@@ -1,5 +1,3 @@
-/* eslint-disable vue/multi-word-component-names */
-
 <template>
   <div>
     <h2>Login</h2>
@@ -48,6 +46,8 @@ export default {
           this.$router.push("/client/dashboard");
         } else if (role === "organizer") {
           this.$router.push("/organizer/dashboard");
+        } else if (role === "admin") {
+          this.$router.push("/admin/dashboard");
         }
       } catch (error) {
         this.errorMessage = error.response?.data?.message || "Errore durante il login";

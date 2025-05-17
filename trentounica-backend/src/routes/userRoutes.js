@@ -28,4 +28,10 @@ router.get('/organizer/dashboard', authenticate, authorizeRole('organizer'), (re
   res.json({ message: 'Benvenuto nel dashboard dell\'organizzatore!' });
 });
 
+// Rotta per verificare un organizzatore (solo admin)
+router.put('/verify/:userId', authenticate, authorizeRole('admin'), userController.verifyOrganizer);
+
+// Rotta per ottenere gli organizzatori non verificati (solo admin)
+router.get('/organizers/pending', authenticate, authorizeRole('admin'), userController.getPendingOrganizers);
+
 module.exports = router;

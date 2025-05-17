@@ -76,25 +76,44 @@ exports.verifyOrganizer = async (req, res) => {
     user.role = 'organizer';
     await user.save();
 
-    res.status(200).json({ message: 'Utente verificato come organizzatore', user });
+    res.status(200).json({ message: 'organizzatore verificato con successo', user });
   } catch (error) {
     res.status(500).json({ message: 'Errore durante la verifica dell\'organizzatore', error: error.message });
   }
 };
 
+// Ottenere gli organizzatori non verificati
+exports.getPendingOrganizers = async (req, res) => {
+  try {
+    const organizers = await User.find({ role: 'organizer', verified: false }).select('-password');
+    res.status(200).json(organizers);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Errore durante il recupero degli organizzatori', error: error.message });
+  }
+};
 
 // Login utente
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
+    console.log("📧 Email fornita:", email);
+    console.log("🔑 Password fornita:", password);
     const user = await User.findOne({ email });
 
+
+    console.log("Utente trovatdo:", user);
     if (!user) {
-      return res.status(401).json({ message: 'Credenziali non valide' });
+      console.log("❌ Utente non trovato");
+      return res.status(401).json({ message: 'Credenziali non valide user' });
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
+    console.log("📝 Password", password);
+    console.log("📝 Password hash nel DB:", user.password);
+    console.log("🔐 Confronto password:", isPasswordValid);
     if (!isPasswordValid) {
+      console.log("❌ Password non valida");
       return res.status(401).json({ message: 'Credenziali non valide' });
     }
 
@@ -108,6 +127,7 @@ exports.login = async (req, res) => {
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRES_IN || '1h' }
     );
+    console.log("📝 login effettuato con successo");
 
     res.status(200).json({ token, role: user.role });
   } catch (error) {
