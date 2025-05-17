@@ -7,6 +7,9 @@ const { authenticate, authorizeRole } = require('../middlewares/authMiddleware')
 // Rotta di registrazione
 router.post('/register', userController.register);
 
+// Rotta per verificare gli organizzatori
+router.put('/verify/:userId', authenticate, authorizeRole('admin'), userController.verifyOrganizer);
+
 // Rotta di login
 router.post('/login', userController.login);
 
