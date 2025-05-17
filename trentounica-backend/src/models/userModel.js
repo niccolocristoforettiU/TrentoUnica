@@ -29,6 +29,19 @@ const userSchema = new mongoose.Schema({
     enum: ['client', 'organizer'], 
     default: 'client' 
   },
+  verified: { 
+    type: Boolean, 
+    default: function() {
+      return this.role === 'client';
+    }
+  },
+  companyName: {
+    type: String,
+    required: function() {
+      return this.role === 'organizer';
+    },
+    trim: true
+  }
 });
 
 // Cripta la password prima di salvarla

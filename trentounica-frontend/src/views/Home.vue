@@ -1,10 +1,18 @@
+/* eslint-disable vue/multi-word-component-names */
+
 <template>
   <div>
-    <h1>Benvenuto a TrentoUnica</h1>
-    <p>Esplora e scopri i migliori eventi!</p>
-    <router-link v-if="!isAuthenticated" to="/register">Registrati</router-link>
-    <router-link v-if="!isAuthenticated" to="/login">Accedi</router-link>
-    <router-link v-if="isAuthenticated" to="/profile">Il Mio Profilo</router-link>
+    <h1>Benvenuto in TrentoUnica</h1>
+    <nav>
+      <ul>
+        <li><router-link to="/">Home</router-link></li>
+        <li><router-link to="/login">Login</router-link></li>
+        <li><router-link to="/register">Registrati</router-link></li>
+        <li v-if="role === 'client'"><router-link to="/client/dashboard">Dashboard Client</router-link></li>
+        <li v-if="role === 'organizer'"><router-link to="/organizer/dashboard">Dashboard Organizer</router-link></li>
+      </ul>
+    </nav>
+    <button v-if="isAuthenticated" @click="logout">Logout</button>
   </div>
 </template>
 
@@ -13,8 +21,39 @@ export default {
   name: "HomePage",
   computed: {
     isAuthenticated() {
-      return !!localStorage.getItem("token");
+      return !!localStorage.getItem('token');
     },
+    role() {
+      return localStorage.getItem('role');
+    }
   },
+  methods: {
+    logout() {
+      localStorage.removeItem('token');
+      localStorage.removeItem('role');
+      this.$router.push('/login');
+    }
+  }
 };
 </script>
+
+<style scoped>
+nav ul {
+  list-style: none;
+  padding: 0;
+}
+
+nav ul li {
+  display: inline-block;
+  margin-right: 15px;
+}
+
+button {
+  margin-top: 15px;
+  padding: 10px 20px;
+  background-color: #f44336;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+}
+</style>

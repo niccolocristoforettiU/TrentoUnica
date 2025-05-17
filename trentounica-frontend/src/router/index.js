@@ -5,6 +5,8 @@ import UserLogin from '@/views/Login.vue';
 import UserRegister from '@/views/Register.vue';
 import AppCalendar from "@/components/AppCalendar.vue";
 import SearchBar from '@/components/SearchBar.vue';
+import ClientDashboard from '@/components/ClientDashboard.vue';
+import OrganizerDashboard from '@/components/OrganizerDashboard.vue';
 
 const routes = [
   {
@@ -31,12 +33,37 @@ const routes = [
     path: "/SearchBar",
     name: 'SearchBar',
     component: SearchBar ,
-  }
+  },
+  {
+    path: '/client/dashboard',
+    name: 'ClientDashboard',
+    component: ClientDashboard,
+    meta: { requiresAuth: true, role: 'client' },
+  },
+  {
+    path: '/organizer/dashboard',
+    name: 'OrganizerDashboard',
+    component: OrganizerDashboard,
+    meta: { requiresAuth: true, role: 'organizer' },
+  },
 ];
 
 const router = createRouter({
   history: createWebHistory(process.env.BASE_URL),
   routes,
+});
+
+router.beforeEach((to, from, next) => {
+  const requiresAuth = to.matched.some(record => record.meta.requiresAuth);
+  const role = to.meta.role;
+  const token = localStorage.getItem('token');
+  const userRole = localStorage.getItem('role');
+
+  if (requiresAuth && (!token || userRole !== role)) {
+    return next('/login');
+  }
+
+  next();
 });
 
 export default router;
