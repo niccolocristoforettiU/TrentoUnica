@@ -6,6 +6,7 @@ import UserRegister from '@/views/Register.vue';
 import AppCalendar from "@/components/AppCalendar.vue";
 import SearchBar from '@/components/SearchBar.vue';
 import ClientDashboard from '@/components/ClientDashboard.vue';
+import AdminDashboardPage from '@/views/AdminDashboardPage.vue';OrganizerDashboard
 import OrganizerDashboard from '@/components/OrganizerDashboard.vue';
 
 const routes = [
@@ -46,6 +47,12 @@ const routes = [
     component: OrganizerDashboard,
     meta: { requiresAuth: true, role: 'organizer' },
   },
+  {
+    path: '/admin/dashboard',
+    name: 'AdminDashboardPage',
+    component: AdminDashboardPage,
+    meta: { requiresAuth: true, role: 'admin' },
+  }
 ];
 
 const router = createRouter({

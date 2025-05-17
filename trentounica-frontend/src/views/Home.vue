@@ -1,5 +1,3 @@
-/* eslint-disable vue/multi-word-component-names */
-
 <template>
   <div>
     <h1>Benvenuto in TrentoUnica</h1>
@@ -10,6 +8,7 @@
         <li><router-link to="/register">Registrati</router-link></li>
         <li v-if="role === 'client'"><router-link to="/client/dashboard">Dashboard Client</router-link></li>
         <li v-if="role === 'organizer'"><router-link to="/organizer/dashboard">Dashboard Organizer</router-link></li>
+        <li v-if="role === 'admin'"><router-link to="/admin/dashboard">Dashboard Admin</router-link></li>
       </ul>
     </nav>
     <button v-if="isAuthenticated" @click="logout">Logout</button>
