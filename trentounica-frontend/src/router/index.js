@@ -5,7 +5,9 @@ import UserLogin from '@/views/Login.vue';
 import UserRegister from '@/views/Register.vue';
 import AppCalendar from "@/components/AppCalendar.vue";
 import SearchBar from '@/components/SearchBar.vue';
-import OrganizerDashboard from '@/views/OrganizerDashboard.vue';
+import ClientDashboard from '@/components/ClientDashboard.vue';
+import AdminDashboardPage from '@/views/AdminDashboardPage.vue';OrganizerDashboard
+import OrganizerDashboard from '@/components/OrganizerDashboard.vue';
 
 const routes = [
   {
@@ -33,11 +35,23 @@ const routes = [
     name: 'SearchBar',
     component: SearchBar ,
   },
-    {
-    path: '/organizer-dashboard',
+  {
+    path: '/client/dashboard',
+    name: 'ClientDashboard',
+    component: ClientDashboard,
+    meta: { requiresAuth: true, role: 'client' },
+  },
+  {
+    path: '/organizer/dashboard',
     name: 'OrganizerDashboard',
     component: OrganizerDashboard,
-    meta: { requiresAuth: true, role: 'organizer' }
+    meta: { requiresAuth: true, role: 'organizer' },
+  },
+  {
+    path: '/admin/dashboard',
+    name: 'AdminDashboardPage',
+    component: AdminDashboardPage,
+    meta: { requiresAuth: true, role: 'admin' },
   }
 ];
 
@@ -61,6 +75,5 @@ router.beforeEach((to, from, next) => {
 
   next();
 });
-
 
 export default router;
