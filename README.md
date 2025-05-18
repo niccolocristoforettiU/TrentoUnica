@@ -30,7 +30,9 @@ TrentoUnica/
 │   │   ├── controllers/        --> Controller per la gestione delle API
 │   │   ├── models/             --> Modelli (Mongoose per MongoDB)
 │   │   ├── routes/             --> Rotte API (userRoutes, eventRoutes, ecc.)
-│   │   └── middlewares/        --> Middleware (Autenticazione JWT, ecc.)
+│   │   ├── middlewares/        --> Middleware (Autenticazione JWT, ecc.)
+│   │   ├── scripts/            --> Script di utilità per il backend
+│   │   │   └── createAdmin.js  --> Script per creare un utente amministratore in MongoDB
 │   ├── index.js                --> File principale del server Express
 │   ├── package.json            --> Configurazione delle dipendenze del backend
 │   ├── package-lock.json       --> Blocco delle dipendenze del backend

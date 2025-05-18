@@ -5,8 +5,8 @@
       <li v-for="event in events" :key="event._id" class="event-card">
         <h3 class="event-title">{{ event.title }}</h3>
         <p class="event-description">{{ event.description }}</p>
-        <p class="event-date">📅 {{ new Date(event.date).toLocaleString() }}</p>
-        <p class="event-location">📍 {{ event.location }}</p>
+        <p class="event-date">{{ new Date(event.date).toLocaleString() }}</p>
+        <p class="event-location">{{ event.location }}</p>
       </li>
     </ul>
   </div>
