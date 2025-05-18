@@ -1,8 +1,7 @@
 <template>
   <div>
-    <h2>Registrati</h2>
+    <h2>Registrazione</h2>
     <form @submit.prevent="register">
-      <input v-model="name" type="text" placeholder="Nome" required />
       <input v-model="email" type="email" placeholder="Email" required />
       <input v-model="password" type="password" placeholder="Password" required />
       <input v-model="ripetiPassword" type="password" placeholder="Ripeti Password" required />
@@ -14,8 +13,23 @@
         <input type="radio" value="organizer" v-model="role" required /> Organizzatore
       </label>
 
+      <div v-if="role === 'client'">
+        <input v-model="name" type="text" placeholder="Nome completo" required />
+        <input v-model="address" type="text" placeholder="Indirizzo" required />
+        <input v-model="age" type="number" placeholder="Età" required />
+      </div>
+
       <div v-if="role === 'organizer'">
         <input v-model="companyName" type="text" placeholder="Nome dell'azienda" required />
+        <input v-model="partitaIva" type="text" placeholder="Partita IVA" required />
+
+        <h3>Locations</h3>
+        <div v-for="(loc, index) in locations" :key="index" class="location-entry">
+          <input v-model="loc.name" type="text" placeholder="Nome Location" required />
+          <input v-model="loc.address" type="text" placeholder="Indirizzo Location" required />
+          <button type="button" @click="removeLocation(index)">Rimuovi Location</button>
+        </div>
+        <button type="button" @click="addLocation">Aggiungi Location</button>
       </div>
 
       <button type="submit">Registrati</button>
@@ -36,12 +50,24 @@ export default {
       email: "",
       password: "",
       ripetiPassword: "",
-      role: "",
+      role: "client",
       companyName: "",
+      address: "",
+      age: "",
+      partitaIva: "",
+      locations: [
+        { name: "", address: "" }
+      ],
       errorMessage: ""
     };
   },
   methods: {
+    addLocation() {
+      this.locations.push({ name: "", address: "" });
+    },
+    removeLocation(index) {
+      this.locations.splice(index, 1);
+    },
     async register() {
       try {
         if (this.password !== this.ripetiPassword) {
@@ -50,15 +76,22 @@ export default {
         }
 
         const payload = {
-          name: this.name,
           email: this.email,
           password: this.password,
           ripetiPassword: this.ripetiPassword,
           role: this.role,
         };
 
-        if (this.role === "organizer") {
+        if (this.role === "client") {
+          payload.name = this.name;
+          payload.address = this.address;
+          payload.age = this.age;
+        } else if (this.role === "organizer") {
           payload.companyName = this.companyName;
+          payload.partitaIva = this.partitaIva;
+          payload.locations = this.locations.filter(
+            loc => loc.name.trim() && loc.address.trim()
+          );
         }
 
         const response = await axios.post("/users/register", payload);
@@ -75,6 +108,17 @@ export default {
 <style scoped>
 .error {
   color: red;
+  margin-top: 10px;
+}
+
+.location-entry {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+button {
   margin-top: 10px;
 }
 </style>
