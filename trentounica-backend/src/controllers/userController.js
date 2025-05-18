@@ -73,7 +73,8 @@ exports.verifyOrganizer = async (req, res) => {
     }
 
     // Aggiorna il ruolo dell'utente (opzionale, se vuoi promuoverlo a "organizer")
-    user.role = 'organizer';
+    //user.role = 'organizer';
+    user.verified = true;
     await user.save();
 
     res.status(200).json({ message: 'organizzatore verificato con successo', user });
@@ -97,23 +98,16 @@ exports.getPendingOrganizers = async (req, res) => {
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
-    console.log("📧 Email fornita:", email);
-    console.log("🔑 Password fornita:", password);
     const user = await User.findOne({ email });
 
 
     console.log("Utente trovatdo:", user);
     if (!user) {
-      console.log("❌ Utente non trovato");
       return res.status(401).json({ message: 'Credenziali non valide user' });
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
-    console.log("📝 Password", password);
-    console.log("📝 Password hash nel DB:", user.password);
-    console.log("🔐 Confronto password:", isPasswordValid);
     if (!isPasswordValid) {
-      console.log("❌ Password non valida");
       return res.status(401).json({ message: 'Credenziali non valide' });
     }
 
@@ -127,7 +121,6 @@ exports.login = async (req, res) => {
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRES_IN || '1h' }
     );
-    console.log("📝 login effettuato con successo");
 
     res.status(200).json({ token, role: user.role });
   } catch (error) {
