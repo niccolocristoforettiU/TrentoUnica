@@ -18,24 +18,24 @@
 <script>
 export default {
   name: "HomePage",
-  computed: {
-    isAuthenticated() {
-      return !!localStorage.getItem('token');
-    },
-    role() {
-      return localStorage.getItem('role');
-    },
-    userName() {
-      // Recupera il nome dell'utente dal localStorage
-      return localStorage.getItem('name') || "";
-    }
+  data() {
+    return {
+      isAuthenticated: !!localStorage.getItem('token'),
+      userName: localStorage.getItem('name') || "",
+      role: localStorage.getItem('role') || ""
+    };
   },
   methods: {
     logout() {
+      // Rimuovi i dati dal localStorage
       localStorage.removeItem('token');
       localStorage.removeItem('role');
       localStorage.removeItem('name');
-      this.$router.push('/login');
+
+      // Aggiorna lo stato locale
+      this.isAuthenticated = false;
+      this.userName = "";
+      this.role = "";
     }
   }
 };
