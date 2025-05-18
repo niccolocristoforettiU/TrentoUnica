@@ -1,6 +1,6 @@
 <template>
   <div>
-    <h1>Benvenuto in TrentoUnica</h1>
+    <h1>Benvenuto {{ userName }} in TrentoUnica</h1>
     <nav>
       <ul>
         <li><router-link to="/">Home</router-link></li>
@@ -24,12 +24,17 @@ export default {
     },
     role() {
       return localStorage.getItem('role');
+    },
+    userName() {
+      // Recupera il nome dell'utente dal localStorage
+      return localStorage.getItem('name') || "";
     }
   },
   methods: {
     logout() {
       localStorage.removeItem('token');
       localStorage.removeItem('role');
+      localStorage.removeItem('name');
       this.$router.push('/login');
     }
   }
