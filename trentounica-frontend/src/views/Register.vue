@@ -6,14 +6,27 @@
       <input v-model="email" type="email" placeholder="Email" required />
       <input v-model="password" type="password" placeholder="Password" required />
       <input v-model="ripetiPassword" type="password" placeholder="Ripeti Password" required />
+
+      <label>
+        <input type="radio" value="client" v-model="role" required /> Cliente
+      </label>
+      <label>
+        <input type="radio" value="organizer" v-model="role" required /> Organizzatore
+      </label>
+
+      <div v-if="role === 'organizer'">
+        <input v-model="companyName" type="text" placeholder="Nome dell'azienda" required />
+      </div>
+
       <button type="submit">Registrati</button>
     </form>
+
     <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
   </div>
 </template>
 
 <script>
-import api from "@/api/axios";
+import axios from "@/api/axios";
 
 export default {
   name: "UserRegister",
@@ -22,34 +35,46 @@ export default {
       name: "",
       email: "",
       password: "",
-      ripetiPassword: "",  // <--- Assicurati che ci sia anche questo
+      ripetiPassword: "",
+      role: "",
+      companyName: "",
       errorMessage: ""
     };
   },
   methods: {
     async register() {
       try {
-        // Controlla che le password coincidano
         if (this.password !== this.ripetiPassword) {
           this.errorMessage = "Le password non coincidono.";
           return;
         }
 
-        // Invia i dati al server
-        await api.post("/users/register", {
+        const payload = {
           name: this.name,
           email: this.email,
           password: this.password,
-          ripetiPassword: this.ripetiPassword
-        });
+          ripetiPassword: this.ripetiPassword,
+          role: this.role,
+        };
 
-        // Reindirizza alla pagina di login
+        if (this.role === "organizer") {
+          payload.companyName = this.companyName;
+        }
+
+        const response = await axios.post("/users/register", payload);
+        alert(response.data.message);
         this.$router.push("/login");
       } catch (error) {
-        console.error("Errore di registrazione:", error);
         this.errorMessage = error.response?.data?.message || "Errore durante la registrazione";
       }
     }
   }
 };
 </script>
+
+<style scoped>
+.error {
+  color: red;
+  margin-top: 10px;
+}
+</style>
