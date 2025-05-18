@@ -18,7 +18,7 @@ exports.register = async (req, res) => {
       return res.status(400).json({ message: 'Indirizzo e età sono obbligatori per i clienti.' });
     }
 
-    if (role === 'organizer' && (!partitaIva || !locations)) {
+    if (role === 'organizer' && (!partitaIva || !locations || !Array.isArray(locations))) {
       return res.status(400).json({ message: 'Partita IVA e location sono obbligatorie per gli organizzatori.' });
     }
 
@@ -41,11 +41,19 @@ exports.register = async (req, res) => {
 
     await user.save();
 
-    if (role === 'organizer') {
+    // Gestione delle location per organizer
+    if (role === 'organizer' && Array.isArray(locations) && locations.length > 0) {
       for (const location of locations) {
-        const existingLocation = await Location.findOne({ name: location });
+        const { name, address } = location;
+        if (!name || !address) {
+          console.error("Location non valida:", location);
+          continue;
+        }
+
+        // Verifica se la location esiste già per questo organizer
+        const existingLocation = await Location.findOne({ name, address, organizer: user._id });
         if (!existingLocation) {
-          await Location.create({ name: location, organizer: user._id });
+          await Location.create({ name, address, organizer: user._id });
         }
       }
     }
@@ -54,7 +62,7 @@ exports.register = async (req, res) => {
       message: role === 'organizer' ? 'Registrazione come organizer in attesa di verifica.' : 'Registrazione avvenuta con successo.'
     });
   } catch (error) {
-    console.error(error);
+    console.error("Errore durante la registrazione:", error);
     res.status(500).json({ message: 'Errore durante la registrazione', error: error.message });
   }
 };
