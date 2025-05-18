@@ -26,15 +26,28 @@ const userSchema = new mongoose.Schema({
   },
   role: { 
     type: String, 
-    enum: ['client', 'organizer'], 
+    enum: ['client', 'organizer', 'admin'], 
     default: 'client' 
   },
+  verified: { 
+    type: Boolean, 
+    default: function() {
+      return this.role === 'client' || this.role === 'admin';
+    }
+  },
+  companyName: {
+    type: String,
+    required: function() {
+      return this.role === 'organizer';
+    },
+    trim: true
+  }
 });
 
 // Cripta la password prima di salvarla
 userSchema.pre("save", async function (next) {
-    if (!this.isModified("password")) return next();
-
+    if (!this.isModified("password") || this.password.startsWith("$2b$")) return next();
+console.log("🔐 Criptando password per l'utente:", this.email);
     // Cripta solo se è una nuova password
     this.password = await bcrypt.hash(this.password, 10);
     next();
