@@ -7,6 +7,9 @@ const { authenticate, authorizeRole } = require('../middlewares/authMiddleware')
 // Rotta di registrazione
 router.post('/register', userController.register);
 
+// Rotta per verificare gli organizzatori
+router.put('/verify/:userId', authenticate, authorizeRole('admin'), userController.verifyOrganizer);
+
 // Rotta di login
 router.post('/login', userController.login);
 
@@ -24,5 +27,11 @@ router.get('/client/dashboard', authenticate, authorizeRole('client'), (req, res
 router.get('/organizer/dashboard', authenticate, authorizeRole('organizer'), (req, res) => {
   res.json({ message: 'Benvenuto nel dashboard dell\'organizzatore!' });
 });
+
+// Rotta per verificare un organizzatore (solo admin)
+router.put('/verify/:userId', authenticate, authorizeRole('admin'), userController.verifyOrganizer);
+
+// Rotta per ottenere gli organizzatori non verificati (solo admin)
+router.get('/organizers/pending', authenticate, authorizeRole('admin'), userController.getPendingOrganizers);
 
 module.exports = router;

@@ -2,38 +2,66 @@
   <div>
     <h2>Login</h2>
     <form @submit.prevent="login">
-      <input v-model="email" type="email" placeholder="Email" />
-      <input v-model="password" type="password" placeholder="Password" />
+      <input v-model="email" type="email" placeholder="Email" required />
+      <input v-model="password" type="password" placeholder="Password" required />
       <button type="submit">Login</button>
     </form>
+
+    <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
   </div>
 </template>
 
 <script>
-import api from "@/api/axios";
+import axios from "@/api/axios";
 
 export default {
-  name: "UserLogin", // Nome del componente aggiornato
+  name: "UserLogin",
   data() {
     return {
       email: "",
       password: "",
+      errorMessage: ""
     };
   },
   methods: {
     async login() {
       try {
-        const response = await api.post("/users/login", {
+        const response = await axios.post("/users/login", {
           email: this.email,
           password: this.password,
         });
-        const { token } = response.data;
+
+        const { token, role, message } = response.data;
+
+        // Controlla se l'organizzatore è in attesa di verifica
+        if (role === "organizer" && message === "Il tuo account è in attesa di verifica. Contatta l'amministratore.") {
+          this.errorMessage = message;
+          return;
+        }
+
         localStorage.setItem("token", token);
-        this.$router.push("/dashboard");
+        localStorage.setItem("role", role);
+        localStorage.setItem("name", response.data.name); 
+
+        this.$router.push("/");
+        /*if (role === "client") {
+          this.$router.push("/");
+        } else if (role === "organizer") {
+          this.$router.push("/organizer/dashboard");
+        } else if (role === "admin") {
+          this.$router.push("/admin/dashboard");
+        }*/
       } catch (error) {
-        console.error("Errore di login:", error);
+        this.errorMessage = error.response?.data?.message || "Errore durante il login";
       }
-    },
-  },
+    }
+  }
 };
 </script>
+
+<style scoped>
+.error {
+  color: red;
+  margin-top: 10px;
+}
+</style>

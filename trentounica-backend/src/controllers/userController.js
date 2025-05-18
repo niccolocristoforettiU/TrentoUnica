@@ -7,7 +7,7 @@ const jwt = require('jsonwebtoken');
 
 exports.register = async (req, res) => {
   try {
-    const { name, email, password, ripetiPassword } = req.body;
+    const { name, email, password, ripetiPassword, role, companyName } = req.body;
     
     // Controllo se le password coincidono
     if (password !== ripetiPassword) {
@@ -35,16 +35,64 @@ exports.register = async (req, res) => {
     }
 
     // Crea un nuovo utente (NON criptare manualmente)
-    const user = new User({ name, email, password });
+    const user = new User({
+      name,
+      email,
+      password,
+      role,
+      companyName: role === 'organizer' ? companyName : undefined,
+      verified: role === 'client'
+    });
     await user.save();
 
-    res.status(201).json({ message: 'Registrazione avvenuta con successo' });
+    res.status(201).json({
+      message: role === 'organizer' 
+        ? 'Registrazione come organizer avvenuta con successo, in attesa di verifica.' 
+        : 'Registrazione avvenuta con successo'
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Errore durante la registrazione', error: error.message });
   }
 };
 
+// Verificare se l'utente è un organizzatore
+exports.verifyOrganizer = async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    
+    // Trova l'utente con l'ID specificato
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'Utente non trovato' });
+    }
+
+    // Verifica se l'utente è un organizzatore
+    if (user.role !== 'organizer') {
+      return res.status(403).json({ message: 'Utente non autorizzato come organizzatore' });
+    }
+
+    // Aggiorna il ruolo dell'utente (opzionale, se vuoi promuoverlo a "organizer")
+    //user.role = 'organizer';
+    user.verified = true;
+    await user.save();
+
+    res.status(200).json({ message: 'organizzatore verificato con successo', user });
+  } catch (error) {
+    res.status(500).json({ message: 'Errore durante la verifica dell\'organizzatore', error: error.message });
+  }
+};
+
+// Ottenere gli organizzatori non verificati
+exports.getPendingOrganizers = async (req, res) => {
+  try {
+    const organizers = await User.find({ role: 'organizer', verified: false }).select('-password');
+    res.status(200).json(organizers);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Errore durante il recupero degli organizzatori', error: error.message });
+  }
+};
 
 // Login utente
 exports.login = async (req, res) => {
@@ -52,13 +100,20 @@ exports.login = async (req, res) => {
     const { email, password } = req.body;
     const user = await User.findOne({ email });
 
+
+    console.log("Utente trovatdo:", user);
     if (!user) {
-      return res.status(401).json({ message: 'Credenziali non valide' });
+      return res.status(401).json({ message: 'Credenziali non valide user' });
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       return res.status(401).json({ message: 'Credenziali non valide' });
+    }
+
+    // Blocca il login degli organizzatori non verificati
+    if (user.role === 'organizer' && !user.verified) {
+      return res.status(403).json({ message: 'Il tuo account è in attesa di verifica. Contatta l\'amministratore.' });
     }
 
     const token = jwt.sign(
@@ -67,7 +122,7 @@ exports.login = async (req, res) => {
       { expiresIn: process.env.JWT_EXPIRES_IN || '1h' }
     );
 
-    res.status(200).json({ token, role: user.role });
+    res.status(200).json({ token, role: user.role, name: user.companyName || user.name });
   } catch (error) {
     res.status(500).json({ message: 'Errore durante il login', error: error.message });
   }
