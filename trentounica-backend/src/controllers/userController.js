@@ -122,7 +122,7 @@ exports.login = async (req, res) => {
       { expiresIn: process.env.JWT_EXPIRES_IN || '1h' }
     );
 
-    res.status(200).json({ token, role: user.role });
+    res.status(200).json({ token, role: user.role, name: user.companyName || user.name });
   } catch (error) {
     res.status(500).json({ message: 'Errore durante il login', error: error.message });
   }
