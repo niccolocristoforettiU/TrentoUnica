@@ -63,7 +63,7 @@ app.use((err, req, res, next) => {
 });
 
 // Avviare il server
-const PORT = process.env.SERVER_PORT || 5000;
+const PORT = process.env.SERVER_PORT || 5050;
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
