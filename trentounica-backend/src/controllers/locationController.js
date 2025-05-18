@@ -13,9 +13,13 @@ exports.getAllLocations = async (req, res) => {
 // Creare una nuova location
 exports.createLocation = async (req, res) => {
   try {
-    const { name, address } = req.body;
+    const { name, address, openingTime, closingTime, maxSeats } = req.body;
 
-    const existingLocation = await Location.findOne({ name, address });
+    if (!name || !address || !openingTime || !closingTime || !maxSeats) {
+      return res.status(400).json({ message: 'Tutti i campi sono obbligatori' });
+    }
+
+    const existingLocation = await Location.findOne({ name, address, organizer: req.user.userId });
     if (existingLocation) {
       return res.status(400).json({ message: 'Location già esistente' });
     }
@@ -23,11 +27,13 @@ exports.createLocation = async (req, res) => {
     const location = new Location({
       name,
       address,
+      openingTime,
+      closingTime,
+      maxSeats,
       organizer: req.user.userId
     });
 
     await location.save();
-
     res.status(201).json(location);
   } catch (error) {
     res.status(500).json({ message: 'Errore nella creazione della location', error: error.message });
@@ -37,11 +43,39 @@ exports.createLocation = async (req, res) => {
 // Modificare una location
 exports.updateLocation = async (req, res) => {
   try {
-    const { name, address } = req.body;
-    const location = await Location.findByIdAndUpdate(req.params.id, { name, address }, { new: true });
+    const { name, address, openingTime, closingTime, maxSeats } = req.body;
+    const location = await Location.findByIdAndUpdate(
+      req.params.id,
+      { name, address, openingTime, closingTime, maxSeats },
+      { new: true }
+    );
+    if (!location) {
+      return res.status(404).json({ message: 'Location non trovata' });
+    }
     res.status(200).json(location);
   } catch (error) {
     res.status(500).json({ message: 'Errore nella modifica della location', error: error.message });
+  }
+};
+
+// Modificare orari e posti massimi di una location
+exports.updateLocationTimesAndSeats = async (req, res) => {
+  try {
+    const { openingTime, closingTime, maxSeats } = req.body;
+    if (!openingTime || !closingTime || !maxSeats) {
+      return res.status(400).json({ message: 'Orari e posti massimi sono obbligatori' });
+    }
+    const location = await Location.findByIdAndUpdate(
+      req.params.id,
+      { openingTime, closingTime, maxSeats },
+      { new: true }
+    );
+    if (!location) {
+      return res.status(404).json({ message: 'Location non trovata' });
+    }
+    res.status(200).json(location);
+  } catch (error) {
+    res.status(500).json({ message: 'Errore nella modifica degli orari e dei posti massimi', error: error.message });
   }
 };
 

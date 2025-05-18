@@ -27,6 +27,9 @@
         <div v-for="(loc, index) in locations" :key="index" class="location-entry">
           <input v-model="loc.name" type="text" placeholder="Nome Location" required />
           <input v-model="loc.address" type="text" placeholder="Indirizzo Location" required />
+          <input v-model="loc.openingTime" type="time" placeholder="Orario di Apertura" required />
+          <input v-model="loc.closingTime" type="time" placeholder="Orario di Chiusura" required />
+          <input v-model="loc.maxSeats" type="number" placeholder="Posti Massimi" required />
           <button type="button" @click="removeLocation(index)">Rimuovi Location</button>
         </div>
         <button type="button" @click="addLocation">Aggiungi Location</button>
@@ -56,14 +59,14 @@ export default {
       age: "",
       partitaIva: "",
       locations: [
-        { name: "", address: "" }
+        { name: "", address: "", openingTime: "", closingTime: "", maxSeats: "" }
       ],
       errorMessage: ""
     };
   },
   methods: {
     addLocation() {
-      this.locations.push({ name: "", address: "" });
+      this.locations.push({ name: "", address: "", openingTime: "", closingTime: "", maxSeats: "" });
     },
     removeLocation(index) {
       this.locations.splice(index, 1);
@@ -90,7 +93,7 @@ export default {
           payload.companyName = this.companyName;
           payload.partitaIva = this.partitaIva;
           payload.locations = this.locations.filter(
-            loc => loc.name.trim() && loc.address.trim()
+            loc => loc.name.trim() && loc.address.trim() && loc.openingTime && loc.closingTime && loc.maxSeats
           );
         }
 
@@ -116,6 +119,7 @@ export default {
   gap: 10px;
   align-items: center;
   margin-bottom: 10px;
+  flex-wrap: wrap;
 }
 
 button {

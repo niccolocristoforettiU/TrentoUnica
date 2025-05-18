@@ -12,6 +12,9 @@ router.post('/', authenticate, authorizeRole('organizer'), locationController.cr
 // Modificare una location
 router.put('/:id', authenticate, authorizeRole('organizer'), locationController.updateLocation);
 
+// Modificare orari e posti massimi di una location
+router.patch('/:id/times-seats', authenticate, authorizeRole('organizer'), locationController.updateLocationTimesAndSeats);
+
 // Eliminare una location
 router.delete('/:id', authenticate, authorizeRole('organizer'), locationController.deleteLocation);
 
