@@ -11,6 +11,20 @@ const locationSchema = new mongoose.Schema({
     required: true,
     trim: true
   },
+  openingTime: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  closingTime: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  maxSeats: {
+    type: Number,
+    required: true
+  },
   organizer: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',

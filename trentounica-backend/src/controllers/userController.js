@@ -41,11 +41,11 @@ exports.register = async (req, res) => {
 
     await user.save();
 
-    // Gestione delle location per organizer
+    // Gestione delle location per organizer (inclusi nuovi campi)
     if (role === 'organizer' && Array.isArray(locations) && locations.length > 0) {
       for (const location of locations) {
-        const { name, address } = location;
-        if (!name || !address) {
+        const { name, address, openingTime, closingTime, maxSeats } = location;
+        if (!name || !address || !openingTime || !closingTime || !maxSeats) {
           console.error("Location non valida:", location);
           continue;
         }
@@ -53,7 +53,14 @@ exports.register = async (req, res) => {
         // Verifica se la location esiste già per questo organizer
         const existingLocation = await Location.findOne({ name, address, organizer: user._id });
         if (!existingLocation) {
-          await Location.create({ name, address, organizer: user._id });
+          await Location.create({
+            name,
+            address,
+            openingTime,
+            closingTime,
+            maxSeats,
+            organizer: user._id
+          });
         }
       }
     }
