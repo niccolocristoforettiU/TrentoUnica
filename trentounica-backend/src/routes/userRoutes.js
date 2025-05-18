@@ -2,6 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/userController');
+const locationController = require('../controllers/locationController');
 const { authenticate, authorizeRole } = require('../middlewares/authMiddleware');
 
 // Rotta di registrazione
@@ -33,5 +34,11 @@ router.put('/verify/:userId', authenticate, authorizeRole('admin'), userControll
 
 // Rotta per ottenere gli organizzatori non verificati (solo admin)
 router.get('/organizers/pending', authenticate, authorizeRole('admin'), userController.getPendingOrganizers);
+
+// Rotte per la gestione delle location
+router.get('/locations', authenticate, authorizeRole('organizer'), locationController.getAllLocations);
+router.post('/locations', authenticate, authorizeRole('organizer'), locationController.createLocation);
+router.put('/locations/:id', authenticate, authorizeRole('organizer'), locationController.updateLocation);
+router.delete('/locations/:id', authenticate, authorizeRole('organizer'), locationController.deleteLocation);
 
 module.exports = router;
