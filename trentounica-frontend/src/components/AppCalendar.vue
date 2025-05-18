@@ -29,7 +29,7 @@ export default {
     async fetchEvents() {
       try {
         const token =  localStorage.getItem("token");
-        const response = await axios.get("http://localhost:5000/api/calendar", {
+        const response = await axios.get("http://localhost:5050/api/calendar", {
           headers: {
             Authorization: `Bearer ${token}`
           }
