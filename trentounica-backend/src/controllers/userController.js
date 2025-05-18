@@ -1,5 +1,6 @@
 // src/controllers/userController.js
 const User = require('../models/userModel');
+const Location = require('../models/locationModel');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
@@ -7,51 +8,68 @@ const jwt = require('jsonwebtoken');
 
 exports.register = async (req, res) => {
   try {
-    const { name, email, password, ripetiPassword, role, companyName } = req.body;
-    
-    // Controllo se le password coincidono
+    const { name, email, password, ripetiPassword, role, companyName, address, age, partitaIva, locations } = req.body;
+
     if (password !== ripetiPassword) {
       return res.status(400).json({ message: 'Le password non coincidono' });
     }
 
-    // Controlla che la password rispetti i criteri prima dell'hashing
-    const isValid = (
-        password.length >= 8 &&
-        password.length <= 20 &&
-        /[a-z]/.test(password) &&
-        /[A-Z]/.test(password) &&
-        /[0-9]/.test(password) &&
-        /[^a-zA-Z0-9]/.test(password)
-    );
-
-    if (!isValid) {
-      return res.status(400).json({ message: "La password deve avere tra 8 e 20 caratteri, con almeno una lettera minuscola, una lettera maiuscola, un numero e un carattere speciale." });
+    if (role === 'client' && (!address || !age)) {
+      return res.status(400).json({ message: 'Indirizzo e età sono obbligatori per i clienti.' });
     }
 
-    // Controllo se l'email esiste già
+    if (role === 'organizer' && (!partitaIva || !locations || !Array.isArray(locations))) {
+      return res.status(400).json({ message: 'Partita IVA e location sono obbligatorie per gli organizzatori.' });
+    }
+
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ message: 'Email già registrata' });
     }
 
-    // Crea un nuovo utente (NON criptare manualmente)
     const user = new User({
-      name,
+      name: role === 'client' ? name : undefined,
       email,
       password,
       role,
+      address: role === 'client' ? address : undefined,
+      age: role === 'client' ? age : undefined,
       companyName: role === 'organizer' ? companyName : undefined,
+      partitaIva: role === 'organizer' ? partitaIva : undefined,
       verified: role === 'client'
     });
+
     await user.save();
 
+    // Gestione delle location per organizer (inclusi nuovi campi)
+    if (role === 'organizer' && Array.isArray(locations) && locations.length > 0) {
+      for (const location of locations) {
+        const { name, address, openingTime, closingTime, maxSeats } = location;
+        if (!name || !address || !openingTime || !closingTime || !maxSeats) {
+          console.error("Location non valida:", location);
+          continue;
+        }
+
+        // Verifica se la location esiste già per questo organizer
+        const existingLocation = await Location.findOne({ name, address, organizer: user._id });
+        if (!existingLocation) {
+          await Location.create({
+            name,
+            address,
+            openingTime,
+            closingTime,
+            maxSeats,
+            organizer: user._id
+          });
+        }
+      }
+    }
+
     res.status(201).json({
-      message: role === 'organizer' 
-        ? 'Registrazione come organizer avvenuta con successo, in attesa di verifica.' 
-        : 'Registrazione avvenuta con successo'
+      message: role === 'organizer' ? 'Registrazione come organizer in attesa di verifica.' : 'Registrazione avvenuta con successo.'
     });
   } catch (error) {
-    console.error(error);
+    console.error("Errore durante la registrazione:", error);
     res.status(500).json({ message: 'Errore durante la registrazione', error: error.message });
   }
 };
@@ -73,7 +91,8 @@ exports.verifyOrganizer = async (req, res) => {
     }
 
     // Aggiorna il ruolo dell'utente (opzionale, se vuoi promuoverlo a "organizer")
-    user.role = 'organizer';
+    //user.role = 'organizer';
+    user.verified = true;
     await user.save();
 
     res.status(200).json({ message: 'organizzatore verificato con successo', user });
@@ -97,23 +116,16 @@ exports.getPendingOrganizers = async (req, res) => {
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
-    console.log("📧 Email fornita:", email);
-    console.log("🔑 Password fornita:", password);
     const user = await User.findOne({ email });
 
 
     console.log("Utente trovatdo:", user);
     if (!user) {
-      console.log("❌ Utente non trovato");
       return res.status(401).json({ message: 'Credenziali non valide user' });
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
-    console.log("📝 Password", password);
-    console.log("📝 Password hash nel DB:", user.password);
-    console.log("🔐 Confronto password:", isPasswordValid);
     if (!isPasswordValid) {
-      console.log("❌ Password non valida");
       return res.status(401).json({ message: 'Credenziali non valide' });
     }
 
@@ -127,9 +139,8 @@ exports.login = async (req, res) => {
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRES_IN || '1h' }
     );
-    console.log("📝 login effettuato con successo");
 
-    res.status(200).json({ token, role: user.role });
+    res.status(200).json({ token, role: user.role, name: user.companyName || user.name });
   } catch (error) {
     res.status(500).json({ message: 'Errore durante il login', error: error.message });
   }

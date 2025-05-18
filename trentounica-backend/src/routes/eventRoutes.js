@@ -12,15 +12,17 @@ router.get('/locations', authenticate, authorizeRole('organizer'), eventControll
 router.get('/', authenticate, eventController.getAllEvents);
 
 // Creazione evento (solo per organizer autorizzati in location)
+
 router.post('/', authenticate, authorizeRole('organizer'), eventController.createEvent);
 
-// Dettagli evento
-router.get('/:id', authenticate, eventController.getEventById);
+// Dettagli evento (pubblico)
+router.get('/:id', eventController.getEventById);
 
-// Modifica evento
+// Modifica evento (solo organizer)
 router.put('/:id', authenticate, authorizeRole('organizer'), eventController.updateEvent);
 
-// Eliminazione evento
+// Eliminazione evento (solo organizer)
+
 router.delete('/:id', authenticate, authorizeRole('organizer'), eventController.deleteEvent);
 
 module.exports = router;

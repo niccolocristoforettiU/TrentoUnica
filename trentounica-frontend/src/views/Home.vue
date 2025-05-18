@@ -1,14 +1,15 @@
 <template>
   <div>
-    <h1>Benvenuto in TrentoUnica</h1>
+    <h1>Benvenuto {{ userName }} in TrentoUnica</h1>
     <nav>
       <ul>
         <li><router-link to="/">Home</router-link></li>
-        <li><router-link to="/login">Login</router-link></li>
-        <li><router-link to="/register">Registrati</router-link></li>
+        <li v-if="!isAuthenticated"><router-link to="/login">Login</router-link></li>
+        <li v-if="!isAuthenticated"><router-link to="/register">Registrati</router-link></li>
         <li v-if="role === 'client'"><router-link to="/client/dashboard">Dashboard Client</router-link></li>
         <li v-if="role === 'organizer'"><router-link to="/organizer/dashboard">Dashboard Organizer</router-link></li>
         <li v-if="role === 'admin'"><router-link to="/admin/dashboard">Dashboard Admin</router-link></li>
+        <li class="search-bar"><SearchBar /></li>
       </ul>
     </nav>
     <button v-if="isAuthenticated" @click="logout">Logout</button>
@@ -18,19 +19,24 @@
 <script>
 export default {
   name: "HomePage",
-  computed: {
-    isAuthenticated() {
-      return !!localStorage.getItem('token');
-    },
-    role() {
-      return localStorage.getItem('role');
-    }
+  data() {
+    return {
+      isAuthenticated: !!localStorage.getItem('token'),
+      userName: localStorage.getItem('name') || "",
+      role: localStorage.getItem('role') || ""
+    };
   },
   methods: {
     logout() {
+      // Rimuovi i dati dal localStorage
       localStorage.removeItem('token');
       localStorage.removeItem('role');
-      this.$router.push('/login');
+      localStorage.removeItem('name');
+
+      // Aggiorna lo stato locale
+      this.isAuthenticated = false;
+      this.userName = "";
+      this.role = "";
     }
   }
 };
@@ -40,11 +46,18 @@ export default {
 nav ul {
   list-style: none;
   padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 nav ul li {
   display: inline-block;
   margin-right: 15px;
+}
+
+nav ul li.search-bar {
+  margin-left: auto;
 }
 
 button {

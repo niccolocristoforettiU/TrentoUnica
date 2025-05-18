@@ -5,6 +5,6 @@ const { searchEvents } = require('../controllers/eventSearchController');
 const router = express.Router();
 
 // Rotta per la ricerca degli eventi
-router.get('/search', searchEvents);
+router.get('/', searchEvents);
 
 module.exports = router;

@@ -41,14 +41,16 @@ export default {
 
         localStorage.setItem("token", token);
         localStorage.setItem("role", role);
+        localStorage.setItem("name", response.data.name); 
 
-        if (role === "client") {
-          this.$router.push("/client/dashboard");
+        this.$router.push("/");
+        /*if (role === "client") {
+          this.$router.push("/");
         } else if (role === "organizer") {
           this.$router.push("/organizer/dashboard");
         } else if (role === "admin") {
           this.$router.push("/admin/dashboard");
-        }
+        }*/
       } catch (error) {
         this.errorMessage = error.response?.data?.message || "Errore durante il login";
       }

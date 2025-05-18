@@ -3,7 +3,13 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 
 const userSchema = new mongoose.Schema({
-  name: { type: String, required: true, trim: true },
+  name: {
+    type: String,
+    required: function() {
+      return this.role === 'client';
+    },
+    trim: true
+  },
   email: { 
     type: String, 
     required: true, 
@@ -22,17 +28,24 @@ const userSchema = new mongoose.Schema({
     type: String, 
     required: true, 
     minlength: 8,
-    maxlength: 100 // Permetti l'hash bcrypt
+    maxlength: 100
   },
   role: { 
     type: String, 
     enum: ['client', 'organizer', 'admin'], 
     default: 'client' 
   },
-  verified: { 
-    type: Boolean, 
-    default: function() {
-      return this.role === 'client' || this.role === 'admin';
+  address: {
+    type: String,
+    required: function() {
+      return this.role === 'client';
+    },
+    trim: true
+  },
+  age: {
+    type: Number,
+    required: function() {
+      return this.role === 'client';
     }
   },
   companyName: {
@@ -41,16 +54,36 @@ const userSchema = new mongoose.Schema({
       return this.role === 'organizer';
     },
     trim: true
+  },
+  partitaIva: {
+    type: String,
+    required: function() {
+      return this.role === 'organizer';
+    },
+    validate: {
+      validator: function(v) {
+        return /^[0-9]{11}$/.test(v);
+      },
+      message: props => `${props.value} non è un formato valido di Partita IVA.`
+    }
+  },
+  locations: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Location'
+  }],
+  verified: { 
+    type: Boolean, 
+    default: function() {
+      return this.role === 'client' || this.role === 'admin';
+    }
   }
 });
 
 // Cripta la password prima di salvarla
 userSchema.pre("save", async function (next) {
-    if (!this.isModified("password") || this.password.startsWith("$2b$")) return next();
-console.log("🔐 Criptando password per l'utente:", this.email);
-    // Cripta solo se è una nuova password
-    this.password = await bcrypt.hash(this.password, 10);
-    next();
+  if (!this.isModified("password") || this.password.startsWith("$2b$")) return next();
+  this.password = await bcrypt.hash(this.password, 10);
+  next();
 });
 
 module.exports = mongoose.model('User', userSchema);
