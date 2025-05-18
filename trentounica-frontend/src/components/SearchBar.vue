@@ -39,7 +39,7 @@ export default {
 
       this.loading = true;
       try {
-        const response = await axios.get(`http://localhost:5000/api/search/search?query=${this.query}`);
+        const response = await axios.get(`http://localhost:5050/api/search/search?query=${this.query}`);
         this.events = response.data;
       } catch (error) {
         console.error("Errore durante la ricerca:", error);
