@@ -27,6 +27,7 @@ exports.register = async (req, res) => {
       return res.status(400).json({ message: 'Email già registrata' });
     }
 
+    // Creazione utente
     const user = new User({
       name: role === 'client' ? name : undefined,
       email,
@@ -41,8 +42,10 @@ exports.register = async (req, res) => {
 
     await user.save();
 
-    // Gestione delle location per organizer (inclusi nuovi campi)
+    // Gestione delle location per organizer (creazione e collegamento)
     if (role === 'organizer' && Array.isArray(locations) && locations.length > 0) {
+      const validLocations = [];
+
       for (const location of locations) {
         const { name, address, openingTime, closingTime, maxSeats } = location;
         if (!name || !address || !openingTime || !closingTime || !maxSeats) {
@@ -51,18 +54,33 @@ exports.register = async (req, res) => {
         }
 
         // Verifica se la location esiste già per questo organizer
-        const existingLocation = await Location.findOne({ name, address, organizer: user._id });
-        if (!existingLocation) {
-          await Location.create({
-            name,
-            address,
-            openingTime,
-            closingTime,
-            maxSeats,
-            organizer: user._id
-          });
+        const existingLocation = await Location.findOne({
+          name: name.trim(),
+          address: address.trim(),
+          organizer: user._id
+        });
+
+        if (existingLocation) {
+          console.log(`Location già esistente per l'organizer: ${existingLocation.name} - ${existingLocation.address}`);
+          validLocations.push(existingLocation._id);
+          continue;
         }
+
+        // Creazione della nuova location
+        const newLocation = await Location.create({
+          name: name.trim(),
+          address: address.trim(),
+          openingTime,
+          closingTime,
+          maxSeats,
+          organizer: user._id
+        });
+
+        validLocations.push(newLocation._id);
       }
+
+      // Collega le location all'organizer e aggiorna l'utente
+      await User.findByIdAndUpdate(user._id, { locations: validLocations });
     }
 
     res.status(201).json({
