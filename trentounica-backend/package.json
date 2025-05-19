@@ -18,9 +18,11 @@
     "date-fns": "^4.1.0",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
+    "googleapis": "^148.0.0",
     "ical-generator": "^9.0.0",
     "jsonwebtoken": "^9.0.2",
-    "mongoose": "^8.14.3"
+    "mongoose": "^8.14.3",
+    "nodemailer": "^7.0.3"
   },
   "devDependencies": {
     "nodemon": "^3.1.10"
