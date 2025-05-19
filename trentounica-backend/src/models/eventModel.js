@@ -16,11 +16,6 @@ const eventSchema = new mongoose.Schema({
     ref: 'User',
     required: true 
   },
-  category: { 
-    type: String, 
-    enum: ["bar", "discoteca", "concerto"], 
-    required: true 
-  },
   popularity: { type: Number, default: 0 },
 }, {
   timestamps: true
