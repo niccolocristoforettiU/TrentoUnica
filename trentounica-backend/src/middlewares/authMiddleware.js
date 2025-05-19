@@ -10,15 +10,23 @@ exports.authenticate = (req, res, next) => {
 
   const token = authHeader.split(' ')[1]; // 'Bearer <token>'
   if (!token) {
-    return res.status(401).json({ message: 'Access denied. Invalid token.' });
+    return res.status(401).json({ message: 'Access denied. Invalid token format.' });
   }
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     req.user = decoded;
+    
+    // Controllo se il token è scaduto
+    const currentTime = Math.floor(Date.now() / 1000);
+    if (decoded.exp && decoded.exp < currentTime) {
+      return res.status(401).json({ message: 'Token expired. Please login again.' });
+    }
+
     next();
   } catch (err) {
-    res.status(400).json({ message: 'Invalid token' });
+    console.error('JWT Error:', err.message);
+    res.status(401).json({ message: 'Invalid token.' });
   }
 };
 
@@ -31,7 +39,7 @@ exports.authorizeRole = (role) => {
 
       // Verifica che gli organizzatori siano approvati
       if (role === 'organizer') {
-        const organizer = await User.findById(req.user.userId);
+        const organizer = await User.findById(req.user.userId || req.user.id || req.user._id);
         if (!organizer || !organizer.verified) {
           return res.status(403).json({ message: 'Access denied. Organizer not verified.' });
         }
