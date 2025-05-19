@@ -30,6 +30,14 @@
           <input v-model="loc.openingTime" type="time" placeholder="Orario di Apertura" required />
           <input v-model="loc.closingTime" type="time" placeholder="Orario di Chiusura" required />
           <input v-model="loc.maxSeats" type="number" placeholder="Posti Massimi" required />
+
+          <select v-model="loc.category" required>
+            <option value="" disabled>Seleziona Categoria</option>
+            <option value="bar">Bar</option>
+            <option value="discoteca">Discoteca</option>
+            <option value="concerto">Concerto</option>
+          </select>
+
           <button type="button" @click="removeLocation(index)">Rimuovi Location</button>
         </div>
         <button type="button" @click="addLocation">Aggiungi Location</button>
@@ -59,14 +67,14 @@ export default {
       age: "",
       partitaIva: "",
       locations: [
-        { name: "", address: "", openingTime: "", closingTime: "", maxSeats: "" }
+        { name: "", address: "", openingTime: "", closingTime: "", maxSeats: "", category: "" }
       ],
       errorMessage: ""
     };
   },
   methods: {
     addLocation() {
-      this.locations.push({ name: "", address: "", openingTime: "", closingTime: "", maxSeats: "" });
+      this.locations.push({ name: "", address: "", openingTime: "", closingTime: "", maxSeats: "", category: "" });
     },
     removeLocation(index) {
       this.locations.splice(index, 1);
@@ -93,7 +101,7 @@ export default {
           payload.companyName = this.companyName;
           payload.partitaIva = this.partitaIva;
           payload.locations = this.locations.filter(
-            loc => loc.name.trim() && loc.address.trim() && loc.openingTime && loc.closingTime && loc.maxSeats
+            loc => loc.name.trim() && loc.address.trim() && loc.openingTime && loc.closingTime && loc.maxSeats && loc.category
           );
         }
 
