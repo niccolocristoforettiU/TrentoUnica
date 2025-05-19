@@ -7,6 +7,9 @@ const eventController = require('../controllers/eventController');
 // Ottenere tutte le location disponibili per la creazione degli eventi (solo per organizer)
 router.get('/locations', authenticate, authorizeRole('organizer'), eventController.getLocations);
 
+// Ottenere gli eventi gestiti dall'organizer autenticato
+router.get('/organizer', authenticate, authorizeRole('organizer'), eventController.getOrganizerEvents);
+
 // Elenco eventi (pubblici)
 router.get('/', eventController.getAllEvents);
 
@@ -16,10 +19,10 @@ router.post('/', authenticate, authorizeRole('organizer'), eventController.creat
 // Dettagli evento (pubblico)
 router.get('/:id', eventController.getEventById);
 
-// Modifica evento (solo per organizer che gestisce la location)
-router.put('/:id', authenticate, authorizeRole('organizer'), eventController.updateEvent);
+// Modifica evento (solo per organizer che ha creato l'evento)
+router.put('/:id', authenticate, authorizeRole('organizer'), eventController.updateOrganizerEvent);
 
-// Eliminazione evento (solo organizer che è proprietario)
-router.delete('/:id', authenticate, authorizeRole('organizer'), eventController.deleteEvent);
+// Eliminazione evento (solo organizer che ha creato l'evento)
+router.delete('/:id', authenticate, authorizeRole('organizer'), eventController.deleteOrganizerEvent);
 
 module.exports = router;
