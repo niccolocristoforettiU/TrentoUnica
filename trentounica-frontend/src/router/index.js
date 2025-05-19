@@ -8,6 +8,7 @@ import SearchBar from '@/components/SearchBar.vue';
 import ClientDashboard from '@/components/ClientDashboard.vue';
 import AdminDashboardPage from '@/views/AdminDashboardPage.vue';OrganizerDashboard
 import OrganizerDashboard from '@/components/OrganizerDashboard.vue';
+import EventForm from '@/components/EventForm.vue';
 
 const routes = [
   {
@@ -46,6 +47,12 @@ const routes = [
     name: 'OrganizerDashboard',
     component: OrganizerDashboard,
     meta: { requiresAuth: true, role: 'organizer' },
+  },
+  {
+    path: '/organizer/create-event',
+    name: 'CreateEvent',
+    component: EventForm,
+    meta: { requiresAuth: true, role: 'organizer' }
   },
   {
     path: '/admin/dashboard',
