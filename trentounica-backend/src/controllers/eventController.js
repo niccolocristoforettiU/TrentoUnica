@@ -6,7 +6,7 @@ const Location = require('../models/locationModel');
 exports.getAllEvents = async (req, res) => {
   try {
     const events = await Event.find()
-      .populate('location', 'name address')
+      .populate('location', 'name address category')
       .populate('organizer', 'companyName email');
     res.json(events);
   } catch (error) {
@@ -17,7 +17,7 @@ exports.getAllEvents = async (req, res) => {
 // Creazione evento con verifica permessi location e categoria
 exports.createEvent = async (req, res) => {
   try {
-    const { title, description, date, locationId, price, category } = req.body;
+    const { title, description, date, locationId, price } = req.body;
     const userId = req.user.userId;
 
     // Verifica se la location esiste nel database MongoDB e se è gestita dall'organizer
@@ -32,8 +32,7 @@ exports.createEvent = async (req, res) => {
       date,
       location: loc._id,
       price,
-      organizer: userId,
-      category
+      organizer: userId
     });
 
     await event.save();
@@ -57,7 +56,7 @@ exports.getLocations = async (req, res) => {
 exports.getEventById = async (req, res) => {
   try {
     const event = await Event.findById(req.params.id)
-      .populate('location', 'name address')
+      .populate('location', 'name address category')
       .populate('organizer', 'companyName email');
     if (!event) return res.status(404).json({ message: 'Evento non trovato' });
     res.json(event);
@@ -69,7 +68,7 @@ exports.getEventById = async (req, res) => {
 // Modifica evento
 exports.updateEvent = async (req, res) => {
   try {
-    const { title, description, date, locationId, price, category } = req.body;
+    const { title, description, date, locationId, price } = req.body;
     const event = await Event.findById(req.params.id);
     if (!event) return res.status(404).json({ message: 'Evento non trovato' });
 
@@ -84,7 +83,6 @@ exports.updateEvent = async (req, res) => {
     event.date = date;
     event.location = loc._id;
     event.price = price;
-    event.category = category;
 
     await event.save();
     res.status(200).json(event);
