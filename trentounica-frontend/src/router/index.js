@@ -6,9 +6,10 @@ import UserRegister from '@/views/Register.vue';
 import AppCalendar from "@/components/AppCalendar.vue";
 import SearchBar from '@/components/SearchBar.vue';
 import ClientDashboard from '@/components/ClientDashboard.vue';
-import AdminDashboardPage from '@/views/AdminDashboardPage.vue';OrganizerDashboard
+import AdminDashboardPage from '@/views/AdminDashboardPage.vue';
 import OrganizerDashboard from '@/components/OrganizerDashboard.vue';
 import EventForm from '@/components/EventForm.vue';
+import MapLocation from '@/components/MapLocation.vue';
 
 const routes = [
   {
@@ -30,6 +31,11 @@ const routes = [
     path: "/Appcalendar",
     name: 'AppCalendar',
     component: AppCalendar ,
+  },
+  { 
+    path: "/MapLocation",
+    name: 'MapLocation',
+    component: MapLocation ,
   },
   { 
     path: "/SearchBar",
