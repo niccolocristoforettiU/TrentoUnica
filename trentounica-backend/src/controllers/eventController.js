@@ -1,26 +1,36 @@
-// src/controllers/eventController.js
 const Event = require('../models/eventModel');
 const Location = require('../models/locationModel');
 
 // Elenco eventi (pubblici)
-exports.getAllEvents = async (req, res) => {
+const getAllEvents = async (req, res) => {
   try {
     const events = await Event.find()
       .populate('location', 'name address category')
       .populate('organizer', 'companyName email');
     res.json(events);
   } catch (error) {
-    res.status(500).json({ message: 'Errore nel recupero degli eventi' });
+    res.status(500).json({ message: 'Errore nel recupero degli eventi', error: error.message });
+  }
+};
+
+// Ottenere gli eventi gestiti dall'organizer autenticato
+const getOrganizerEvents = async (req, res) => {
+  try {
+    const organizerId = req.user.userId;
+    const events = await Event.find({ organizer: organizerId })
+      .populate('location', 'name address category')
+      .populate('organizer', 'companyName email');
+    res.status(200).json(events);
+  } catch (error) {
+    res.status(500).json({ message: 'Errore nel recupero degli eventi per l\'organizer.', error: error.message });
   }
 };
 
 // Creazione evento con verifica permessi location e categoria
-exports.createEvent = async (req, res) => {
+const createEvent = async (req, res) => {
   try {
     const { title, description, date, locationId, price } = req.body;
     const userId = req.user.userId;
-
-    // Verifica se la location esiste nel database MongoDB e se è gestita dall'organizer
     const loc = await Location.findOne({ _id: locationId, organizer: userId });
     if (!loc) {
       return res.status(400).json({ message: 'Location non valida o non gestita da questo organizer.' });
@@ -42,8 +52,8 @@ exports.createEvent = async (req, res) => {
   }
 };
 
-// Ottenere tutte le location disponibili per la creazione degli eventi (solo quelle gestite dall'organizer autenticato)
-exports.getLocations = async (req, res) => {
+// Ottenere tutte le location disponibili per la creazione degli eventi
+const getLocations = async (req, res) => {
   try {
     const locations = await Location.find({ organizer: req.user.userId }).populate('organizer', 'companyName email');
     res.json(locations);
@@ -53,7 +63,7 @@ exports.getLocations = async (req, res) => {
 };
 
 // Dettagli evento
-exports.getEventById = async (req, res) => {
+const getEventById = async (req, res) => {
   try {
     const event = await Event.findById(req.params.id)
       .populate('location', 'name address category')
@@ -66,13 +76,12 @@ exports.getEventById = async (req, res) => {
 };
 
 // Modifica evento
-exports.updateEvent = async (req, res) => {
+const updateEvent = async (req, res) => {
   try {
     const { title, description, date, locationId, price } = req.body;
     const event = await Event.findById(req.params.id);
     if (!event) return res.status(404).json({ message: 'Evento non trovato' });
 
-    // Verifica che la location sia gestita dall'organizer
     const loc = await Location.findOne({ _id: locationId, organizer: req.user.userId });
     if (!loc) {
       return res.status(400).json({ message: 'Location non valida o non gestita da questo organizer.' });
@@ -92,12 +101,11 @@ exports.updateEvent = async (req, res) => {
 };
 
 // Eliminazione evento
-exports.deleteEvent = async (req, res) => {
+const deleteEvent = async (req, res) => {
   try {
     const event = await Event.findById(req.params.id);
     if (!event) return res.status(404).json({ message: 'Evento non trovato' });
 
-    // Verifica che l'organizer sia il proprietario dell'evento
     if (event.organizer.toString() !== req.user.userId) {
       return res.status(403).json({ message: 'Non autorizzato a eliminare questo evento' });
     }
@@ -107,4 +115,15 @@ exports.deleteEvent = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: 'Errore durante l\'eliminazione dell\'evento' });
   }
+};
+
+// Esportazione delle funzioni del controller
+module.exports = {
+  getAllEvents,
+  getOrganizerEvents,
+  createEvent,
+  getLocations,
+  getEventById,
+  updateEvent,
+  deleteEvent
 };
