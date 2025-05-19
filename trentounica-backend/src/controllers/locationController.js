@@ -32,10 +32,10 @@ exports.getOrganizerLocations = async (req, res) => {
 // Creare una nuova location
 exports.createLocation = async (req, res) => {
   try {
-    const { name, address, openingTime, closingTime, maxSeats } = req.body;
+    const { name, address, openingTime, closingTime, maxSeats, category } = req.body;
 
-    if (!name || !address || !openingTime || !closingTime || !maxSeats) {
-      return res.status(400).json({ message: 'Tutti i campi sono obbligatori' });
+    if (!name || !address || !openingTime || !closingTime || !maxSeats || !category) {
+      return res.status(400).json({ message: 'Tutti i campi sono obbligatori, incluso la categoria.' });
     }
 
     const existingLocation = await Location.findOne({ name, address, organizer: req.user.userId });
@@ -49,6 +49,7 @@ exports.createLocation = async (req, res) => {
       openingTime,
       closingTime,
       maxSeats,
+      category,
       organizer: req.user.userId
     });
 
