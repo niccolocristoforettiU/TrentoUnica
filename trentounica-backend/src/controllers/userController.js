@@ -47,8 +47,8 @@ exports.register = async (req, res) => {
       const validLocations = [];
 
       for (const location of locations) {
-        const { name, address, openingTime, closingTime, maxSeats } = location;
-        if (!name || !address || !openingTime || !closingTime || !maxSeats) {
+        const { name, address, openingTime, closingTime, maxSeats, category } = location;
+        if (!name || !address || !openingTime || !closingTime || !maxSeats || !category) {
           console.error("Location non valida:", location);
           continue;
         }
@@ -73,6 +73,7 @@ exports.register = async (req, res) => {
           openingTime,
           closingTime,
           maxSeats,
+          category,
           organizer: user._id
         });
 
