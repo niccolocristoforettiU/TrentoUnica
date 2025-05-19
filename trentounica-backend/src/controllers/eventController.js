@@ -22,31 +22,20 @@ exports.createEvent = async (req, res) => {
     const { title, description, date, locationId, price, category } = req.body;
     const userId = req.user.userId;
 
-    // Verifica se la location esiste nel file JSON
-    const locationsPath = path.join(__dirname, '../../data/locations.json');
-    const locations = JSON.parse(fs.readFileSync(locationsPath, 'utf-8'));
-    const location = locations.find(loc => loc.locationId === locationId);
-
-    // Verifica se la location esiste nel database MongoDB
-    const loc = await Location.findById(locationId);
-    if (!location && !loc) {
-      return res.status(400).json({ message: 'Location non valida.' });
-    }
-
-    // Verifica permessi organizer (solo per location da JSON)
-    if (location && !location.allowedOrganizers.includes(userId)) {
-      return res.status(403).json({ message: 'Accesso negato. Non hai il permesso di organizzare eventi in questa location.' });
+    // Verifica se la location esiste nel database MongoDB e se è gestita dall'organizer
+    const loc = await Location.findOne({ _id: locationId, organizer: userId });
+    if (!loc) {
+      return res.status(400).json({ message: 'Location non valida o non gestita da questo organizer.' });
     }
 
     const event = new Event({
       title,
       description,
       date,
-      location: loc ? loc._id : location.name,
-      locationId,
+      location: loc._id,
       price,
       organizer: userId,
-      category: loc ? loc.category : location.category
+      category
     });
 
     await event.save();

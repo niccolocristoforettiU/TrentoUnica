@@ -39,7 +39,7 @@
 </template>
 
 <script>
-import axios from 'axios';
+import axios from "@/api/axios";
 
 export default {
   data() {
@@ -65,10 +65,27 @@ export default {
     async fetchLocations() {
       this.loading = true;
       try {
-        const response = await axios.get('http://localhost:3000/api/locations');
+        const token = localStorage.getItem('token');
+        if (!token) {
+          this.errorMessage = "Autenticazione non valida. Effettua il login.";
+          return;
+        }
+
+        const response = await axios.get('/locations/organizer', {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+
         this.locations = response.data;
+        if (this.locations.length === 0) {
+          this.errorMessage = "Non ci sono location associate a questo organizer.";
+        } else {
+          this.errorMessage = "";
+        }
       } catch (error) {
         console.error("Errore nel caricamento delle location:", error);
+        this.errorMessage = error.response?.data?.message || "Errore nel caricamento delle location.";
       } finally {
         this.loading = false;
       }
@@ -77,7 +94,7 @@ export default {
       try {
         const token = localStorage.getItem('token');
         await axios.post(
-          'http://localhost:3000/api/events',
+          '/events',
           this.event,
           {
             headers: {
