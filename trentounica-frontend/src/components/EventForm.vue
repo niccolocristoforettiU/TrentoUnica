@@ -21,8 +21,8 @@
 
       <div>
         <label for="locationId">Location</label>
-        <select v-model="event.locationId" required>
-          <option v-for="location in locations" :key="location.locationId" :value="location.locationId">
+        <select v-model="event.locationId" required @change="debugLocationSelection">
+          <option v-for="location in locations" :key="location._id" :value="location._id">
             {{ location.name }} - {{ location.category }}
           </option>
         </select>
@@ -78,6 +78,8 @@ export default {
         });
 
         this.locations = response.data;
+        console.log("Location caricate:", this.locations);
+
         if (this.locations.length === 0) {
           this.errorMessage = "Non ci sono location associate a questo organizer.";
         } else {
@@ -90,25 +92,51 @@ export default {
         this.loading = false;
       }
     },
+    debugLocationSelection() {
+      console.log("Location selezionata:", this.event.locationId);
+    },
     async createEvent() {
+      console.log("Dati evento prima dell'invio:", this.event);
       try {
         const token = localStorage.getItem('token');
-        await axios.post(
-          '/events',
-          this.event,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`
-            }
+        if (!token) {
+          this.errorMessage = "Autenticazione non valida. Effettua il login.";
+          return;
+        }
+
+        if (!this.event.locationId) {
+          this.errorMessage = "Seleziona una location valida.";
+          return;
+        }
+
+        const response = await axios.post('/events', this.event, {
+          headers: {
+            Authorization: `Bearer ${token}`
           }
-        );
+        });
+
         this.successMessage = "Evento creato con successo!";
         this.errorMessage = '';
         this.resetForm();
       } catch (error) {
         console.error("Errore durante la creazione dell'evento:", error);
         this.successMessage = '';
-        this.errorMessage = "Errore nella creazione dell'evento.";
+
+        if (error.response) {
+          if (error.response.status === 400) {
+            this.errorMessage = "Richiesta non valida. Verifica i campi e riprova.";
+          } else if (error.response.status === 401) {
+            this.errorMessage = "Sessione scaduta. Effettua di nuovo il login.";
+            localStorage.removeItem('token');
+            this.$router.push('/login');
+          } else if (error.response.status === 403) {
+            this.errorMessage = "Non hai i permessi per creare questo evento.";
+          } else {
+            this.errorMessage = error.response.data?.message || "Errore nella creazione dell'evento.";
+          }
+        } else {
+          this.errorMessage = "Errore nella creazione dell'evento.";
+        }
       }
     },
     resetForm() {

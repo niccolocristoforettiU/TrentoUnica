@@ -1,7 +1,5 @@
 // src/controllers/eventController.js
 const Event = require('../models/eventModel');
-const fs = require('fs');
-const path = require('path');
 const Location = require('../models/locationModel');
 
 // Elenco eventi (pubblici)
@@ -45,14 +43,13 @@ exports.createEvent = async (req, res) => {
   }
 };
 
-// Ottenere tutte le location disponibili per la creazione degli eventi
-exports.getLocations = (req, res) => {
+// Ottenere tutte le location disponibili per la creazione degli eventi (solo quelle gestite dall'organizer autenticato)
+exports.getLocations = async (req, res) => {
   try {
-    const locationsPath = path.join(__dirname, '../../data/locations.json');
-    const locations = JSON.parse(fs.readFileSync(locationsPath, 'utf-8'));
+    const locations = await Location.find({ organizer: req.user.userId }).populate('organizer', 'companyName email');
     res.json(locations);
   } catch (error) {
-    res.status(500).json({ message: 'Errore nel recupero delle locations' });
+    res.status(500).json({ message: 'Errore nel recupero delle locations', error: error.message });
   }
 };
 
@@ -76,28 +73,18 @@ exports.updateEvent = async (req, res) => {
     const event = await Event.findById(req.params.id);
     if (!event) return res.status(404).json({ message: 'Evento non trovato' });
 
-    // Verifica la location sia nel JSON che nel database
-    const locationsPath = path.join(__dirname, '../../data/locations.json');
-    const locations = JSON.parse(fs.readFileSync(locationsPath, 'utf-8'));
-    const location = locations.find(loc => loc.locationId === locationId);
-    const loc = await Location.findById(locationId);
-
-    if (!location && !loc) {
-      return res.status(400).json({ message: 'Location non valida.' });
-    }
-
-    // Verifica permessi organizer (solo per location da JSON)
-    if (location && !location.allowedOrganizers.includes(req.user.userId)) {
-      return res.status(403).json({ message: 'Non autorizzato a modificare eventi in questa location' });
+    // Verifica che la location sia gestita dall'organizer
+    const loc = await Location.findOne({ _id: locationId, organizer: req.user.userId });
+    if (!loc) {
+      return res.status(400).json({ message: 'Location non valida o non gestita da questo organizer.' });
     }
 
     event.title = title;
     event.description = description;
     event.date = date;
-    event.location = loc ? loc._id : location.name;
-    event.locationId = locationId;
+    event.location = loc._id;
     event.price = price;
-    event.category = loc ? loc.category : location.category;
+    event.category = category;
 
     await event.save();
     res.status(200).json(event);
