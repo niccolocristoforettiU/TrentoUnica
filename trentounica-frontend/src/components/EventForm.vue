@@ -109,7 +109,7 @@ export default {
           return;
         }
 
-        const response = await axios.post('/events', this.event, {
+       await axios.post('/events', this.event, {
           headers: {
             Authorization: `Bearer ${token}`
           }
