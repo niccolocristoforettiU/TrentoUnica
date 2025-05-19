@@ -25,6 +25,12 @@ const locationSchema = new mongoose.Schema({
     type: Number,
     required: true
   },
+  category: {
+    type: String,
+    required: true,
+    enum: ['bar', 'discoteca', 'concerto'],
+    trim: true
+  },
   organizer: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
