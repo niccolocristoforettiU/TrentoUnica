@@ -8,6 +8,7 @@
         <li v-if="!isAuthenticated"><router-link to="/register">Registrati</router-link></li>
         <li v-if="role === 'client'"><router-link to="/client/dashboard">Dashboard Client</router-link></li>
         <li v-if="role === 'organizer'"><router-link to="/organizer/dashboard">Dashboard Organizer</router-link></li>
+        <li v-if="role === 'organizer'"><router-link to="/organizer/create-event">Crea Evento</router-link></li>
         <li v-if="role === 'admin'"><router-link to="/admin/dashboard">Dashboard Admin</router-link></li>
         <li class="search-bar"><SearchBar /></li>
       </ul>
@@ -43,17 +44,26 @@ export default {
 </script>
 
 <style scoped>
+div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 70vh;
+  text-align: center;
+}
+
 nav ul {
+  display: flex;
+  justify-content: center;
   list-style: none;
   padding: 0;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
 }
 
 nav ul li {
   display: inline-block;
   margin-right: 15px;
+  font-size: 18px;
 }
 
 nav ul li.search-bar {
