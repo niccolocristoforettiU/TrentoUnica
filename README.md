@@ -41,7 +41,7 @@ TrentoUnica/
 │
 ├── 1Deriverable.pdf            --> Documento di specifiche del progetto (Parte 1)
 ├── 2Deriverable.pdf            --> Documento di specifiche del progetto (Parte 2)
-└── README.md                   --> Documentazione del progetto```
+├── README.md                   --> Documentazione del progetto```
 │   ├── public/                 --> File statici (index.html, favicon)
 │   ├── package.json            --> Configurazione delle dipendenze del frontend
 │   ├── package-lock.json       --> Blocco delle dipendenze del frontend
