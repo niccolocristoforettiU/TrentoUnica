@@ -3,7 +3,7 @@
     <h2>Dashboard Admin</h2>
     <ul>
       <li v-for="organizer in organizers" :key="organizer._id">
-        {{ organizer.name }} - {{ organizer.email }}
+        {{ organizer.companyName || organizer.name }} - {{ organizer.email }}
         <button @click="verifyOrganizer(organizer._id)">Verifica</button>
       </li>
     </ul>
@@ -33,6 +33,7 @@ export default {
       });
       this.organizers = response.data;
     } catch (error) {
+      console.error("Errore durante il caricamento degli organizzatori:", error.response || error);
       this.errorMessage = error.response?.data?.message || "Errore durante il caricamento degli organizzatori";
     }
   },
@@ -48,6 +49,7 @@ export default {
         this.organizers = this.organizers.filter(org => org._id !== userId);
         alert("Organizzatore verificato con successo");
       } catch (error) {
+        console.error("Errore durante la verifica dell'organizzatore:", error.response || error);
         this.errorMessage = error.response?.data?.message || "Errore durante la verifica";
       }
     }

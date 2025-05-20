@@ -3,8 +3,7 @@ const User = require('../models/userModel');
 const Location = require('../models/locationModel');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-
-// src/controllers/userController.js
+const { sendAccountActivationEmail } = require('../services/emailService');
 
 
 exports.register = async (req, res) => {
@@ -32,7 +31,7 @@ exports.register = async (req, res) => {
       return res.status(400).json({ message: 'Email già registrata' });
     }
 
-    // ✅ Creazione utente (aggiunti lat/lon per client)
+    // Creazione utente (aggiunti lat/lon per client)
     const user = new User({
       name: role === 'client' ? name : undefined,
       email,
@@ -49,7 +48,7 @@ exports.register = async (req, res) => {
 
     await user.save();
 
-    // ✅ Gestione location per organizer
+    // Gestione location per organizer
     if (role === 'organizer' && Array.isArray(locations) && locations.length > 0) {
       const validLocations = [];
 
@@ -77,7 +76,7 @@ exports.register = async (req, res) => {
           continue;
         }
 
-        // ✅ Crea nuova location con lat/lon
+        //Crea nuova location con lat/lon
         const newLocation = await Location.create({
           name: name.trim(),
           address: address.trim(),
@@ -108,8 +107,6 @@ exports.register = async (req, res) => {
   }
 };
 
-
-
 // Verificare se l'utente è un organizzatore
 exports.verifyOrganizer = async (req, res) => {
   try {
@@ -131,7 +128,9 @@ exports.verifyOrganizer = async (req, res) => {
     user.verified = true;
     await user.save();
 
-    res.status(200).json({ message: 'organizzatore verificato con successo', user });
+    // Invia l'email di attivazione
+    await sendAccountActivationEmail(user.email, user.companyName || user.name);
+    res.status(200).json({ message: 'organizzatore verificato con successo ed email inviata', user });
   } catch (error) {
     res.status(500).json({ message: 'Errore durante la verifica dell\'organizzatore', error: error.message });
   }
