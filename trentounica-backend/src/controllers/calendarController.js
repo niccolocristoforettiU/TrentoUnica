@@ -27,7 +27,7 @@ exports.getICalendar = async (req, res) => {
     filteredEvents.forEach(event => {
       calendar.createEvent({
         start: event.date,
-        end: new Date(event.date.getTime() + 2 * 60 * 60 * 1000), // Durata di 2 ore
+        end: new Date(event.date.getTime() + event.duration * 60 * 1000),
         summary: event.title,
         description: event.description,
         location: event.location ? event.location.name : "Senza location",
@@ -54,7 +54,7 @@ exports.getSingleEventICalendar = async (req, res) => {
     const calendar = ical({ name: 'Evento TrentoUnica' });
     calendar.createEvent({
       start: event.date,
-      end: new Date(event.date.getTime() + 2 * 60 * 60 * 1000),
+      end: new Date(event.date.getTime() + event.duration * 60 * 1000),
       summary: event.title,
       description: event.description,
       location: event.location?.name || "Senza location",

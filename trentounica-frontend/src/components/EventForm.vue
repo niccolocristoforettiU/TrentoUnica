@@ -33,6 +33,11 @@
         <input type="number" v-model="event.price" min="0" placeholder="Inserisci il prezzo (opzionale)" />
       </div>
 
+      <div>
+        <label for="duration">Durata (minuti)</label>
+        <input type="number" v-model="event.duration" min="1" required placeholder="Durata dell'evento in minuti" />
+      </div>
+
       <button type="submit">Crea Evento</button>
     </form>
   </div>
@@ -50,6 +55,7 @@ export default {
         date: '',
         locationId: '',
         price: 0,
+        duration: '',
       },
       locations: [],
       loading: false,
@@ -146,6 +152,7 @@ export default {
         date: '',
         locationId: '',
         price: 0,
+        duration: '',
       };
     }
   }
