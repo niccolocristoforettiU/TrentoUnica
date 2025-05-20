@@ -21,7 +21,7 @@
 
       <div>
         <label for="locationId">Location</label>
-        <select v-model="event.locationId" required @change="debugLocationSelection">
+        <select v-model="event.locationId" required @change="onLocationChange">
           <option v-for="location in locations" :key="location._id" :value="location._id">
             {{ location.name }} - {{ location.category }}
           </option>
@@ -49,6 +49,7 @@ export default {
         description: '',
         date: '',
         locationId: '',
+        category: '',
         price: 0,
       },
       locations: [],
@@ -92,8 +93,13 @@ export default {
         this.loading = false;
       }
     },
-    debugLocationSelection() {
-      console.log("Location selezionata:", this.event.locationId);
+    onLocationChange() {
+      const selectedLocation = this.locations.find(loc => loc._id === this.event.locationId);
+      if (selectedLocation) {
+        this.event.category = selectedLocation.category;
+        console.log("Location selezionata:", selectedLocation);
+        console.log("Categoria associata:", this.event.category);
+      }
     },
     async createEvent() {
       console.log("Dati evento prima dell'invio:", this.event);
@@ -145,6 +151,7 @@ export default {
         description: '',
         date: '',
         locationId: '',
+        category:'',
         price: 0,
       };
     }

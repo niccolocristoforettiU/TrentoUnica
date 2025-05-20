@@ -29,7 +29,7 @@ const getOrganizerEvents = async (req, res) => {
 // Creazione evento con verifica permessi location e categoria
 const createEvent = async (req, res) => {
   try {
-    const { title, description, date, locationId, price } = req.body;
+    const { title, description, date, locationId, price, category } = req.body;
     const userId = req.user.userId;
     const loc = await Location.findOne({ _id: locationId, organizer: userId });
     if (!loc) {
@@ -41,6 +41,7 @@ const createEvent = async (req, res) => {
       description,
       date,
       location: loc._id,
+      category,
       price,
       organizer: userId
     });
