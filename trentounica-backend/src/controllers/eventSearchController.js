@@ -1,18 +1,25 @@
-// src/controllers/eventSearchController.js
-
 const Event = require('../models/eventModel');
 
 async function searchEvents(req, res) {
     try {
-        const { query, category, sortByDate, sortByPopularity } = req.query;
+        const { query, category, sortByDate, sortByPopularity, onlyUpcoming } = req.query;
         const filter = {};
 
-        // Filtro per titolo, descrizione o location
+        // Mostra solo eventi futuri
+        if (onlyUpcoming === "true") {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0); // Imposta a mezzanotte
+            filter.date = { $gte: today };
+            console.log("Filtro combinato finale:", filter);
+
+        }
+
+        // Filtro per testo (titolo, descrizione, location se stringa)
         if (query && query.trim() !== "") {
             filter.$or = [
                 { title: { $regex: query, $options: 'i' } },
                 { description: { $regex: query, $options: 'i' } },
-                { location: { $regex: query, $options: 'i' } }
+                { location: { $regex: query, $options: 'i' } } // solo se location è stringa!
             ];
         }
 
@@ -21,24 +28,21 @@ async function searchEvents(req, res) {
             filter.category = category;
         }
 
-        console.log("Filtro applicato:", filter);
+        // Imposta ordinamento
+        let sortOption = { date: 1 }; // default: eventi dal più vicino
 
-        // Ottieni gli eventi filtrati
-        let events = await Event.find(filter).populate('organizer', 'name email');
-
-        console.log("Eventi trovati:", events);
-
-        // Ordina per data (dal più recente)
         if (sortByDate === "true") {
-            events = events.sort((a, b) => new Date(b.date) - new Date(a.date));
+            sortOption = { date: -1 };
         }
 
-        // Ordina per popolarità (se definito)
         if (sortByPopularity === "true") {
-            events = events.sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
+            sortOption = { popularity: -1 };
         }
 
-        console.log("Eventi dopo l'ordinamento:", events);
+        const events = await Event.find(filter)
+            .populate('organizer', 'name email')
+            .sort(sortOption);
+console.log("Eventi trovati:", events.map(e => ({ title: e.title, date: e.date })));
 
         res.status(200).json(events);
     } catch (error) {

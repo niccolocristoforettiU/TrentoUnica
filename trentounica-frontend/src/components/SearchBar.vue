@@ -15,14 +15,21 @@
       <option value="discoteca">Discoteca</option>
       <option value="concerto">Concerto</option>
     </select>
-
+    <label class="filter-label">
+      <input 
+        type="checkbox" 
+        v-model="onlyUpcoming" 
+        @change="fetchEvents" 
+      />
+      Solo eventi futuri
+    </label>
     <label class="filter-label">
       <input 
         type="checkbox" 
         v-model="sortByDate" 
         @change="fetchEvents" 
       />
-      Ordina per data (dal più recente)
+      Ordina per data (decrescente)
     </label>
 
     <label class="filter-label">
@@ -52,6 +59,7 @@ export default {
       selectedCategory: "",
       sortByDate: false,
       sortByPopularity: false,
+      onlyUpcoming: false,
       events: []
     };
   },
@@ -70,7 +78,8 @@ export default {
             query: this.searchQuery,
             category: this.selectedCategory,
             sortByDate: this.sortByDate,
-            sortByPopularity: this.sortByPopularity
+            sortByPopularity: this.sortByPopularity,
+            onlyUpcoming: this.onlyUpcoming
           }
         });
         this.events = response.data;
