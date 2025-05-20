@@ -10,6 +10,7 @@ const eventSchema = new mongoose.Schema({
     ref: 'Location',
     required: true 
   },
+  category: { type: String },
   price: { type: Number, default: 0 },
   organizer: { 
     type: mongoose.Schema.Types.ObjectId, 
