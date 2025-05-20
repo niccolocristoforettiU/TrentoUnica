@@ -4,6 +4,9 @@
 ```
 npm install
 npm install leaflet
+npm install ical-generator
+npm install nodemailer
+npm install @fullcalendar/core @fullcalendar/daygrid @fullcalendar/interaction
 ```
 
 ### Compiles and hot-reloads for development
