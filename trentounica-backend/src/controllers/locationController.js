@@ -29,13 +29,13 @@ exports.getOrganizerLocations = async (req, res) => {
   }
 };
 
-// Creare una nuova location
+// ✅ Creare una nuova location (aggiunti lat/lon)
 exports.createLocation = async (req, res) => {
   try {
-    const { name, address, openingTime, closingTime, maxSeats, category } = req.body;
+    const { name, address, lat, lon, openingTime, closingTime, maxSeats, category } = req.body;
 
-    if (!name || !address || !openingTime || !closingTime || !maxSeats || !category) {
-      return res.status(400).json({ message: 'Tutti i campi sono obbligatori, incluso la categoria.' });
+    if (!name || !address || lat == null || lon == null || !openingTime || !closingTime || !maxSeats || !category) {
+      return res.status(400).json({ message: 'Tutti i campi sono obbligatori, inclusi latitudine e longitudine.' });
     }
 
     const existingLocation = await Location.findOne({ name, address, organizer: req.user.userId });
@@ -46,6 +46,8 @@ exports.createLocation = async (req, res) => {
     const location = new Location({
       name,
       address,
+      lat,
+      lon,
       openingTime,
       closingTime,
       maxSeats,
@@ -60,13 +62,25 @@ exports.createLocation = async (req, res) => {
   }
 };
 
-// Modificare una location (solo se è gestita dall'organizer)
+// ✅ Modificare una location (aggiunto lat/lon modificabili)
 exports.updateLocation = async (req, res) => {
   try {
-    const { name, address, openingTime, closingTime, maxSeats } = req.body;
+    const { name, address, lat, lon, openingTime, closingTime, maxSeats, category } = req.body;
+
+    const updateFields = {
+      ...(name && { name }),
+      ...(address && { address }),
+      ...(lat !== undefined && { lat }),
+      ...(lon !== undefined && { lon }),
+      ...(openingTime && { openingTime }),
+      ...(closingTime && { closingTime }),
+      ...(maxSeats && { maxSeats }),
+      ...(category && { category })
+    };
+
     const location = await Location.findOneAndUpdate(
       { _id: req.params.id, organizer: req.user.userId },
-      { name, address, openingTime, closingTime, maxSeats },
+      updateFields,
       { new: true }
     );
 
@@ -80,7 +94,7 @@ exports.updateLocation = async (req, res) => {
   }
 };
 
-// Modificare orari e posti massimi di una location (solo se è gestita dall'organizer)
+// Modificare orari e posti massimi
 exports.updateLocationTimesAndSeats = async (req, res) => {
   try {
     const { openingTime, closingTime, maxSeats } = req.body;
@@ -104,7 +118,7 @@ exports.updateLocationTimesAndSeats = async (req, res) => {
   }
 };
 
-// Eliminare una location (solo se è gestita dall'organizer)
+// Eliminare una location
 exports.deleteLocation = async (req, res) => {
   try {
     const location = await Location.findOneAndDelete({ _id: req.params.id, organizer: req.user.userId });

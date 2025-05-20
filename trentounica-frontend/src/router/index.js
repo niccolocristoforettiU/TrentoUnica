@@ -11,6 +11,7 @@ import OrganizerDashboard from '@/components/OrganizerDashboard.vue';
 import EventForm from '@/components/EventForm.vue';
 import MapLocation from '@/components/MapLocation.vue';
 
+
 const routes = [
   {
     path: '/',

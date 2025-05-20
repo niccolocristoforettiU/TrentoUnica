@@ -1,4 +1,3 @@
-// models/userModel.js
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 
@@ -41,6 +40,18 @@ const userSchema = new mongoose.Schema({
       return this.role === 'client';
     },
     trim: true
+  },
+  lat: {
+    type: Number,
+    required: function () {
+      return this.role === 'client';
+    }
+  },
+  lon: {
+    type: Number,
+    required: function () {
+      return this.role === 'client';
+    }
   },
   age: {
     type: Number,
