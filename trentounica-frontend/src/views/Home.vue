@@ -11,6 +11,7 @@
         <li v-if="role === 'organizer'"><router-link to="/organizer/create-event">Crea Evento</router-link></li>
         <li v-if="role === 'admin'"><router-link to="/admin/dashboard">Dashboard Admin</router-link></li>
         <li v-if="isAuthenticated"><router-link to="/searchbar">Cerca Eventi</router-link></li>
+        <li v-if="isAuthenticated"><router-link to="/Appcalendar">Calendario Eventi</router-link></li>
       </ul>
     </nav>
     <button v-if="isAuthenticated" @click="logout">Logout</button>
