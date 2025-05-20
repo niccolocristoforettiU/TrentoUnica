@@ -6,16 +6,21 @@ const jwt = require('jsonwebtoken');
 
 // src/controllers/userController.js
 
+
 exports.register = async (req, res) => {
   try {
-    const { name, email, password, ripetiPassword, role, companyName, address, age, partitaIva, locations } = req.body;
+    const {
+      name, email, password, ripetiPassword, role,
+      companyName, address, age, partitaIva, locations,
+      lat, lon // 👈 aggiunti per il client
+    } = req.body;
 
     if (password !== ripetiPassword) {
       return res.status(400).json({ message: 'Le password non coincidono' });
     }
 
-    if (role === 'client' && (!address || !age)) {
-      return res.status(400).json({ message: 'Indirizzo e età sono obbligatori per i clienti.' });
+    if (role === 'client' && (!address || !age || lat == null || lon == null)) {
+      return res.status(400).json({ message: 'Indirizzo, età e coordinate sono obbligatorie per i clienti.' });
     }
 
     if (role === 'organizer' && (!partitaIva || !locations || !Array.isArray(locations))) {
@@ -27,7 +32,7 @@ exports.register = async (req, res) => {
       return res.status(400).json({ message: 'Email già registrata' });
     }
 
-    // Creazione utente
+    // ✅ Creazione utente (aggiunti lat/lon per client)
     const user = new User({
       name: role === 'client' ? name : undefined,
       email,
@@ -35,6 +40,8 @@ exports.register = async (req, res) => {
       role,
       address: role === 'client' ? address : undefined,
       age: role === 'client' ? age : undefined,
+      lat: role === 'client' ? lat : undefined,
+      lon: role === 'client' ? lon : undefined,
       companyName: role === 'organizer' ? companyName : undefined,
       partitaIva: role === 'organizer' ? partitaIva : undefined,
       verified: role === 'client'
@@ -42,18 +49,22 @@ exports.register = async (req, res) => {
 
     await user.save();
 
-    // Gestione delle location per organizer (creazione e collegamento)
+    // ✅ Gestione location per organizer
     if (role === 'organizer' && Array.isArray(locations) && locations.length > 0) {
       const validLocations = [];
 
       for (const location of locations) {
-        const { name, address, openingTime, closingTime, maxSeats, category } = location;
-        if (!name || !address || !openingTime || !closingTime || !maxSeats || !category) {
+        const {
+          name, address, openingTime, closingTime,
+          maxSeats, category, lat, lon // 👈 aggiunti lat/lon per location
+        } = location;
+
+        if (!name || !address || !openingTime || !closingTime || !maxSeats || !category || lat == null || lon == null) {
           console.error("Location non valida:", location);
           continue;
         }
 
-        // Verifica se la location esiste già per questo organizer
+        // Verifica se già esiste
         const existingLocation = await Location.findOne({
           name: name.trim(),
           address: address.trim(),
@@ -66,7 +77,7 @@ exports.register = async (req, res) => {
           continue;
         }
 
-        // Creazione della nuova location
+        // ✅ Crea nuova location con lat/lon
         const newLocation = await Location.create({
           name: name.trim(),
           address: address.trim(),
@@ -74,24 +85,30 @@ exports.register = async (req, res) => {
           closingTime,
           maxSeats,
           category,
+          lat,
+          lon,
           organizer: user._id
         });
 
         validLocations.push(newLocation._id);
       }
 
-      // Collega le location all'organizer e aggiorna l'utente
+      // Associa le location all’utente
       await User.findByIdAndUpdate(user._id, { locations: validLocations });
     }
 
     res.status(201).json({
-      message: role === 'organizer' ? 'Registrazione come organizer in attesa di verifica.' : 'Registrazione avvenuta con successo.'
+      message: role === 'organizer'
+        ? 'Registrazione come organizer in attesa di verifica.'
+        : 'Registrazione avvenuta con successo.'
     });
   } catch (error) {
     console.error("Errore durante la registrazione:", error);
     res.status(500).json({ message: 'Errore durante la registrazione', error: error.message });
   }
 };
+
+
 
 // Verificare se l'utente è un organizzatore
 exports.verifyOrganizer = async (req, res) => {

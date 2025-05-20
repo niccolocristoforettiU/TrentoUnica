@@ -4,6 +4,7 @@
     <nav>
       <ul>
         <li><router-link to="/">Home</router-link></li>
+        <li><router-link to="/MapLocation">Mappa</router-link></li>
         <li v-if="!isAuthenticated"><router-link to="/login">Login</router-link></li>
         <li v-if="!isAuthenticated"><router-link to="/register">Registrati</router-link></li>
         <li v-if="role === 'client'"><router-link to="/client/dashboard">Dashboard Client</router-link></li>

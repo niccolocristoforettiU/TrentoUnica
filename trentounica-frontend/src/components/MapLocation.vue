@@ -1,26 +1,46 @@
 <template>
-  <div id="map" style="height: 400px; width: 100%;"></div>
+  <GMapMap
+    :center="defaultCenter"
+    :zoom="14"
+    style="width: 100%; height: 400px"
+  >
+    <GMapMarker
+      v-for="(marker, index) in markerData"
+      :key="index"
+      :position="{ lat: marker.lat, lng: marker.lon }"
+    />
+  </GMapMap>
 </template>
 
-<script setup>
-import { onMounted } from 'vue'
-import L from 'leaflet'
-import 'leaflet/dist/leaflet.css'
-
-onMounted(() => {
-  // Coordinates for Trento, Italy
-  const lat = 46.0667
-  const lng = 11.1167
-
-  // Create the map
-  const map = L.map('map').setView([lat, lng], 13)
-
-  // Add OpenStreetMap tiles
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; OpenStreetMap contributors',
-  }).addTo(map)
-
-  // Add marker at Trento
-  L.marker([lat, lng]).addTo(map).bindPopup('Trento, Italy').openPopup()
-})
+<script>
+export default {
+  name: 'MapLocation',
+  props: {
+    locations: {
+      type: Array,
+      default: () => [
+        {
+          address: 'Trento centro',
+          lat: 46.0700,
+          lon: 11.1190
+        }
+      ]
+    }
+  },
+  computed: {
+    markerData() {
+      return this.locations.length ? this.locations : [{
+        address: 'Trento centro',
+        lat: 46.0700,
+        lon: 11.1190
+      }];
+    },
+    defaultCenter() {
+      return {
+        lat: this.markerData[0].lat,
+        lng: this.markerData[0].lon
+      };
+    }
+  }
+};
 </script>
