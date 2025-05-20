@@ -29,7 +29,7 @@ const getOrganizerEvents = async (req, res) => {
 // Creazione evento con verifica permessi location e categoria
 const createEvent = async (req, res) => {
   try {
-    const { title, description, date, locationId, price, category } = req.body;
+    const { title, description, date, locationId, price, category, duration } = req.body;
     const userId = req.user.userId;
     const loc = await Location.findOne({ _id: locationId, organizer: userId });
     if (!loc) {
@@ -40,6 +40,7 @@ const createEvent = async (req, res) => {
       title,
       description,
       date,
+      duration,
       location: loc._id,
       category,
       price,
@@ -79,7 +80,7 @@ const getEventById = async (req, res) => {
 // Modifica evento
 const updateEvent = async (req, res) => {
   try {
-    const { title, description, date, locationId, price } = req.body;
+    const { title, description, date, locationId, price, duration } = req.body;
     const event = await Event.findById(req.params.id);
     if (!event) return res.status(404).json({ message: 'Evento non trovato' });
 
@@ -91,6 +92,7 @@ const updateEvent = async (req, res) => {
     event.title = title;
     event.description = description;
     event.date = date;
+    event.duration = duration;
     event.location = loc._id;
     event.price = price;
 
