@@ -10,6 +10,7 @@
         <p><strong>Location:</strong> {{ event.location }}</p>
         <p><strong>Descrizione:</strong> {{ event.description }}</p>
         <p><strong>Prezzo:</strong> {{ event.price }} €</p>
+        <p><strong>Durata:</strong> {{ event.duration }} minuti</p>
         <p><strong>Categoria:</strong> {{ event.category }}</p>
         <button @click="editEvent(event)">Modifica</button>
         <button @click="deleteEvent(event._id)">Elimina</button>
