@@ -64,6 +64,7 @@ TrentoUnica/
 │
 ├── 1Deriverable.pdf            --> Documento di specifiche del progetto (Parte 1)
 ├── 2Deriverable.pdf            --> Documento di specifiche del progetto (Parte 2)
+├── apiary.apib                 --> Documentazione Apiary
 └── README.md                   --> Documentazione del progetto
 ```
 
