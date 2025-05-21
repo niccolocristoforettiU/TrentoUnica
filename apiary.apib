@@ -1,80 +1,317 @@
-FORMAT: 1A
-HOST: https://polls.apiblueprint.org/
+# TrentoUnica API
 
-# niccolocristoforettiU
+Questo documento descrive le API del progetto **TrentoUnica**, un sistema per la gestione e la fruizione di eventi nella città di Trento. Le API sono strutturate per supportare funzionalità relative a utenti, eventi, prenotazioni, posizioni e calendario.
 
-Polls is a simple API allowing consumers to view polls and vote in them.
 
-## Questions Collection [/questions]
+## Calendario [/calendar]
 
-### List All Questions [GET]
+### Elenco eventi filtrati per data [GET /calendar]
+Restituisce gli eventi disponibili filtrati per intervallo di date e, opzionalmente, per categoria.
+
++ Parameters
+    + startDate: `2025-05-01` (optional, string) - Data di inizio nel formato ISO.
+    + endDate: `2025-06-01` (optional, string) - Data di fine nel formato ISO.
+    + category: `musica` (optional, string) - Categoria dell'evento.
 
 + Response 200 (application/json)
 
-        [
-            {
-                "question": "Favourite programming language?",
-                "published_at": "2015-08-05T08:40:51.620Z",
-                "choices": [
-                    {
-                        "choice": "Swift",
-                        "votes": 2048
-                    }, {
-                        "choice": "Python",
-                        "votes": 1024
-                    }, {
-                        "choice": "Objective-C",
-                        "votes": 512
-                    }, {
-                        "choice": "Ruby",
-                        "votes": 256
-                    }
-                ]
-            }
-        ]
+### Esporta tutti gli eventi in formato iCalendar [GET /calendar/export]
+Restituisce tutti gli eventi come file iCalendar (.ics) autenticati.
 
-### Create a New Question [POST]
++ Headers
 
-You may create your own question using this action. It takes a JSON
-object containing a question and a collection of answers in the
-form of choices.
+        Authorization: Bearer {token}
+
++ Response 200 (text/calendar)
+
+
+## Eventi [/events]
+
+### Elenco Eventi Pubblici [GET /events]
+Restituisce la lista di tutti gli eventi pubblici disponibili.
+
++ Response 200 (application/json)
+
+### Dettaglio Evento [GET /events/{id}]
+Restituisce i dettagli di un evento pubblico specifico.
+
++ Parameters
+    + id: `12345` (string) - ID dell'evento
+
++ Response 200 (application/json)
+
+### Crea Evento [POST /events]
+Crea un nuovo evento. Accesso riservato agli utenti con ruolo `organizer`.
+
++ Headers
+
+        Authorization: Bearer {token}
 
 + Request (application/json)
-
-        {
-            "question": "Favourite programming language?",
-            "choices": [
-                "Swift",
-                "Python",
-                "Objective-C",
-                "Ruby"
-            ]
-        }
-
-+ Response 201 (application/json)
-
-    + Headers
-
-            Location: /questions/2
-
     + Body
 
             {
-                "question": "Favourite programming language?",
-                "published_at": "2015-08-05T08:40:51.620Z",
-                "choices": [
-                    {
-                        "choice": "Swift",
-                        "votes": 0
-                    }, {
-                        "choice": "Python",
-                        "votes": 0
-                    }, {
-                        "choice": "Objective-C",
-                        "votes": 0
-                    }, {
-                        "choice": "Ruby",
-                        "votes": 0
-                    }
-                ]
+                "title": "Concerto Jazz",
+                "date": "2025-06-01T21:00:00.000Z",
+                "locationId": "abc123"
             }
+
++ Response 201 (application/json)
+
+### Modifica Evento [PUT /events/{id}]
+Aggiorna i dettagli di un evento esistente. Accesso riservato all’organizer che ha creato l’evento.
+
++ Parameters
+    + id: `12345` (string) - ID dell'evento
+
++ Headers
+
+        Authorization: Bearer {token}
+
++ Request (application/json)
+    + Body
+
+            {
+                "title": "Concerto Jazz Modificato",
+                "date": "2025-06-02T21:00:00.000Z"
+            }
+
++ Response 200 (application/json)
+
+### Elimina Evento [DELETE /events/{id}]
+Elimina un evento. Accesso riservato all’organizer che ha creato l’evento.
+
++ Parameters
+    + id: `12345` (string) - ID dell'evento
+
++ Headers
+
+        Authorization: Bearer {token}
+
++ Response 204
+
+### Eventi dell’Organizer [GET /events/organizer]
+Restituisce gli eventi creati dall’organizer autenticato.
+
++ Headers
+
+        Authorization: Bearer {token}
+
++ Response 200 (application/json)
+
+### Location disponibili [GET /events/locations]
+Restituisce l’elenco delle location disponibili per la creazione eventi (solo per organizer).
+
++ Headers
+
+        Authorization: Bearer {token}
+
++ Response 200 (application/json)
+
+### Esporta un singolo evento in formato iCalendar [GET /calendar/export/{id}]
+Restituisce un evento specifico in formato iCalendar.
+
++ Parameters
+    + id: `abcdef123456` (string) - ID dell'evento da esportare
+
++ Headers
+
+        Authorization: Bearer {token}
+
++ Response 200 (text/calendar)
+
+## Ricerca Eventi [/event-search]
+
+### Ricerca eventi [GET /event-search]
+Permette di cercare eventi sulla base di parametri testuali (es. nome, descrizione, ecc.).
+
++ Parameters
+    + query: `jazz` (optional, string) - Testo da cercare negli eventi.
+
++ Response 200 (application/json)
+
+## Utenti [/users]
+
+### Registrazione [POST /users/register]
+Registra un nuovo utente (client o organizer).
+
++ Request (application/json)
+    + Body
+
+            {
+                "name": "Mario Rossi",
+                "email": "mario@example.com",
+                "password": "password123",
+                "role": "client"
+            }
+
++ Response 201 (application/json)
+
+### Login [POST /users/login]
+Effettua il login restituendo un token JWT.
+
++ Request (application/json)
+    + Body
+
+            {
+                "email": "mario@example.com",
+                "password": "password123"
+            }
+
++ Response 200 (application/json)
+
+### Profilo Utente [GET /users/profile]
+Restituisce il profilo dell’utente autenticato.
+
++ Headers
+
+        Authorization: Bearer {token}
+
++ Response 200 (application/json)
+
+### Aggiorna Profilo Utente [PUT /users/profile]
+Aggiorna i dati del profilo dell’utente autenticato.
+
++ Headers
+
+        Authorization: Bearer {token}
+
++ Request (application/json)
+    + Body
+
+            {
+                "name": "Mario R.",
+                "email": "mario@example.com"
+            }
+
++ Response 200 (application/json)
+
+### Verifica Organizer [PUT /users/verify/{userId}]
+Verifica (abilita) un organizer. Accesso riservato agli admin.
+
++ Parameters
+    + userId: `abc123` (string) - ID dell’utente da verificare
+
++ Headers
+
+        Authorization: Bearer {token}
+
++ Response 200 (application/json)
+
+### Lista Organizer in attesa [GET /users/organizers/pending]
+Restituisce l’elenco degli organizer non ancora verificati (solo per admin).
+
++ Headers
+
+        Authorization: Bearer {token}
+
++ Response 200 (application/json)
+
+### Dashboard Cliente [GET /users/client/dashboard]
+Restituisce un messaggio di benvenuto per il client autenticato.
+
++ Headers
+
+        Authorization: Bearer {token}
+
++ Response 200 (application/json)
+
+### Dashboard Organizer [GET /users/organizer/dashboard]
+Restituisce un messaggio di benvenuto per l’organizer autenticato.
+
++ Headers
+
+        Authorization: Bearer {token}
+
++ Response 200 (application/json)
+
+
+## Location [/locations]
+
+### Lista Location [GET /locations]
+Restituisce tutte le location disponibili. Accesso riservato agli organizer autenticati.
+
++ Headers
+
+        Authorization: Bearer {token}
+
++ Response 200 (application/json)
+
+### Location dell’Organizer [GET /locations/organizer]
+Restituisce solo le location gestite dall’organizer autenticato.
+
++ Headers
+
+        Authorization: Bearer {token}
+
++ Response 200 (application/json)
+
+### Crea Location [POST /locations]
+Crea una nuova location.
+
++ Headers
+
+        Authorization: Bearer {token}
+
++ Request (application/json)
+    + Body
+
+            {
+                "name": "Sala Conferenze A",
+                "address": "Via Roma 5, Trento",
+                "capacity": 100
+            }
+
++ Response 201 (application/json)
+
+### Modifica Location [PUT /locations/{id}]
+Modifica le informazioni generali di una location.
+
++ Parameters
+    + id: `loc123` (string) - ID della location
+
++ Headers
+
+        Authorization: Bearer {token}
+
++ Request (application/json)
+    + Body
+
+            {
+                "name": "Sala B",
+                "address": "Via Milano 7"
+            }
+
++ Response 200 (application/json)
+
+### Modifica Orari e Posti [PATCH /locations/{id}/times-seats]
+Modifica gli orari e la capienza massima di una location.
+
++ Parameters
+    + id: `loc123` (string) - ID della location
+
++ Headers
+
+        Authorization: Bearer {token}
+
++ Request (application/json)
+    + Body
+
+            {
+                "openingHours": "09:00-18:00",
+                "capacity": 120
+            }
+
++ Response 200 (application/json)
+
+### Elimina Location [DELETE /locations/{id}]
+Elimina una location esistente.
+
++ Parameters
+    + id: `loc123` (string) - ID della location
+
++ Headers
+
+        Authorization: Bearer {token}
+
++ Response 204
