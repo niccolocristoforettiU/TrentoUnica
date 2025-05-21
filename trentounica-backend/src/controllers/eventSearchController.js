@@ -14,12 +14,10 @@ async function searchEvents(req, res) {
 
         }
 
-        // Filtro per testo (titolo, descrizione, location se stringa)
+        // Filtro per testo (titolo)
         if (query && query.trim() !== "") {
             filter.$or = [
                 { title: { $regex: query, $options: 'i' } },
-                { description: { $regex: query, $options: 'i' } },
-                { location: { $regex: query, $options: 'i' } } // solo se location è stringa!
             ];
         }
 
