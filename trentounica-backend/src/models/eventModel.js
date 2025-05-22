@@ -19,6 +19,7 @@ const eventSchema = new mongoose.Schema({
     required: true 
   },
   popularity: { type: Number, default: 0 },
+  bookingRequired: { type: Boolean, default: false },
 }, {
   timestamps: true
 });

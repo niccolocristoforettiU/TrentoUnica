@@ -10,6 +10,9 @@
     <p><strong>Organizzatore:</strong> {{ event.organizer.companyName }} ({{ event.organizer.email }})</p>
     <p><strong>Prezzo:</strong> €{{ event.price }}</p>
     <p><strong>Popolarità:</strong> {{ event.popularity }}</p>
+    <button v-if="event.bookingRequired && userRole === 'client'" @click="prenotaEvento" class="btn btn-primary">
+      Prenotazione
+    </button>
   </div>
   <div v-else>
     <p>Caricamento evento in corso...</p>
@@ -23,7 +26,8 @@ export default {
   name: 'EventDetail',
   data() {
     return {
-      event: null
+      event: null,
+      userRole: localStorage.getItem("role")
     };
   },
   async created() {
