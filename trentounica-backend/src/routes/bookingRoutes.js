@@ -1,9 +1,10 @@
-// src/routes/userRoutes.js
 const express = require('express');
 const router = express.Router();
-const userController = require('../controllers/userController');
+const { authenticate } = require('../middlewares/authMiddleware');
+const { getTicketForEvent, getClientBookings, createBooking } = require('../controllers/bookingController');
 
-// Esempio di rotta
-router.get('/', (req, res) => res.send('User Route Attiva!'));
+router.get('/ticket/:eventId', authenticate, getTicketForEvent);
+router.get('/client', authenticate, getClientBookings);
+router.post('/', authenticate, createBooking); // 👈 aggiunta questa riga
 
 module.exports = router;
