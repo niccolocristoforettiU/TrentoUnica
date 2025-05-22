@@ -11,6 +11,12 @@ router.post('/register', userController.register);
 // Rotta per verificare gli organizzatori
 router.put('/verify/:userId', authenticate, authorizeRole('admin'), userController.verifyOrganizer);
 
+// Rotta per ottenere tutti gli organizer con le location (solo admin)
+router.get('/organizers/all', authenticate, authorizeRole('admin'), userController.getAllOrganizersWithLocations);
+
+// Rotta per disabilitare un organizer (solo admin)
+router.put('/disable/:userId', authenticate, authorizeRole('admin'), userController.disableOrganizer);
+
 // Rotta di login
 router.post('/login', userController.login);
 
