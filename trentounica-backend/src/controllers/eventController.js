@@ -1,6 +1,6 @@
 const Event = require('../models/eventModel');
 const Location = require('../models/locationModel');
-
+const Booking = require('../models/bookingModel');
 // Elenco eventi (pubblici)
 const getAllEvents = async (req, res) => {
   try {
@@ -69,10 +69,22 @@ const getLocations = async (req, res) => {
 const getEventById = async (req, res) => {
   try {
     const event = await Event.findById(req.params.id)
-      .populate('location', 'name address category')
+      .populate('location', 'name address category maxSeats')
       .populate('organizer', 'companyName email');
     if (!event) return res.status(404).json({ message: 'Evento non trovato' });
-    res.json(event);
+
+    // Conta i booking confermati e pagati
+    const bookingCount = await Booking.countDocuments({
+      event: event._id,
+      status: 'confirmed',
+      paymentStatus: 'paid'
+    });
+
+     // Aggiungi bookingCount al risultato
+    const eventObj = event.toObject();
+    eventObj.bookingCount = bookingCount;
+
+    res.json(eventObj);
   } catch (error) {
     res.status(500).json({ message: 'Errore nel recupero dell\'evento' });
   }
@@ -126,6 +138,25 @@ const deleteEvent = async (req, res) => {
   }
 };
 
+const getEventsWithBookingCounts = async (req, res) => {
+  const events = await Event.find({ organizer: req.user.userId })
+    .populate('location', 'name address category');
+
+  const data = await Promise.all(events.map(async (event) => {
+    const count = await Booking.countDocuments({
+      event: event._id,
+      status: 'confirmed'
+    });
+
+    return {
+      ...event.toObject(),
+      bookingCount: count
+    };
+  }));
+
+  res.json(data);
+};
+
 
 
 // Esportazione delle funzioni del controller
@@ -136,5 +167,6 @@ module.exports = {
   getLocations,
   getEventById,
   updateEvent,
-  deleteEvent
+  deleteEvent,
+  getEventsWithBookingCounts
 };
