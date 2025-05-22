@@ -11,7 +11,7 @@ exports.register = async (req, res) => {
     const {
       name, email, password, ripetiPassword, role,
       companyName, address, age, partitaIva, locations,
-      lat, lon // 👈 aggiunti per il client
+      lat, lon // aggiunti per il client
     } = req.body;
 
     if (password !== ripetiPassword) {
@@ -55,7 +55,7 @@ exports.register = async (req, res) => {
       for (const location of locations) {
         const {
           name, address, openingTime, closingTime,
-          maxSeats, category, lat, lon // 👈 aggiunti lat/lon per location
+          maxSeats, category, lat, lon // aggiunti lat/lon per location
         } = location;
 
         if (!name || !address || !openingTime || !closingTime || !maxSeats || !category || lat == null || lon == null) {
@@ -222,5 +222,38 @@ exports.updateProfile = async (req, res) => {
     res.status(200).json({ message: 'Profilo aggiornato con successo', user });
   } catch (error) {
     res.status(500).json({ message: 'Errore durante l\'aggiornamento del profilo', error: error.message });
+  }
+};
+
+// Recupera tutti gli organizer (verificati e non) con le loro location
+exports.getAllOrganizersWithLocations = async (req, res) => {
+  try {
+    const organizers = await User.find({ role: 'organizer' })
+      .populate('locations', 'name address category') // Seleziona solo info chiave
+      .select('-password');
+    res.status(200).json(organizers);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Errore durante il recupero degli organizzatori', error: error.message });
+  }
+};
+
+// Disabilita un organizer (setta verified a false)
+exports.disableOrganizer = async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const user = await User.findById(userId);
+
+    if (!user || user.role !== 'organizer') {
+      return res.status(404).json({ message: 'Organizzatore non trovato' });
+    }
+
+    user.verified = false;
+    await user.save();
+
+    res.status(200).json({ message: 'Organizzatore disabilitato con successo' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Errore durante la disabilitazione dell\'organizzatore', error: error.message });
   }
 };
