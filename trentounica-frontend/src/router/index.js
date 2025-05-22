@@ -4,6 +4,7 @@ import HomePage from '@/views/Home.vue';
 import UserLogin from '@/views/Login.vue';
 import UserRegister from '@/views/Register.vue';
 import AppCalendar from "@/components/AppCalendar.vue";
+import EventDetail from '@/components/EventDetail.vue';
 import SearchBar from '@/components/SearchBar.vue';
 import ClientDashboard from '@/components/ClientDashboard.vue';
 import AdminDashboardPage from '@/views/AdminDashboardPage.vue';
@@ -32,6 +33,11 @@ const routes = [
     path: "/Appcalendar",
     name: 'AppCalendar',
     component: AppCalendar ,
+  },
+  {
+    path: '/event/:id',
+    name: 'EventDetail',
+    component: EventDetail
   },
   { 
     path: "/MapLocation",

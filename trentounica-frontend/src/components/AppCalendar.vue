@@ -82,8 +82,7 @@ export default {
           location: event.location?.name || "Sconosciuto",
           id: event._id
         })),
-        eventClick: this.exportEvent,
-        dateClick: this.createEvent
+        eventClick: this.handleEventClick
       });
       this.calendar.render();
     },
@@ -114,18 +113,12 @@ export default {
         this.loadingExport = false;
       }
     },
-    async createEvent(info) {
-      const title = prompt("Inserisci il titolo dell'evento:");
-      if (!title) return;
-
-      try {
-        await api.post("/calendar/create", {
-          title: title,
-          date: info.dateStr
-        });
-        this.fetchEvents();
-      } catch (error) {
-        console.error("Errore nella creazione dell'evento:", error);
+    handleEventClick(info) {
+      const scelta = confirm("Vuoi esportare questo evento nel tuo calendario personale?\nPremi Annulla per visualizzare i dettagli.");
+      if (scelta) {
+        this.exportEvent(info);
+      } else {
+        this.$router.push(`/event/${info.event.id}`);
       }
     }
   }
