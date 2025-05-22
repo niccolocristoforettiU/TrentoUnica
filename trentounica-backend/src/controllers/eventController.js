@@ -107,18 +107,24 @@ const updateEvent = async (req, res) => {
 const deleteEvent = async (req, res) => {
   try {
     const event = await Event.findById(req.params.id);
-    if (!event) return res.status(404).json({ message: 'Evento non trovato' });
 
-    if (event.organizer.toString() !== req.user.userId) {
+    if (!event) {
+      return res.status(404).json({ message: 'Evento non trovato' });
+    }
+
+    if (!event.organizer || event.organizer.toString() !== req.user.userId) {
       return res.status(403).json({ message: 'Non autorizzato a eliminare questo evento' });
     }
 
-    await event.remove();
+    await event.deleteOne(); // <-- questa è la soluzione!
     res.json({ message: 'Evento eliminato con successo' });
   } catch (error) {
-    res.status(500).json({ message: 'Errore durante l\'eliminazione dell\'evento' });
+    console.error("Errore durante l'eliminazione:", error);
+    res.status(500).json({ message: 'Errore durante l\'eliminazione dell\'evento', error: error.message });
   }
 };
+
+
 
 // Esportazione delle funzioni del controller
 module.exports = {
