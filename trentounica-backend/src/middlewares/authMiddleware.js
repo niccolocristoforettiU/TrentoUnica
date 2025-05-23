@@ -30,15 +30,19 @@ exports.authenticate = (req, res, next) => {
   }
 };
 
-exports.authorizeRole = (role) => {
+exports.authorizeRole = (roles) => {
   return async (req, res, next) => {
     try {
-      if (req.user.role !== role) {
+      const userRole = req.user.role;
+
+      // Supporta sia un ruolo singolo che un array di ruoli
+      const allowed = Array.isArray(roles) ? roles.includes(userRole) : roles === userRole;
+
+      if (!allowed) {
         return res.status(403).json({ message: 'Access denied. Insufficient permissions.' });
       }
 
-      // Verifica che gli organizzatori siano approvati
-      if (role === 'organizer') {
+      if (userRole === 'organizer') {
         const organizer = await User.findById(req.user.userId || req.user.id || req.user._id);
         if (!organizer || !organizer.verified) {
           return res.status(403).json({ message: 'Access denied. Organizer not verified.' });
@@ -52,3 +56,4 @@ exports.authorizeRole = (role) => {
     }
   };
 };
+
