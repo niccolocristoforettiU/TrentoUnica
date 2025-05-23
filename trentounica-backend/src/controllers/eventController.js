@@ -1,6 +1,6 @@
 const Event = require('../models/eventModel');
 const Location = require('../models/locationModel');
-
+const Booking = require('../models/bookingModel');
 // Elenco eventi (pubblici)
 const getAllEvents = async (req, res) => {
   try {
@@ -29,7 +29,7 @@ const getOrganizerEvents = async (req, res) => {
 // Creazione evento con verifica permessi location e categoria
 const createEvent = async (req, res) => {
   try {
-    const { title, description, date, locationId, price, category, duration } = req.body;
+    const { title, description, date, locationId, price, category, duration, bookingRequired} = req.body;
     const userId = req.user.userId;
     const loc = await Location.findOne({ _id: locationId, organizer: userId });
     if (!loc) {
@@ -44,7 +44,8 @@ const createEvent = async (req, res) => {
       location: loc._id,
       category,
       price,
-      organizer: userId
+      organizer: userId,
+      bookingRequired
     });
 
     await event.save();
@@ -68,10 +69,22 @@ const getLocations = async (req, res) => {
 const getEventById = async (req, res) => {
   try {
     const event = await Event.findById(req.params.id)
-      .populate('location', 'name address category')
+      .populate('location', 'name address category maxSeats')
       .populate('organizer', 'companyName email');
     if (!event) return res.status(404).json({ message: 'Evento non trovato' });
-    res.json(event);
+
+    // Conta i booking confermati e pagati
+    const bookingCount = await Booking.countDocuments({
+      event: event._id,
+      status: 'confirmed',
+      paymentStatus: 'paid'
+    });
+
+     // Aggiungi bookingCount al risultato
+    const eventObj = event.toObject();
+    eventObj.bookingCount = bookingCount;
+
+    res.json(eventObj);
   } catch (error) {
     res.status(500).json({ message: 'Errore nel recupero dell\'evento' });
   }
@@ -80,7 +93,7 @@ const getEventById = async (req, res) => {
 // Modifica evento
 const updateEvent = async (req, res) => {
   try {
-    const { title, description, date, locationId, price, duration } = req.body;
+    const { title, description, date, locationId, price, duration, bookingRequired } = req.body;
     const event = await Event.findById(req.params.id);
     if (!event) return res.status(404).json({ message: 'Evento non trovato' });
 
@@ -95,6 +108,7 @@ const updateEvent = async (req, res) => {
     event.duration = duration;
     event.location = loc._id;
     event.price = price;
+    event.bookingRequired = bookingRequired;
 
     await event.save();
     res.status(200).json(event);
@@ -107,16 +121,20 @@ const updateEvent = async (req, res) => {
 const deleteEvent = async (req, res) => {
   try {
     const event = await Event.findById(req.params.id);
-    if (!event) return res.status(404).json({ message: 'Evento non trovato' });
 
-    if (event.organizer.toString() !== req.user.userId) {
+    if (!event) {
+      return res.status(404).json({ message: 'Evento non trovato' });
+    }
+
+    if (!event.organizer || event.organizer.toString() !== req.user.userId) {
       return res.status(403).json({ message: 'Non autorizzato a eliminare questo evento' });
     }
 
-    await event.remove();
+    await event.deleteOne(); // <-- questa è la soluzione!
     res.json({ message: 'Evento eliminato con successo' });
   } catch (error) {
-    res.status(500).json({ message: 'Errore durante l\'eliminazione dell\'evento' });
+    console.error("Errore durante l'eliminazione:", error);
+    res.status(500).json({ message: 'Errore durante l\'eliminazione dell\'evento', error: error.message });
   }
 };
 
@@ -148,6 +166,25 @@ const getFilteredEvents = async (req, res) => {
   }
 };
 
+const getEventsWithBookingCounts = async (req, res) => {
+  const events = await Event.find({ organizer: req.user.userId })
+    .populate('location', 'name address category');
+
+  const data = await Promise.all(events.map(async (event) => {
+    const count = await Booking.countDocuments({
+      event: event._id,
+      status: 'confirmed'
+    });
+
+    return {
+      ...event.toObject(),
+      bookingCount: count
+    };
+  }));
+
+  res.json(data);
+};
+
 
 // Esportazione delle funzioni del controller
 module.exports = {
@@ -158,5 +195,6 @@ module.exports = {
   getEventById,
   updateEvent,
   deleteEvent,
-  getFilteredEvents
+  getFilteredEvents,
+  getEventsWithBookingCounts
 };

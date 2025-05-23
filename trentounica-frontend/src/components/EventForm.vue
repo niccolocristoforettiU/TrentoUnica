@@ -38,6 +38,13 @@
         <input type="number" v-model="event.duration" min="1" required placeholder="Durata dell'evento in minuti" />
       </div>
 
+      <div class="form-group">
+        <label>
+          <input type="checkbox" v-model="event.bookingRequired" />
+          Evento a prenotazione
+        </label>
+      </div>
+
       <button type="submit">Crea Evento</button>
     </form>
   </div>
@@ -57,6 +64,7 @@ export default {
         category: '',
         price: 0,
         duration: '',
+        bookingRequired: false,
       },
       locations: [],
       loading: false,
@@ -160,6 +168,7 @@ export default {
         category:'',
         price: 0,
         duration: '',
+        bookingRequired: false
       };
     }
   }

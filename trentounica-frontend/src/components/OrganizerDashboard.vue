@@ -14,6 +14,7 @@
         <p><strong>Prezzo:</strong> {{ event.price }} €</p>
         <p><strong>Categoria:</strong> {{ event.category }}</p>
         <p><strong>Popolarità:</strong> {{ event.popularity }}</p>
+        <p>N. prenotati: {{ event.bookingCount }}</p>
         <button @click="editEvent(event)">Modifica</button>
         <button @click="deleteEvent(event._id)">Elimina</button>
       </li>
@@ -32,7 +33,7 @@ export default {
   data() {
     return {
       events: [],
-      loading: false
+      loading: false,
     };
   },
   created() {
@@ -43,7 +44,7 @@ export default {
       this.loading = true;
       try {
         const token = localStorage.getItem("token");
-        const response = await axios.get("/events/organizer", {
+        const response = await axios.get("/events/organizer/bookings-count", {
           headers: {
             Authorization: `Bearer ${token}`
           }

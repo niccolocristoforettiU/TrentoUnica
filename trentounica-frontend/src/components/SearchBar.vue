@@ -42,7 +42,7 @@
     </label>
 
     <ul class="event-list">
-      <li v-for="event in events" :key="event._id" class="event-item">
+      <li v-for="event in events" :key="event._id" class="event-item" @click="goToEvent(event._id)" style="cursor: pointer;">
         <strong>{{ event.title }}</strong> - {{ new Date(event.date).toLocaleDateString("it-IT") }} - {{ event.category }}
       </li>
     </ul>
@@ -86,6 +86,9 @@ export default {
       } catch (error) {
         console.error("Errore durante il caricamento degli eventi:", error);
       }
+    },
+    goToEvent(eventId) {
+      this.$router.push(`/event/${eventId}`);
     }
   }
 };
