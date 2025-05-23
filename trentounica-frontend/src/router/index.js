@@ -40,7 +40,7 @@ const routes = [
     component: EventDetail
   },
   { 
-    path: "/MapLocation",
+    path: "/map",
     name: 'MapLocation',
     component: MapLocation ,
   },
