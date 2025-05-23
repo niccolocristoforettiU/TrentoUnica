@@ -120,6 +120,35 @@ const deleteEvent = async (req, res) => {
   }
 };
 
+// Per mappe con filtri per utenti e admin
+const getFilteredEvents = async (req, res) => {
+  try {
+    const { startDate, endDate, category } = req.query;
+    const filter = {};
+
+    if (startDate || endDate) {
+      filter.date = {};
+      if (startDate) filter.date.$gte = new Date(startDate);
+      if (endDate) filter.date.$lte = new Date(endDate);
+    }
+
+    const events = await Event.find(filter)
+      .populate({
+        path: 'location',
+        match: category ? { category } : {},
+        select: 'name address lat lon category'
+      })
+      .sort({ date: 1 });
+
+    const filtered = events.filter(e => e.location !== null);
+
+    res.json(filtered);
+  } catch (err) {
+    res.status(500).json({ message: "Errore nel recupero eventi per mappa", error: err.message });
+  }
+};
+
+
 // Esportazione delle funzioni del controller
 module.exports = {
   getAllEvents,
@@ -128,5 +157,6 @@ module.exports = {
   getLocations,
   getEventById,
   updateEvent,
-  deleteEvent
+  deleteEvent,
+  getFilteredEvents
 };
