@@ -1,29 +1,42 @@
 <template>
-  <div>
-    <h2>Dashboard Organizzatore</h2>
-    <p>Benvenuto nel dashboard dell'organizzatore!</p>
-    
-    <h3>I Tuoi Eventi</h3>
-    <div v-if="loading">Caricamento eventi...</div>
-    <ul v-else-if="events.length > 0">
-      <li v-for="event in events" :key="event._id">
-        <h3>{{ event.title }}</h3>
-        <p><strong>Data:</strong> {{ new Date(event.date).toLocaleString() }}</p>
-        <p><strong>Location:</strong> {{ event.location.name }}</p>
-        <p><strong>Descrizione:</strong> {{ event.description }}</p>
-        <p><strong>Prezzo:</strong> {{ event.price }} €</p>
-        <p><strong>Categoria:</strong> {{ event.category }}</p>
-        <p><strong>Popolarità:</strong> {{ event.popularity }}</p>
-        <p>N. prenotati: {{ event.bookingCount }}</p>
-        <button @click="editEvent(event)">Modifica</button>
-        <button @click="deleteEvent(event._id)">Elimina</button>
-      </li>
-    </ul>
-    <div v-else>
-      Nessun evento trovato.
+  <div class="dashboard-wrapper">
+    <!-- Bottone indietro -->
+    <button class="back-button" @click="$router.back()">← Torna indietro</button>
+
+    <div class="dashboard">
+      <h2>Dashboard Organizzatore</h2>
+      <p>Benvenuto nel dashboard dell'organizzatore!</p>
+
+      <h3>I Tuoi Eventi</h3>
+
+      <div v-if="loading" class="loading-text">Caricamento eventi...</div>
+
+      <div v-else-if="events.length > 0" class="event-list">
+        <div v-for="event in events" :key="event._id" class="event-card">
+          <h3 class="event-title">{{ event.title }}</h3>
+
+          <div class="event-details">
+            <p><strong>Data:</strong> {{ new Date(event.date).toLocaleString() }}</p>
+            <p><strong>Location:</strong> {{ event.location.name }}</p>
+            <p><strong>Descrizione:</strong> {{ event.description }}</p>
+            <p><strong>Prezzo:</strong> €{{ event.price }}</p>
+            <p><strong>Categoria:</strong> {{ event.category }}</p>
+            <p><strong>Popolarità:</strong> {{ event.popularity }}</p>
+            <p><strong>N. prenotati:</strong> {{ event.bookingCount }}</p>
+          </div>
+
+          <div class="button-group">
+            <button class="edit-btn" @click="editEvent(event)">Modifica</button>
+            <button class="delete-btn" @click="deleteEvent(event._id)">Elimina</button>
+          </div>
+        </div>
+      </div>
+
+      <div v-else class="no-events">Nessun evento trovato.</div>
     </div>
   </div>
 </template>
+
 
 <script>
 import axios from "@/api/axios";
@@ -79,7 +92,116 @@ export default {
 </script>
 
 <style scoped>
-h2 {
-  color: #8e44ad;
+.event-title {
+  text-align: center;
+  margin-bottom: 15px;
+  color: #2e7d32;
+  font-size: 20px;
+  font-weight: 600;
 }
+
+.event-details {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 15px;
+  font-size: 14px;
+  color: #444;
+}
+.dashboard-wrapper {
+  background-color: #f5f7fa;
+  padding: 60px 20px;
+  min-height: 100vh;
+}
+
+.dashboard {
+  max-width: 900px;
+  margin: 0 auto;
+  background-color: white;
+  padding: 30px;
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+}
+
+h2 {
+  text-align: center;
+  color: #2e7d32;
+  margin-bottom: 5px;
+}
+
+p {
+  text-align: center;
+  color: #333;
+}
+
+h3 {
+  margin-top: 30px;
+  margin-bottom: 20px;
+  text-align: center;
+  color: #333;
+}
+
+.event-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.event-card {
+  background-color: #fcfcfc;
+  padding: 20px;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.event-card h3 {
+  margin-bottom: 10px;
+  font-size: 1.2em;
+  color: #2e7d32;
+}
+
+.event-card p {
+  margin: 4px 0;
+  font-size: 14px;
+  color: #555;
+  text-align: left;
+}
+
+.button-group {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.edit-btn {
+  background-color: #1976d2;
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.edit-btn:hover {
+  background-color: #1565c0;
+}
+
+.delete-btn {
+  background-color: #e53935;
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.delete-btn:hover {
+  background-color: #c62828;
+}
+
 </style>
+

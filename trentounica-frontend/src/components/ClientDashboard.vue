@@ -1,18 +1,33 @@
 <template>
-  <div v-for="b in bookings" :key="b._id" class="booking-card">
-    <h3>{{ b.event.title }}</h3>
-    <p>{{ new Date(b.event.date).toLocaleString() }}</p>
-    <p>{{ b.event.location.name }}</p>
+  <div class="booking-page">
+    <h2>Le tue prenotazioni</h2>
 
-    <div class="center-content">
-      <qrcode-vue :value="b._id" :size="100" />
-      <button
-        v-if="b.event.price === 0"
-        @click="cancelBooking(b._id)"
-        class="cancel-button"
-      >
-        Annulla prenotazione
-      </button>
+    <div v-if="bookings.length === 0" class="empty-message">
+      Nessuna prenotazione trovata.
+    </div>
+
+    <div
+      v-for="b in bookings"
+      :key="b._id"
+      class="booking-card"
+    >
+      <div class="card-header">
+        <h3>{{ b.event.title }}</h3>
+        <p>{{ new Date(b.event.date).toLocaleString() }}</p>
+        <p>{{ b.event.location.name }}</p>
+      </div>
+
+      <div class="qr-container">
+        <qrcode-vue :value="b._id" :size="100" />
+
+        <button
+          v-if="b.event.price === 0"
+          @click="cancelBooking(b._id)"
+          class="cancel-button"
+        >
+          Annulla prenotazione
+        </button>
+      </div>
     </div>
   </div>
 </template>
@@ -61,31 +76,66 @@ export default {
 </script>
 
 <style scoped>
-.booking-card {
-  border: 1px solid #ccc;
-  border-radius: 12px;
-  padding: 1rem;
-  margin-bottom: 1.5rem;
+.booking-page {
+  padding: 60px 20px;
+  max-width: 800px;
+  margin: 0 auto;
+  background-color: #f5f7fa;
+  min-height: 100vh;
 }
 
-.center-content {
+h2 {
+  text-align: center;
+  margin-bottom: 30px;
+  color: #2e7d32;
+}
+
+.empty-message {
+  text-align: center;
+  color: #888;
+  font-size: 1rem;
+  margin-top: 20px;
+}
+
+.booking-card {
+  background-color: white;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.card-header h3 {
+  margin: 0;
+  color: #333;
+}
+
+.card-header p {
+  margin: 4px 0;
+  color: #555;
+}
+
+.qr-container {
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-top: 1rem;
 }
 
 .cancel-button {
-  margin-top: 0.5rem;
+  margin-top: 12px;
   background-color: #e53935;
   color: white;
   border: none;
-  padding: 0.6rem 1.2rem;
+  padding: 10px 20px;
   font-weight: bold;
-  font-size: 1rem;
-  border-radius: 10px;
+  font-size: 14px;
+  border-radius: 8px;
   cursor: pointer;
 }
+
 .cancel-button:hover {
   background-color: #c62828;
 }

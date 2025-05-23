@@ -1,9 +1,12 @@
 <template>
   <div class="event-form">
-    <h2>Crea un Nuovo Evento</h2>
+    <button class="back-button" @click="$router.back()">← Torna indietro</button>
+    <h2 class="form-title">Crea un Nuovo Evento</h2>
+
     <div v-if="successMessage" class="success-message">{{ successMessage }}</div>
     <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
-    <form @submit.prevent="createEvent">
+
+    <form @submit.prevent="createEvent" class="event-fields">
       <div>
         <label for="title">Titolo</label>
         <input type="text" v-model="event.title" required minlength="5" placeholder="Inserisci il titolo dell'evento" />
@@ -11,7 +14,7 @@
 
       <div>
         <label for="description">Descrizione</label>
-        <textarea v-model="event.description"></textarea>
+        <textarea v-model="event.description" placeholder="Descrizione dell'evento"></textarea>
       </div>
 
       <div>
@@ -22,6 +25,7 @@
       <div>
         <label for="locationId">Location</label>
         <select v-model="event.locationId" required @change="onLocationChange">
+          <option value="" disabled>Seleziona una location</option>
           <option v-for="location in locations" :key="location._id" :value="location._id">
             {{ location.name }} - {{ location.category }}
           </option>
@@ -38,7 +42,7 @@
         <input type="number" v-model="event.duration" min="1" required placeholder="Durata dell'evento in minuti" />
       </div>
 
-      <div class="form-group">
+      <div>
         <label>
           <input type="checkbox" v-model="event.bookingRequired" />
           Evento a prenotazione
@@ -87,13 +91,10 @@ export default {
         }
 
         const response = await axios.get('/locations/organizer', {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
+          headers: { Authorization: `Bearer ${token}` }
         });
 
         this.locations = response.data;
-        console.log("Location caricate:", this.locations);
 
         if (this.locations.length === 0) {
           this.errorMessage = "Non ci sono location associate a questo organizer.";
@@ -111,12 +112,9 @@ export default {
       const selectedLocation = this.locations.find(loc => loc._id === this.event.locationId);
       if (selectedLocation) {
         this.event.category = selectedLocation.category;
-        console.log("Location selezionata:", selectedLocation);
-        console.log("Categoria associata:", this.event.category);
       }
     },
     async createEvent() {
-      console.log("Dati evento prima dell'invio:", this.event);
       try {
         const token = localStorage.getItem('token');
         if (!token) {
@@ -129,10 +127,8 @@ export default {
           return;
         }
 
-       await axios.post('/events', this.event, {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
+        await axios.post('/events', this.event, {
+          headers: { Authorization: `Bearer ${token}` }
         });
 
         this.successMessage = "Evento creato con successo!";
@@ -165,7 +161,7 @@ export default {
         description: '',
         date: '',
         locationId: '',
-        category:'',
+        category: '',
         price: 0,
         duration: '',
         bookingRequired: false
@@ -176,58 +172,92 @@ export default {
 </script>
 
 <style scoped>
-.event-form {
-  max-width: 600px;
-  margin: 0 auto;
-  padding: 20px;
-  background-color: #f9f9f9;
-  border: 1px solid #ddd;
-  border-radius: 10px;
+.back-button {
+  margin-bottom: 10px;
+  background: transparent;
+  border: none;
+  color: #2e7d32;
+  font-size: 14px;
+  cursor: pointer;
+}
+.back-button:hover {
+  text-decoration: underline;
 }
 
-form div {
-  margin-bottom: 15px;
+.event-form {
+  max-width: 650px;
+  margin: 60px auto;
+  padding: 30px;
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+}
+
+.form-title {
+  text-align: center;
+  font-size: 24px;
+  color: #2e7d32;
+  margin-bottom: 25px;
+}
+
+.event-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
 }
 
 form label {
-  display: block;
+  font-weight: 600;
   margin-bottom: 5px;
-  font-weight: bold;
+  display: block;
 }
 
-input, textarea, select {
+input,
+textarea,
+select {
   width: 100%;
   padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 5px;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+textarea {
+  resize: vertical;
+  min-height: 80px;
 }
 
 button {
-  background-color: #007bff;
+  background-color: #2e7d32;
   color: white;
+  font-weight: 600;
   border: none;
-  padding: 10px 15px;
+  padding: 12px;
+  font-size: 15px;
+  border-radius: 6px;
   cursor: pointer;
-  transition: background 0.3s;
+  transition: background-color 0.3s;
 }
 
 button:hover {
-  background-color: #0056b3;
+  background-color: #1b5e20;
 }
 
 .success-message {
   background-color: #d4edda;
   color: #155724;
-  padding: 10px;
-  border-radius: 5px;
+  padding: 10px 15px;
+  border-radius: 6px;
   margin-bottom: 15px;
+  font-size: 14px;
 }
 
 .error-message {
   background-color: #f8d7da;
   color: #721c24;
-  padding: 10px;
-  border-radius: 5px;
+  padding: 10px 15px;
+  border-radius: 6px;
   margin-bottom: 15px;
+  font-size: 14px;
 }
 </style>
