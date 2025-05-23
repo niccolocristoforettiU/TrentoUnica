@@ -1,14 +1,23 @@
 <template>
-  <div>
-    <h2>Dashboard Admin</h2>
-    <ul>
-      <li v-for="organizer in organizers" :key="organizer._id">
-        {{ organizer.companyName || organizer.name }} - {{ organizer.email }}
-        <button @click="verifyOrganizer(organizer._id)">Verifica</button>
-      </li>
-    </ul>
+  <div class="admin-container">
+    <div class="admin-box">
+      <!-- Bottone indietro -->
+      <button class="back-button" @click="$router.back()">← Torna indietro</button>
 
-    <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
+      <h2>Dashboard Amministratore</h2>
+
+      <ul class="organizer-list">
+        <li v-for="organizer in organizers" :key="organizer._id" class="organizer-item">
+          <div class="organizer-info">
+            <strong>{{ organizer.companyName || organizer.name }}</strong>
+            <span>{{ organizer.email }}</span>
+          </div>
+          <button @click="verifyOrganizer(organizer._id)" class="verify-btn">Verifica</button>
+        </li>
+      </ul>
+
+      <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
+    </div>
   </div>
 </template>
 
@@ -58,8 +67,90 @@ export default {
 </script>
 
 <style scoped>
-.error {
+.admin-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 60px 20px;
+  background-color: #f5f7fa;
+  min-height: 100vh;
+}
+
+.admin-box {
+  position: relative;
+  background-color: white;
+  padding: 40px;
+  border-radius: 10px;
+  width: 100%;
+  max-width: 700px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.back-button {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  background: transparent;
+  border: none;
+  color: #2e7d32;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.back-button:hover {
+  text-decoration: underline;
+}
+
+h2 {
+  margin-bottom: 20px;
+  color: #2e7d32;
+  text-align: center;
+}
+
+.organizer-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.organizer-item {
+  background-color: #f1f1f1;
+  padding: 15px;
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.organizer-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.verify-btn {
+  background-color: #2e7d32;
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.verify-btn:hover {
+  background-color: #1b5e20;
+}
+
+.error-message {
+  margin-top: 20px;
   color: red;
-  margin-top: 10px;
+  text-align: center;
+  font-size: 14px;
 }
 </style>
