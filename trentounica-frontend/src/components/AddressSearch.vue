@@ -29,8 +29,6 @@ const emit = defineEmits(['address-selected'])
 import { ref, onMounted } from 'vue'
 import { Loader } from '@googlemaps/js-api-loader'
 
-
-
 const query = ref('')
 const suggestions = ref([])
 const showList = ref(false)
@@ -39,13 +37,13 @@ let sessionToken = null
 let autocompleteService = null
 let placesService = null
 
+
 async function initGoogleMaps() {
   const loader = new Loader({
-    apiKey: 'AIzaSyDl9r6zDbX4ZoGOBS8jtoDauKhRBAyZxf4',
+    apiKey: process.env.VUE_APP_GOOGLE_MAPS_API_KEY,
     version: 'weekly',
     libraries: ['places'],
   })
-
   await loader.load()
 
   sessionToken = new google.maps.places.AutocompleteSessionToken()
