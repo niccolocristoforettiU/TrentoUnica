@@ -1,19 +1,29 @@
 <template>
-  <div>
+  <div class="map-page-container">
     <h2>{{ title }}</h2>
+    <button class="back-button" @click="$router.back()">← Torna indietro</button>
 
-    <div v-if="showFilters" class="filters mb-4">
-      <label for="startDate">Data Inizio:</label>
-      <input type="date" v-model="startDate" @change="fetchLocations" />
-      <label for="endDate">Data Fine:</label>
-      <input type="date" v-model="endDate" @change="fetchLocations" />
-      <label for="category">Categoria:</label>
-      <select v-model="category" @change="fetchLocations">
-        <option value="">Tutte</option>
-        <option value="bar">Bar</option>
-        <option value="discoteca">Discoteca</option>
-        <option value="concerto">Concerto</option>
-      </select>
+    <div v-if="showFilters" class="filters">
+      <label>
+        Data Inizio:
+        <input type="date" v-model="startDate" @change="fetchLocations" />
+      </label>
+
+      <label>
+        Data Fine:
+        <input type="date" v-model="endDate" @change="fetchLocations" />
+      </label>
+
+      <label>
+        Categoria:
+        <select v-model="category" @change="fetchLocations">
+          <option value="">Tutte</option>
+          <option value="bar">Bar</option>
+          <option value="discoteca">Discoteca</option>
+          <option value="concerto">Concerto</option>
+        </select>
+      </label>
+
       <button @click="resetFilters">Reset filtri</button>
     </div>
 
@@ -145,7 +155,6 @@ export default {
 
         this.infoWindowOpen = this.locations.map(() => false);
         this.infoWindowKey = this.locations.map((_, i) => i);
-        console.log("MARKERS:", this.locations);
       } catch (error) {
         console.error("Errore nel recupero delle location:", error.response || error);
         alert("Errore nel recupero delle location.");
@@ -169,20 +178,86 @@ export default {
 </script>
 
 <style scoped>
+.map-page-container {
+  padding: 40px 20px;
+  background-color: #f5f7fa;
+}
+
 .filters {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-wrap: wrap;
+  gap: 15px;
+  align-items: flex-end;
+  background-color: #ffffff;
+  padding: 16px;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
   margin-bottom: 20px;
-  gap: 10px;
 }
+
 .filters label {
-  margin-right: 5px;
-}
-.info-window {
-  max-width: 250px;
-  padding: 8px;
   font-size: 14px;
-  line-height: 1.4;
+  color: #333;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
 }
+
+.filters input,
+.filters select {
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+}
+
+.filters button {
+  padding: 10px 16px;
+  background-color: #2e7d32;
+  color: white;
+  font-weight: bold;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.filters button:hover {
+  background-color: #1b5e20;
+}
+
+.info-window {
+  max-width: 260px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #333;
+}
+
+.info-window strong {
+  font-size: 14px;
+  color: #2e7d32;
+}
+
+.info-window hr {
+  margin: 6px 0;
+  border: none;
+  border-top: 1px solid #ddd;
+}
+
+.info-window small {
+  color: #777;
+}
+.back-button {
+  margin-bottom: 15px;
+  background-color: transparent;
+  border: none;
+  color: #2e7d32;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.back-button:hover {
+  text-decoration: underline;
+}
+
 </style>

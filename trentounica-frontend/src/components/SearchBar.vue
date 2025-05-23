@@ -1,51 +1,46 @@
 <template>
-  <div class="search-container">
-    <h1>TrentoUnica</h1>
-    <input 
-      type="text" 
-      placeholder="Cerca eventi..." 
-      v-model="searchQuery" 
-      @input="fetchEvents" 
-      class="search-input"
-    />
-    
-    <select v-model="selectedCategory" @change="fetchEvents" class="filter-select">
-      <option value="">Tutte le categorie</option>
-      <option value="bar">Bar</option>
-      <option value="discoteca">Discoteca</option>
-      <option value="concerto">Concerto</option>
-    </select>
-    <label class="filter-label">
-      <input 
-        type="checkbox" 
-        v-model="onlyUpcoming" 
-        @change="fetchEvents" 
-      />
-      Solo eventi futuri
-    </label>
-    <label class="filter-label">
-      <input 
-        type="checkbox" 
-        v-model="sortByDate" 
-        @change="fetchEvents" 
-      />
-      Ordina per data (decrescente)
-    </label>
+  <div class="search-page">
+    <div class="search-box">
+      <h1>🎟️ TrentoUnica – Cerca eventi</h1>
 
-    <label class="filter-label">
-      <input 
-        type="checkbox" 
-        v-model="sortByPopularity" 
-        @change="fetchEvents" 
+      <input
+        type="text"
+        placeholder="Cerca eventi..."
+        v-model="searchQuery"
+        @input="fetchEvents"
+        class="search-input"
       />
-      Ordina per popolarità
-    </label>
 
-    <ul class="event-list">
-      <li v-for="event in events" :key="event._id" class="event-item" @click="goToEvent(event._id)" style="cursor: pointer;">
-        <strong>{{ event.title }}</strong> - {{ new Date(event.date).toLocaleDateString("it-IT") }} - {{ event.category }}
-      </li>
-    </ul>
+      <select v-model="selectedCategory" @change="fetchEvents" class="filter-select">
+        <option value="">Tutte le categorie</option>
+        <option value="bar">Bar</option>
+        <option value="discoteca">Discoteca</option>
+        <option value="concerto">Concerto</option>
+      </select>
+
+      <div class="checkbox-group">
+        <label><input type="checkbox" v-model="onlyUpcoming" @change="fetchEvents" /> Solo eventi futuri</label>
+        <label><input type="checkbox" v-model="sortByDate" @change="fetchEvents" /> Ordina per data (decrescente)</label>
+        <label><input type="checkbox" v-model="sortByPopularity" @change="fetchEvents" /> Ordina per popolarità</label>
+      </div>
+
+      <ul class="event-list">
+        <li
+          v-for="event in events"
+          :key="event._id"
+          class="event-card"
+          @click="goToEvent(event._id)"
+        >
+          <div class="event-title">{{ event.title }}</div>
+          <div class="event-meta">
+            📅 {{ new Date(event.date).toLocaleDateString("it-IT") }} • 🏷️ {{ event.category }}
+          </div>
+          <div class="event-location">📍 {{ event.location?.name }}</div>
+        </li>
+      </ul>
+
+      <p v-if="events.length === 0" class="no-results">Nessun evento trovato.</p>
+    </div>
   </div>
 </template>
 
@@ -64,16 +59,14 @@ export default {
     };
   },
   created() {
-    this.fetchEvents(); // Carica tutti gli eventi all'avvio
+    this.fetchEvents();
   },
   methods: {
     async fetchEvents() {
       try {
-        const token = localStorage.getItem("token"); // Prendi il token dal localStorage
+        const token = localStorage.getItem("token");
         const response = await axios.get("http://localhost:5050/api/search", {
-          headers: {
-            Authorization: `Bearer ${token}`
-          },
+          headers: { Authorization: `Bearer ${token}` },
           params: {
             query: this.searchQuery,
             category: this.selectedCategory,
@@ -95,65 +88,90 @@ export default {
 </script>
 
 <style scoped>
-.search-container {
-  width: 80%;
-  margin: 0 auto;
-  padding: 20px;
-  background-color: #f9f9f9;
+.search-page {
+  background-color: #f5f7fa;
+  min-height: 100vh;
+  padding: 60px 20px;
+  display: flex;
+  justify-content: center;
+}
+
+.search-box {
+  background-color: white;
+  padding: 30px;
   border-radius: 12px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
-}
-
-.search-input {
   width: 100%;
-  padding: 12px;
-  margin-bottom: 20px;
-  border-radius: 8px;
-  border: 1px solid #ccc;
-  font-size: 16px;
+  max-width: 800px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
 
+h1 {
+  text-align: center;
+  color: #2e7d32;
+  margin-bottom: 25px;
+}
+
+.search-input,
 .filter-select {
   width: 100%;
   padding: 12px;
-  margin-bottom: 20px;
+  font-size: 16px;
+  margin-bottom: 15px;
   border-radius: 8px;
   border: 1px solid #ccc;
-  font-size: 16px;
 }
 
-.filter-label {
-  display: block;
-  margin-bottom: 10px;
+.checkbox-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 20px;
   font-size: 14px;
 }
 
 .event-list {
-  list-style-type: none;
+  list-style: none;
   padding: 0;
+  margin: 0;
 }
 
-.event-item {
+.event-card {
   background-color: #ffffff;
-  margin-bottom: 15px;
-  padding: 15px;
-  border-radius: 8px;
   border: 1px solid #e0e0e0;
-  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 16px;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
-.event-item strong {
+.event-card:hover {
+  transform: scale(1.01);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.event-title {
   font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 5px;
   color: #333;
 }
 
-.event-item .event-date {
-  font-size: 14px;
-  color: #777;
-}
-
-.event-item .event-category {
+.event-meta {
   font-size: 14px;
   color: #555;
+  margin-bottom: 4px;
+}
+
+.event-location {
+  font-size: 14px;
+  color: #666;
+}
+
+.no-results {
+  text-align: center;
+  color: #999;
+  font-size: 14px;
+  margin-top: 20px;
 }
 </style>
