@@ -34,7 +34,7 @@ const routes = [
     component: AppCalendar ,
   },
   { 
-    path: "/MapLocation",
+    path: "/map",
     name: 'MapLocation',
     component: MapLocation ,
   },
