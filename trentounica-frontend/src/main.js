@@ -8,7 +8,7 @@ createApp(App)
   .use(router)
   .use(VueGoogleMaps, {
     load: {
-      key: 'AIzaSyDl9r6zDbX4ZoGOBS8jtoDauKhRBAyZxf4', 
+      key: process.env.VUE_APP_GOOGLE_MAPS_API_KEY,
       libraries: 'places',   
     },
   })
