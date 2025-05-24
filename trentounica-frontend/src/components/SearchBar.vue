@@ -19,7 +19,6 @@
       </select>
 
       <div class="checkbox-group">
-        <label><input type="checkbox" v-model="onlyUpcoming" @change="fetchEvents" /> Solo eventi futuri</label>
         <label><input type="checkbox" v-model="sortByDate" @change="fetchEvents" /> Ordina per data (decrescente)</label>
         <label><input type="checkbox" v-model="sortByPopularity" @change="fetchEvents" /> Ordina per popolarità</label>
       </div>
@@ -74,7 +73,7 @@ export default {
       selectedCategory: "",
       sortByDate: false,
       sortByPopularity: false,
-      onlyUpcoming: false,
+      onlyUpcoming: true,
       events: [],
       showOnlyMine: false,
       showOnlyPreferred: false,
@@ -96,7 +95,7 @@ export default {
             category: this.selectedCategory,
             sortByDate: this.sortByDate,
             sortByPopularity: this.sortByPopularity,
-            onlyUpcoming: this.onlyUpcoming,
+            onlyUpcoming: true,
             onlyMine: this.role === "organizer" && this.showOnlyMine,
             onlyPreferred: this.role === "client" && this.showOnlyPreferredLocations,
             onlyEventPreferred: this.role === "client" && this.showOnlyPreferred
@@ -115,7 +114,6 @@ export default {
       this.selectedCategory = "";
       this.sortByDate = false;
       this.sortByPopularity = false;
-      this.onlyUpcoming = false;
       this.showOnlyMine = false;
       this.showOnlyPreferred = false;
       this.showOnlyPreferredLocations = false;

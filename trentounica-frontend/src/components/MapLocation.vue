@@ -142,16 +142,19 @@ export default {
         let endpoint = "";
         let params = {};
 
+        // Forza filtro startDate alla data odierna se non selezionato manualmente
+        const todayStr = new Date().toISOString().split('T')[0];
+
         if (this.role === "organizer") {
           endpoint = "/events/filter";
           params.onlyMine = this.showOnlyMine;
 
-          if (this.startDate) params.startDate = this.startDate;
+          params.startDate = this.startDate || todayStr;
           if (this.endDate) params.endDate = this.endDate;
           if (this.category) params.category = this.category;
         } else if (this.role === "client" || this.role === "admin") {
           endpoint = "/events/filter";
-          if (this.startDate) params.startDate = this.startDate;
+          params.startDate = this.startDate || todayStr;
           if (this.endDate) params.endDate = this.endDate;
           if (this.category) params.category = this.category;
           if (this.role === "client") {
