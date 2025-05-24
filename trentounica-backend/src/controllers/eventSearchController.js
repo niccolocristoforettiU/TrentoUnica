@@ -2,7 +2,7 @@ const Event = require('../models/eventModel');
 
 async function searchEvents(req, res) {
     try {
-        const { query, category, sortByDate, sortByPopularity, onlyUpcoming } = req.query;
+        const { query, category, sortByDate, sortByPopularity, onlyUpcoming, onlyMine } = req.query;
         const filter = {};
 
         // Mostra solo eventi futuri
@@ -24,6 +24,10 @@ async function searchEvents(req, res) {
         // Filtro per categoria
         if (category && category.trim() !== "") {
             filter.category = category;
+        }
+
+        if (onlyMine === 'true' && req.user?.role === 'organizer') {
+            filter.organizer = req.user.userId;
         }
 
         // Imposta ordinamento

@@ -24,6 +24,15 @@
         <label><input type="checkbox" v-model="sortByPopularity" @change="fetchEvents" /> Ordina per popolarità</label>
       </div>
 
+      <div class="checkbox-group" v-if="role === 'organizer'">
+        <label>
+          <input type="checkbox" v-model="showOnlyMine" @change="fetchEvents" />
+          Solo i miei eventi
+        </label>
+      </div>
+      
+      <button class="reset-button" @click="resetFilters">Reset filtri</button>
+
       <ul class="event-list">
         <li
           v-for="event in events"
@@ -55,7 +64,9 @@ export default {
       sortByDate: false,
       sortByPopularity: false,
       onlyUpcoming: false,
-      events: []
+      events: [],
+      showOnlyMine: false,
+      role: localStorage.getItem("role") || ""
     };
   },
   created() {
@@ -72,7 +83,8 @@ export default {
             category: this.selectedCategory,
             sortByDate: this.sortByDate,
             sortByPopularity: this.sortByPopularity,
-            onlyUpcoming: this.onlyUpcoming
+            onlyUpcoming: this.onlyUpcoming,
+            onlyMine: this.role === "organizer" && this.showOnlyMine
           }
         });
         this.events = response.data;
@@ -82,6 +94,15 @@ export default {
     },
     goToEvent(eventId) {
       this.$router.push(`/event/${eventId}`);
+    },
+    resetFilters() {
+      this.searchQuery = "";
+      this.selectedCategory = "";
+      this.sortByDate = false;
+      this.sortByPopularity = false;
+      this.onlyUpcoming = false;
+      this.showOnlyMine = false;
+      this.fetchEvents();
     }
   }
 };
@@ -124,9 +145,28 @@ h1 {
 .checkbox-group {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin-bottom: 20px;
+  gap: 16px;
+  margin: 0 auto 20px auto;
   font-size: 14px;
+  align-items: center;
+  text-align: left;
+  width: fit-content;
+}
+
+.reset-button {
+  margin-bottom: 20px;
+  padding: 8px 16px;
+  background-color: #2e7d32;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  align-self: center;
+}
+
+.reset-button:hover {
+  background-color: #27642a;
 }
 
 .event-list {
