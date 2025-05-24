@@ -10,7 +10,7 @@
     <p><strong>Popolarità:</strong> {{ event.popularity }}</p>
 
     <!-- Preferenza evento -->
-    <div v-if="userRole === 'client' && !hasBooking">
+    <div v-if="userRole === 'client' && !hasBooking && !isPastEvent">
       <button @click="togglePreference" class="btn" :class="hasPreferred ? 'btn-secondary' : 'btn-outline-secondary'">
         {{ hasPreferred ? 'Rimuovi preferenza' : 'Mi interessa questo evento' }}
       </button>
@@ -30,7 +30,7 @@
 
       <!-- Prenotazione gratuita -->
       <button
-        v-else-if="!hasBooking && event.price === 0"
+        v-else-if="!hasBooking && event.price === 0 && !isPastEvent"
         @click="prenotaEvento"
         class="btn btn-primary"
       >
@@ -38,7 +38,7 @@
       </button>
 
       <!-- Prenotazione con pagamento PayPal -->
-      <template v-else-if="!hasBooking && event.price > 0">
+      <template v-else-if="!hasBooking && event.price > 0 && !isPastEvent">
         <p class="text-info">
           Utilizza uno dei metodi di pagamento qui sotto per effettuare la prenotazione:
         </p>
@@ -47,8 +47,11 @@
         </div>
       </template>
 
-      <p v-else class="text-success">
+      <p v-else-if="hasBooking" class="text-success">
         Prenotazione già effettuata ✔️
+      </p>
+      <p v-else-if="isPastEvent" class="text-muted">
+        Evento concluso
       </p>
     </div>
 
@@ -84,6 +87,11 @@ export default {
       hasLocationPreferred: false
     };
   },
+  computed: {
+    isPastEvent() {
+      return this.event ? new Date(this.event.date) < new Date() : false;
+    }
+  },
   async created() {
     try {
       const id = this.$route.params.id;
@@ -91,9 +99,11 @@ export default {
       this.event = response.data;
 
       if (this.token && this.userRole === "client") {
-        await this.checkBooking();
-        await this.checkPreference();
-        await this.checkLocationPreference();
+        this.$nextTick(async () => {
+          await this.checkBooking();
+          await this.checkPreference();
+          await this.checkLocationPreference();
+        });
       }
 
       this.$nextTick(() => {
@@ -124,6 +134,10 @@ export default {
   },
   methods: {
     async prenotaEvento() {
+      if (this.isPastEvent) {
+        alert("Non è possibile prenotare un evento già passato.");
+        return;
+      }
       try {
         await axios.post(
           "/bookings",
@@ -150,7 +164,7 @@ export default {
           headers: { Authorization: `Bearer ${this.token}` }
         });
 
-        if (res.data.hasBooking) {
+        if (res.data.hasBooking && new Date(this.event.date) >= new Date()) {
           this.hasBooking = true;
           this.ticket = res.data.ticket;
         } else {
@@ -201,31 +215,40 @@ export default {
       });
     },
     renderPayPalButton() {
-      if (this.paypalRendered) return;
-      this.paypalRendered = true;
+      const waitForContainer = () => {
+        const container = document.getElementById("paypal-button-container");
+        if (!container) {
+          setTimeout(waitForContainer, 100);
+        } else {
+          if (this.paypalRendered) return;
+          this.paypalRendered = true;
 
-      window.paypal.Buttons({
-        createOrder: (data, actions) => {
-          return actions.order.create({
-            purchase_units: [
-              {
-                amount: {
-                  value: this.event.price.toFixed(2)
-                }
-              }
-            ]
-          });
-        },
-        onApprove: async (data, actions) => {
-          const details = await actions.order.capture();
-          console.log("Pagamento completato:", details);
-          await this.prenotaEvento();
-        },
-        onError: (err) => {
-          console.error("Errore PayPal:", err);
-          alert("Errore durante il pagamento.");
+          window.paypal.Buttons({
+            createOrder: (data, actions) => {
+              return actions.order.create({
+                purchase_units: [
+                  {
+                    amount: {
+                      value: this.event.price.toFixed(2)
+                    }
+                  }
+                ]
+              });
+            },
+            onApprove: async (data, actions) => {
+              const details = await actions.order.capture();
+              console.log("Pagamento completato:", details);
+              await this.prenotaEvento();
+            },
+            onError: (err) => {
+              console.error("Errore PayPal:", err);
+              alert("Errore durante il pagamento.");
+            }
+          }).render("#paypal-button-container");
         }
-      }).render("#paypal-button-container");
+      };
+
+      waitForContainer();
     },
     async checkPreference() {
       try {
@@ -242,6 +265,10 @@ export default {
       }
     },
     async togglePreference() {
+      if (this.isPastEvent) {
+        alert("Non è possibile aggiungere un evento passato ai preferiti.");
+        return;
+      }
       try {
         if (this.hasPreferred) {
           await axios.delete(`/events/${this.event._id}/preference`, {
@@ -318,4 +345,52 @@ p {
   width: 100%;
   max-width: 600px;
 }
+  .day-has-event::after {
+    content: '';
+    display: block;
+    margin: 0 auto;
+    width: 6px;
+    height: 6px;
+    background-color: #28a745;
+    border-radius: 50%;
+    margin-top: 4px;
+  }
+
+  .switch {
+    position: relative;
+    display: inline-block;
+    width: 40px;
+    height: 24px;
+  }
+  .switch input {
+    display: none;
+  }
+  .slider {
+    position: absolute;
+    cursor: pointer;
+    background-color: #ccc;
+    transition: .4s;
+    border-radius: 24px;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+  }
+  .slider:before {
+    position: absolute;
+    content: "";
+    height: 16px;
+    width: 16px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+  }
+  input:checked + .slider {
+    background-color: #28a745;
+  }
+  input:checked + .slider:before {
+    transform: translateX(16px);
+  }
 </style>
