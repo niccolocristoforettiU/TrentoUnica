@@ -127,10 +127,50 @@ const cancelBooking = async (req, res) => {
   }
 };
 
+const validateTicket = async (req, res) => {
+  const { ticketId, eventId } = req.body;
+  const organizerId = req.user.userId;
+
+  try {
+    // 1. Verifica che l’evento appartenga all'organizer
+    const event = await Event.findOne({ _id: eventId, organizer: organizerId });
+    if (!event) {
+      return res.status(403).json({ valid: false, reason: 'Evento non trovato o non autorizzato.' });
+    }
+
+    // 2. Trova la prenotazione
+    const booking = await Booking.findOne({
+      _id: ticketId,
+      event: eventId,
+      status: 'confirmed',
+      paymentStatus: 'paid'
+    });
+
+    if (!booking) {
+      return res.status(404).json({ valid: false, reason: 'Biglietto non valido o inesistente.' });
+    }
+
+    // 3. Controlla se già usato
+    if (booking.checkedIn) {
+      return res.status(200).json({ valid: false, reason: 'Biglietto già usato.' });
+    }
+
+    // 4. Segna come usato
+    booking.checkedIn = true;
+    await booking.save();
+
+    return res.status(200).json({ valid: true, message: 'Biglietto valido. Accesso consentito.' });
+  } catch (err) {
+    console.error('Errore durante la validazione del biglietto:', err);
+    return res.status(500).json({ valid: false, reason: 'Errore del server' });
+  }
+};
+
 
 module.exports = {
   getTicketForEvent,
   getClientBookings,
   createBooking,
-  cancelBooking
+  cancelBooking,
+  validateTicket
 };

@@ -22,12 +22,19 @@
             <p><strong>Prezzo:</strong> €{{ event.price }}</p>
             <p><strong>Categoria:</strong> {{ event.category }}</p>
             <p><strong>Popolarità:</strong> {{ event.popularity }}</p>
-            <p><strong>N. prenotati:</strong> {{ event.bookingCount }}</p>
+            <p v-if="event.bookingRequired"><strong>N. prenotati:</strong> {{ event.bookingCount }}</p>
           </div>
 
           <div class="button-group">
             <button class="edit-btn" @click="editEvent(event)">Modifica</button>
             <button class="delete-btn" @click="deleteEvent(event._id)">Elimina</button>
+            <router-link
+              v-if="event.bookingRequired"
+              :to="`/organizer/event/${event._id}/scan`"
+              class="scan-btn"
+            >
+              Scanner QR
+            </router-link>
           </div>
         </div>
       </div>
@@ -92,6 +99,20 @@ export default {
 </script>
 
 <style scoped>
+.scan-btn {
+  background-color: #2e7d32;
+  color: white;
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-size: 14px;
+  text-decoration: none;
+  display: inline-block;
+  line-height: 1.5;
+}
+
+.scan-btn:hover {
+  background-color: #1b5e20;
+}
 .event-title {
   text-align: center;
   margin-bottom: 15px;

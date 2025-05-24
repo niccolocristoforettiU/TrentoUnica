@@ -38,8 +38,26 @@ export default {
     return {
       isAuthenticated: !!localStorage.getItem('token'),
       userName: localStorage.getItem('name') || "",
-      role: localStorage.getItem('role') || ""
+      role: localStorage.getItem('role') || "",
+      organizerEvents: []
     };
+  },
+  mounted() {
+    if (this.role === 'organizer') {
+      const token = localStorage.getItem('token');
+      fetch('/api/events/organizer', {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      })
+        .then(res => res.json())
+        .then(data => {
+          this.organizerEvents = data;
+        })
+        .catch(err => {
+          console.error('Errore nel caricamento eventi organizer:', err);
+        });
+    }
   },
   methods: {
     logout() {
@@ -53,6 +71,7 @@ export default {
   }
 };
 </script>
+
 
 <style scoped>
 .container {
