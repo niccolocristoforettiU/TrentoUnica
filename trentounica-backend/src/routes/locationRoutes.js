@@ -21,4 +21,8 @@ router.patch('/:id/times-seats', authenticate, authorizeRole('organizer'), locat
 // Eliminare una location
 router.delete('/:id', authenticate, authorizeRole('organizer'), locationController.deleteLocation);
 
+// Client: aggiungi/rimuovi location dalle preferenze
+router.post('/:locationId/preference', authenticate, authorizeRole('client'), locationController.addLocationPreference);
+router.delete('/:locationId/preference', authenticate, authorizeRole('client'), locationController.removeLocationPreference);
+
 module.exports = router;

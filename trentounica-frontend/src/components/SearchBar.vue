@@ -34,7 +34,11 @@
       <div class="checkbox-group" v-if="role === 'client'">
         <label>
           <input type="checkbox" v-model="showOnlyPreferred" @change="fetchEvents" />
-          Solo i miei eventi preferiti
+          Solo eventi preferiti
+        </label>
+        <label>
+          <input type="checkbox" v-model="showOnlyPreferredLocations" @change="fetchEvents" />
+          Solo eventi in location preferite
         </label>
       </div>
       
@@ -74,6 +78,7 @@ export default {
       events: [],
       showOnlyMine: false,
       showOnlyPreferred: false,
+      showOnlyPreferredLocations: false,
       role: localStorage.getItem("role") || ""
     };
   },
@@ -93,7 +98,8 @@ export default {
             sortByPopularity: this.sortByPopularity,
             onlyUpcoming: this.onlyUpcoming,
             onlyMine: this.role === "organizer" && this.showOnlyMine,
-            onlyPreferred: this.role === "client" && this.showOnlyPreferred
+            onlyPreferred: this.role === "client" && this.showOnlyPreferredLocations,
+            onlyEventPreferred: this.role === "client" && this.showOnlyPreferred
           }
         });
         this.events = response.data;
@@ -112,6 +118,7 @@ export default {
       this.onlyUpcoming = false;
       this.showOnlyMine = false;
       this.showOnlyPreferred = false;
+      this.showOnlyPreferredLocations = false;
       this.fetchEvents();
     }
   }
