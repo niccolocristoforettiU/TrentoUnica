@@ -4,7 +4,7 @@ const Event = require('../models/eventModel');
 
 exports.getICalendar = async (req, res) => {
   try {
-    const { startDate, endDate, category, onlyMine, onlyPreferred } = req.query;
+    const { startDate, endDate, category, onlyMine, onlyPreferred, onlyEventPreferred } = req.query;
     const filter = {};
 
     // Filtraggio per data se specificato
@@ -15,6 +15,13 @@ exports.getICalendar = async (req, res) => {
     }
 
     if (onlyPreferred === 'true' && req.user?.role === 'client') {
+      const EventPreference = require('../models/eventPreferenceModel');
+      const prefs = await EventPreference.find({ user: req.user.userId }).select('event');
+      const preferredEventIds = prefs.map(p => p.event.toString());
+      filter._id = { $in: preferredEventIds };
+    }
+
+    if (onlyEventPreferred === 'true' && req.user?.role === 'client') {
       const EventPreference = require('../models/eventPreferenceModel');
       const prefs = await EventPreference.find({ user: req.user.userId }).select('event');
       const preferredEventIds = prefs.map(p => p.event.toString());

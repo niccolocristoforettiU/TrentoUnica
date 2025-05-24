@@ -1,7 +1,8 @@
 const Location = require('../models/locationModel');
+const LocationPreference = require('../models/locationPreferenceModel');
 
 // Ottenere tutte le location (solo per admin)
-exports.getAllLocations = async (req, res) => {
+const getAllLocations = async (req, res) => {
   try {
     if (req.user.role !== 'admin') {
       return res.status(403).json({ message: 'Accesso negato. Solo l\'admin può visualizzare tutte le location.' });
@@ -14,7 +15,7 @@ exports.getAllLocations = async (req, res) => {
 };
 
 // Ottenere le location gestite dall'organizer autenticato
-exports.getOrganizerLocations = async (req, res) => {
+const getOrganizerLocations = async (req, res) => {
   try {
     const organizerId = req.user.userId;
     const locations = await Location.find({ organizer: organizerId });
@@ -29,8 +30,8 @@ exports.getOrganizerLocations = async (req, res) => {
   }
 };
 
-// ✅ Creare una nuova location (aggiunti lat/lon)
-exports.createLocation = async (req, res) => {
+// Creare una nuova location (aggiunti lat/lon)
+const createLocation = async (req, res) => {
   try {
     const { name, address, lat, lon, openingTime, closingTime, maxSeats, category } = req.body;
 
@@ -62,8 +63,8 @@ exports.createLocation = async (req, res) => {
   }
 };
 
-// ✅ Modificare una location (aggiunto lat/lon modificabili)
-exports.updateLocation = async (req, res) => {
+// Modificare una location (aggiunto lat/lon modificabili)
+const updateLocation = async (req, res) => {
   try {
     const { name, address, lat, lon, openingTime, closingTime, maxSeats, category } = req.body;
 
@@ -95,7 +96,7 @@ exports.updateLocation = async (req, res) => {
 };
 
 // Modificare orari e posti massimi
-exports.updateLocationTimesAndSeats = async (req, res) => {
+const updateLocationTimesAndSeats = async (req, res) => {
   try {
     const { openingTime, closingTime, maxSeats } = req.body;
     if (!openingTime || !closingTime || !maxSeats) {
@@ -119,7 +120,7 @@ exports.updateLocationTimesAndSeats = async (req, res) => {
 };
 
 // Eliminare una location
-exports.deleteLocation = async (req, res) => {
+const deleteLocation = async (req, res) => {
   try {
     const location = await Location.findOneAndDelete({ _id: req.params.id, organizer: req.user.userId });
 
@@ -131,4 +132,44 @@ exports.deleteLocation = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: 'Errore nell\'eliminazione della location', error: error.message });
   }
+};
+
+// Aggiungi una location alle preferenze dell'utente
+const addLocationPreference = async (req, res) => {
+  try {
+    const { locationId } = req.params;
+    const userId = req.user.userId;
+
+    await LocationPreference.create({ user: userId, location: locationId });
+    res.status(200).json({ message: 'Location aggiunta alle preferenze.' });
+  } catch (error) {
+    if (error.code === 11000) {
+      return res.status(400).json({ message: 'Location già presente nelle preferenze.' });
+    }
+    res.status(500).json({ message: 'Errore nel salvataggio della preferenza.', error: error.message });
+  }
+};
+
+// Rimuovi una location dalle preferenze dell'utente
+const removeLocationPreference = async (req, res) => {
+  try {
+    const { locationId } = req.params;
+    const userId = req.user.userId;
+
+    await LocationPreference.findOneAndDelete({ user: userId, location: locationId });
+    res.status(200).json({ message: 'Location rimossa dalle preferenze.' });
+  } catch (error) {
+    res.status(500).json({ message: 'Errore nella rimozione della preferenza.', error: error.message });
+  }
+};
+
+module.exports = {
+  getAllLocations,
+  getOrganizerLocations,
+  createLocation,
+  updateLocation,
+  updateLocationTimesAndSeats,
+  deleteLocation,
+  addLocationPreference,
+  removeLocationPreference
 };

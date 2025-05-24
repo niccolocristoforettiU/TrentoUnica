@@ -16,6 +16,13 @@
       </button>
     </div>
 
+    <!-- Preferenza location -->
+    <div v-if="userRole === 'client' && event.location">
+      <button @click="toggleLocationPreference" class="btn" :class="hasLocationPreferred ? 'btn-success' : 'btn-outline-success'">
+        {{ hasLocationPreferred ? 'Rimuovi location dai preferiti' : 'Aggiungi location ai preferiti' }}
+      </button>
+    </div>
+
     <div v-if="event.bookingRequired && userRole === 'client'">
       <p v-if="event.bookingCount >= event.location.maxSeats" class="text-danger">
         Evento sold out 🚫
@@ -73,7 +80,8 @@ export default {
       userRole: localStorage.getItem("role"),
       token: localStorage.getItem("token"),
       paypalRendered: false,
-      hasPreferred: false
+      hasPreferred: false,
+      hasLocationPreferred: false
     };
   },
   async created() {
@@ -85,6 +93,7 @@ export default {
       if (this.token && this.userRole === "client") {
         await this.checkBooking();
         await this.checkPreference();
+        await this.checkLocationPreference();
       }
 
       this.$nextTick(() => {
@@ -249,6 +258,40 @@ export default {
         }
       } catch (error) {
         console.error("Errore nella gestione preferenza:", error);
+      }
+    },
+    async checkLocationPreference() {
+      try {
+        if (!this.token || this.userRole !== "client" || !this.event?.location?._id) return;
+
+        const res = await axios.get(`/users/profile`, {
+          headers: { Authorization: `Bearer ${this.token}` }
+        });
+
+        const preferredLocations = res.data.preferredLocations || [];
+        this.hasLocationPreferred = preferredLocations.includes(this.event.location._id);
+      } catch (err) {
+        console.error("Errore nel checkLocationPreference:", err);
+        this.hasLocationPreferred = false;
+      }
+    },
+
+    async toggleLocationPreference() {
+      try {
+        const locationId = this.event.location._id;
+        if (this.hasLocationPreferred) {
+          await axios.delete(`/locations/${locationId}/preference`, {
+            headers: { Authorization: `Bearer ${this.token}` }
+          });
+          this.hasLocationPreferred = false;
+        } else {
+          await axios.post(`/locations/${locationId}/preference`, {}, {
+            headers: { Authorization: `Bearer ${this.token}` }
+          });
+          this.hasLocationPreferred = true;
+        }
+      } catch (error) {
+        console.error("Errore nella gestione preferenza location:", error);
       }
     }
   }

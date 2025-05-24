@@ -32,6 +32,10 @@
           <span style="font-size: 14px;">Solo i miei eventi preferiti</span>
           <input type="checkbox" v-model="showOnlyPreferred" @change="fetchEvents" />
         </label>
+        <label v-if="role === 'client'" class="checkbox-inline">
+          <span style="font-size: 14px;">Solo eventi in location preferite</span>
+          <input type="checkbox" v-model="showOnlyPreferredLocations" @change="fetchEvents" />
+        </label>
         <button @click="resetFilters">Reset filtri</button>
       </div>
 
@@ -64,6 +68,7 @@ export default {
       loadingExport: false, // Variabile per il caricamento
       showOnlyMine: false,
       showOnlyPreferred: false,
+      showOnlyPreferredLocations: false,
       role: localStorage.getItem("role") || ""
     };
   },
@@ -80,11 +85,14 @@ export default {
         if (this.role === 'organizer' && this.showOnlyMine) {
           params.onlyMine = true;
         }
-        if (this.role === 'client' && this.showOnlyPreferred) {
+        if (this.role === 'client' && this.showOnlyPreferredLocations) {
           params.onlyPreferred = true;
         }
+        if (this.role === 'client' && this.showOnlyPreferred) {
+          params.onlyEventPreferred = true;
+        }
 
-        const response = await api.get("/calendar", {
+        const response = await api.get("/events/filter", {
           params
         });
         
@@ -100,6 +108,7 @@ export default {
       this.category = "";
       this.showOnlyMine = false;
       this.showOnlyPreferred = false;
+      this.showOnlyPreferredLocations = false;
       this.fetchEvents();
     },
     initCalendar() {

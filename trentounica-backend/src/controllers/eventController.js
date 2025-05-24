@@ -2,6 +2,7 @@ const Event = require('../models/eventModel');
 const Location = require('../models/locationModel');
 const Booking = require('../models/bookingModel');
 const EventPreference = require('../models/eventPreferenceModel');
+const LocationPreference = require('../models/locationPreferenceModel');
 // Elenco eventi (pubblici)
 const getAllEvents = async (req, res) => {
   try {
@@ -143,7 +144,7 @@ const deleteEvent = async (req, res) => {
 const getFilteredEvents = async (req, res) => {
   try {
     const { startDate, endDate, category } = req.query;
-    const { onlyPreferred } = req.query;
+    const { onlyPreferred, onlyEventPreferred } = req.query;
     const filter = {};
 
     if (req.user && req.user.role === 'organizer' && req.query.onlyMine === 'true') {
@@ -151,6 +152,12 @@ const getFilteredEvents = async (req, res) => {
     }
 
     if (onlyPreferred === 'true' && req.user?.role === 'client') {
+      const prefs = await LocationPreference.find({ user: req.user.userId }).select('location');
+      const preferredLocationIds = prefs.map(p => p.location.toString());
+      filter.location = { $in: preferredLocationIds };
+    }
+
+    if (onlyEventPreferred === 'true' && req.user?.role === 'client') {
       const prefs = await EventPreference.find({ user: req.user.userId }).select('event');
       const preferredEventIds = prefs.map(p => p.event.toString());
       filter._id = { $in: preferredEventIds };
