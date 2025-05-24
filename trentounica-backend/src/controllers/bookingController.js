@@ -1,5 +1,6 @@
 const Booking = require('../models/bookingModel');
 const Event = require('../models/eventModel');
+const EventPreference = require('../models/eventPreferenceModel');
 
 const getTicketForEvent = async (req, res) => {
   try {
@@ -14,12 +15,13 @@ const getTicketForEvent = async (req, res) => {
     });
 
     if (!booking) {
-      return res.status(403).json({ message: 'Biglietto non disponibile (prenotazione assente o non pagata).' });
+      return res.status(200).json({ hasBooking: false });
     }
 
     const { title, date, location } = booking.event;
 
-    res.json({
+    res.status(200).json({
+      hasBooking: true,
       ticket: {
         title,
         date,
@@ -74,6 +76,12 @@ const createBooking = async (req, res) => {
     });
 
     await booking.save();
+
+    const pref = await EventPreference.findOneAndDelete({ user: userId, event: eventId });
+    if (!pref) {
+      await Event.findByIdAndUpdate(eventId, { $inc: { popularity: 1 } });
+    }
+
     res.status(201).json(booking);
   } catch (error) {
     console.error("Errore nella creazione della prenotazione:", error);
@@ -104,6 +112,13 @@ const cancelBooking = async (req, res) => {
 
     booking.status = 'cancelled';
     await booking.save();
+
+    await EventPreference.deleteOne({ user: userId, event: booking.event }); // Assicura che venga rimossa ogni automatica
+
+    const existingPref = await EventPreference.findOne({ user: userId, event: booking.event });
+    if (!existingPref) {
+      await Event.findByIdAndUpdate(booking.event, { $inc: { popularity: -1 } });
+    }
 
     res.json({ message: 'Prenotazione annullata con successo.' });
   } catch (error) {

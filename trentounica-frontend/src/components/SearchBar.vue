@@ -30,6 +30,13 @@
           Solo i miei eventi
         </label>
       </div>
+
+      <div class="checkbox-group" v-if="role === 'client'">
+        <label>
+          <input type="checkbox" v-model="showOnlyPreferred" @change="fetchEvents" />
+          Solo i miei eventi preferiti
+        </label>
+      </div>
       
       <button class="reset-button" @click="resetFilters">Reset filtri</button>
 
@@ -66,6 +73,7 @@ export default {
       onlyUpcoming: false,
       events: [],
       showOnlyMine: false,
+      showOnlyPreferred: false,
       role: localStorage.getItem("role") || ""
     };
   },
@@ -84,7 +92,8 @@ export default {
             sortByDate: this.sortByDate,
             sortByPopularity: this.sortByPopularity,
             onlyUpcoming: this.onlyUpcoming,
-            onlyMine: this.role === "organizer" && this.showOnlyMine
+            onlyMine: this.role === "organizer" && this.showOnlyMine,
+            onlyPreferred: this.role === "client" && this.showOnlyPreferred
           }
         });
         this.events = response.data;
@@ -102,6 +111,7 @@ export default {
       this.sortByPopularity = false;
       this.onlyUpcoming = false;
       this.showOnlyMine = false;
+      this.showOnlyPreferred = false;
       this.fetchEvents();
     }
   }

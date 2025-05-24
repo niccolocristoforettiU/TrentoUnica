@@ -1,6 +1,7 @@
 const Event = require('../models/eventModel');
 const Location = require('../models/locationModel');
 const Booking = require('../models/bookingModel');
+const EventPreference = require('../models/eventPreferenceModel');
 // Elenco eventi (pubblici)
 const getAllEvents = async (req, res) => {
   try {
@@ -142,10 +143,17 @@ const deleteEvent = async (req, res) => {
 const getFilteredEvents = async (req, res) => {
   try {
     const { startDate, endDate, category } = req.query;
+    const { onlyPreferred } = req.query;
     const filter = {};
 
     if (req.user && req.user.role === 'organizer' && req.query.onlyMine === 'true') {
       filter.organizer = req.user.userId;
+    }
+
+    if (onlyPreferred === 'true' && req.user?.role === 'client') {
+      const prefs = await EventPreference.find({ user: req.user.userId }).select('event');
+      const preferredEventIds = prefs.map(p => p.event.toString());
+      filter._id = { $in: preferredEventIds };
     }
 
     if (startDate || endDate) {
@@ -197,6 +205,41 @@ const getEventsWithBookingCounts = async (req, res) => {
   res.json(data);
 };
 
+// Aggiungi una preferenza
+const expressPreference = async (req, res) => {
+  try {
+    const { id: eventId } = req.params;
+    const userId = req.user.userId;
+
+    await EventPreference.create({ user: userId, event: eventId });
+    await Event.findByIdAndUpdate(eventId, { $inc: { popularity: 1 } });
+
+    res.status(200).json({ message: 'Preferenza registrata con successo.' });
+  } catch (error) {
+    if (error.code === 11000) {
+      return res.status(400).json({ message: 'Preferenza già espressa.' });
+    }
+    res.status(500).json({ message: 'Errore nel salvataggio della preferenza.', error: error.message });
+  }
+};
+
+// Rimuovi una preferenza
+const removePreference = async (req, res) => {
+  try {
+    const { id: eventId } = req.params;
+    const userId = req.user.userId;
+
+    const pref = await EventPreference.findOneAndDelete({ user: userId, event: eventId });
+    if (pref) {
+      await Event.findByIdAndUpdate(eventId, { $inc: { popularity: -1 } });
+    }
+
+    res.status(200).json({ message: 'Preferenza rimossa con successo.' });
+  } catch (error) {
+    res.status(500).json({ message: 'Errore nella rimozione della preferenza.', error: error.message });
+  }
+};
+
 
 // Esportazione delle funzioni del controller
 module.exports = {
@@ -208,5 +251,7 @@ module.exports = {
   updateEvent,
   deleteEvent,
   getFilteredEvents,
-  getEventsWithBookingCounts
+  getEventsWithBookingCounts,
+  expressPreference,
+  removePreference
 };
