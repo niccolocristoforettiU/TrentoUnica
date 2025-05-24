@@ -1,6 +1,7 @@
 // src/controllers/userController.js
 const User = require('../models/userModel');
 const Location = require('../models/locationModel');
+const LocationPreference = require('../models/locationPreferenceModel');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { sendAccountActivationEmail } = require('../services/emailService');
@@ -188,7 +189,11 @@ exports.getProfile = async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: 'Utente non trovato' });
     }
-    res.status(200).json(user);
+
+    const prefs = await LocationPreference.find({ user: user._id }).select('location');
+    const preferredLocations = prefs.map(p => p.location.toString());
+
+    res.status(200).json({ ...user.toObject(), preferredLocations });
   } catch (error) {
     res.status(500).json({ message: 'Errore durante il recupero del profilo', error: error.message });
   }

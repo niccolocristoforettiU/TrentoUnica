@@ -34,8 +34,12 @@
           </template>
           <template v-if="role === 'client'">
             <label class="filters-checkbox-stacked">
-              Solo i miei eventi preferiti
-              <input type="checkbox" v-model="showOnlyPreferred" @change="fetchLocations" />
+              Solo eventi in location preferite
+              <input type="checkbox" v-model="showOnlyPreferredLocations" @change="fetchLocations" />
+            </label>
+            <label class="filters-checkbox-stacked">
+              Solo eventi preferiti
+              <input type="checkbox" v-model="showOnlyPreferredEvents" @change="fetchLocations" />
             </label>
           </template>
         </div>
@@ -106,6 +110,8 @@ export default {
       category: "",
       showOnlyMine: false,
       showOnlyPreferred: false,
+      showOnlyPreferredLocations: false,
+      showOnlyPreferredEvents: false,
     };
   },
   computed: {
@@ -136,20 +142,24 @@ export default {
         let endpoint = "";
         let params = {};
 
+        // Forza filtro startDate alla data odierna se non selezionato manualmente
+        const todayStr = new Date().toISOString().split('T')[0];
+
         if (this.role === "organizer") {
           endpoint = "/events/filter";
           params.onlyMine = this.showOnlyMine;
 
-          if (this.startDate) params.startDate = this.startDate;
+          params.startDate = this.startDate || todayStr;
           if (this.endDate) params.endDate = this.endDate;
           if (this.category) params.category = this.category;
         } else if (this.role === "client" || this.role === "admin") {
           endpoint = "/events/filter";
-          if (this.startDate) params.startDate = this.startDate;
+          params.startDate = this.startDate || todayStr;
           if (this.endDate) params.endDate = this.endDate;
           if (this.category) params.category = this.category;
           if (this.role === "client") {
-            params.onlyPreferred = this.showOnlyPreferred;
+            params.onlyPreferred = this.showOnlyPreferredLocations ? "true" : "false";
+            params.onlyEventPreferred = this.showOnlyPreferredEvents ? "true" : "false";
           }
         } else {
           alert("Ruolo utente non autorizzato.");
@@ -223,6 +233,8 @@ export default {
       this.category = "";
       this.showOnlyMine = false;
       this.showOnlyPreferred = false;
+      this.showOnlyPreferredLocations = false;
+      this.showOnlyPreferredEvents = false;
       this.fetchLocations();
     },
     openOnlyThis(index) {
