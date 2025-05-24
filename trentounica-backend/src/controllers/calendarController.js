@@ -4,12 +4,15 @@ const Event = require('../models/eventModel');
 
 exports.getICalendar = async (req, res) => {
   try {
-    const { startDate, endDate, category } = req.query;
+    const { startDate, endDate, category, onlyMine } = req.query;
     const filter = {};
 
     // Filtraggio per data se specificato
     if (startDate) filter.date = { $gte: new Date(startDate) };
     if (endDate) filter.date = { ...filter.date, $lte: new Date(endDate) };
+    if (onlyMine === 'true' && req.user?.role === 'organizer') {
+      filter.organizer = req.user.userId;
+    }
 
     // Recupera gli eventi con popolazione condizionale per location in base a category
     const events = await Event.find(filter)

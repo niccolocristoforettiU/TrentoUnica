@@ -13,11 +13,15 @@ router.get("/export/:id", authenticate, calendarController.getSingleEventICalend
 // Elenco eventi (filtrabili per data)
 router.get("/", authenticate, async (req, res) => {
     try {
-        const { startDate, endDate, category } = req.query;
+        const { startDate, endDate, category, onlyMine } = req.query;
         const filter = {};
 
         if (startDate) filter.date = { $gte: new Date(startDate) };
         if (endDate) filter.date = { ...filter.date, $lte: new Date(endDate) };
+
+        if (onlyMine === 'true' && req.user?.role === 'organizer') {
+            filter.organizer = req.user.userId;
+        }
 
         const events = await Event.find(filter)
             .populate({

@@ -24,6 +24,10 @@
             <option value="concerto">Concerto</option>
           </select>
         </label>
+        <label v-if="role === 'organizer'" class="checkbox-inline">
+          <span style="font-size: 14px;">Solo i miei eventi</span>
+          <input type="checkbox" v-model="showOnlyMine" @change="fetchEvents" />
+        </label>
         <button @click="resetFilters">Reset filtri</button>
       </div>
 
@@ -53,7 +57,9 @@ export default {
       startDate: "",
       endDate: "",
       category: "",
-      loadingExport: false // Variabile per il caricamento
+      loadingExport: false, // Variabile per il caricamento
+      showOnlyMine: false,
+      role: localStorage.getItem("role") || ""
     };
   },
   mounted() {
@@ -66,6 +72,9 @@ export default {
         if (this.startDate) params.startDate = this.startDate;
         if (this.endDate) params.endDate = this.endDate;
         if (this.category) params.category = this.category;
+        if (this.role === 'organizer' && this.showOnlyMine) {
+          params.onlyMine = true;
+        }
 
         const response = await api.get("/calendar", {
           params
@@ -81,6 +90,7 @@ export default {
       this.startDate = "";
       this.endDate = "";
       this.category = "";
+      this.showOnlyMine = false;
       this.fetchEvents();
     },
     initCalendar() {
