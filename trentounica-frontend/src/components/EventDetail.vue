@@ -3,11 +3,18 @@
     <h1>{{ event.title }}</h1>
     <p><strong>Luogo:</strong> {{ event.location.name }} - {{ event.location.address }}</p>
     <p><strong>Data:</strong> {{ new Date(event.date).toLocaleString() }}</p>
-    <p><strong>Durata:</strong> {{ event.duration }} ore</p>
+    <p><strong>Durata:</strong> {{ event.duration }} minuti</p>
     <p><strong>Descrizione:</strong> {{ event.description }}</p>
     <p><strong>Organizzatore:</strong> {{ event.organizer.companyName }} ({{ event.organizer.email }})</p>
     <p><strong>Prezzo:</strong> €{{ event.price }}</p>
-    <p><strong>Popolarità:</strong> {{ event.popolarity }}</p>
+    <p><strong>Popolarità:</strong> {{ event.popularity }}</p>
+
+    <!-- Preferenza evento -->
+    <div v-if="userRole === 'client' && !hasBooking">
+      <button @click="togglePreference" class="btn" :class="hasPreferred ? 'btn-secondary' : 'btn-outline-secondary'">
+        {{ hasPreferred ? 'Rimuovi preferenza' : 'Mi interessa questo evento' }}
+      </button>
+    </div>
 
     <div v-if="event.bookingRequired && userRole === 'client'">
       <p v-if="event.bookingCount >= event.location.maxSeats" class="text-danger">
@@ -24,9 +31,14 @@
       </button>
 
       <!-- Prenotazione con pagamento PayPal -->
-      <div v-else-if="!hasBooking && event.price > 0" class="paypal-wrapper">
-        <div id="paypal-button-container" ref="paypal"></div>
-      </div>
+      <template v-else-if="!hasBooking && event.price > 0">
+        <p class="text-info">
+          Utilizza uno dei metodi di pagamento qui sotto per effettuare la prenotazione:
+        </p>
+        <div class="paypal-wrapper">
+          <div id="paypal-button-container" ref="paypal"></div>
+        </div>
+      </template>
 
       <p v-else class="text-success">
         Prenotazione già effettuata ✔️
@@ -60,7 +72,8 @@ export default {
       hasBooking: false,
       userRole: localStorage.getItem("role"),
       token: localStorage.getItem("token"),
-      paypalRendered: false
+      paypalRendered: false,
+      hasPreferred: false
     };
   },
   async created() {
@@ -71,6 +84,7 @@ export default {
 
       if (this.token && this.userRole === "client") {
         await this.checkBooking();
+        await this.checkPreference();
       }
 
       this.$nextTick(() => {
@@ -121,17 +135,23 @@ export default {
     },
     async checkBooking() {
       try {
+        if (!this.token || this.userRole !== "client") return;
+
         const res = await axios.get(`/bookings/ticket/${this.event._id}`, {
           headers: { Authorization: `Bearer ${this.token}` }
         });
-        this.hasBooking = true;
-        this.ticket = res.data.ticket;
-      } catch (err) {
-        if (err.response?.status === 403) {
-          this.hasBooking = false;
+
+        if (res.data.hasBooking) {
+          this.hasBooking = true;
+          this.ticket = res.data.ticket;
         } else {
-          console.error("Errore nel checkBooking:", err);
+          this.hasBooking = false;
+          this.ticket = null;
         }
+      } catch (err) {
+        console.error("Errore nel checkBooking:", err);
+        this.hasBooking = false;
+        this.ticket = null;
       }
     },
     loadPayPal() {
@@ -188,6 +208,39 @@ export default {
           alert("Errore durante il pagamento.");
         }
       }).render("#paypal-button-container");
+    },
+    async checkPreference() {
+      try {
+        if (!this.token || this.userRole !== "client") return;
+
+        const res = await axios.get(`/preferences/${this.event._id}`, {
+          headers: { Authorization: `Bearer ${this.token}` }
+        });
+
+        this.hasPreferred = res.data.hasPreference === true;
+      } catch (err) {
+        console.error("Errore nel checkPreference:", err);
+        this.hasPreferred = false;
+      }
+    },
+    async togglePreference() {
+      try {
+        if (this.hasPreferred) {
+          await axios.delete(`/events/${this.event._id}/preference`, {
+            headers: { Authorization: `Bearer ${this.token}` }
+          });
+          this.hasPreferred = false;
+          this.event.popularity--;
+        } else {
+          await axios.post(`/events/${this.event._id}/preference`, {}, {
+            headers: { Authorization: `Bearer ${this.token}` }
+          });
+          this.hasPreferred = true;
+          this.event.popularity++;
+        }
+      } catch (error) {
+        console.error("Errore nella gestione preferenza:", error);
+      }
     }
   }
 };

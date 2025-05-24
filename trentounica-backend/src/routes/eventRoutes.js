@@ -28,6 +28,11 @@ router.put('/:id', authenticate, authorizeRole('organizer'), (req, res, next) =>
 // Eliminazione evento (solo organizer che ha creato l'evento)
 router.delete('/:id', authenticate, authorizeRole('organizer'), (req, res, next) => eventController.deleteEvent(req, res, next));
 
+
+// Esprimere e rimuovere preferenze sugli eventi (solo client)
+router.post('/:id/preference', authenticate, authorizeRole('client'), eventController.expressPreference);
+router.delete('/:id/preference', authenticate, authorizeRole('client'), eventController.removePreference);
+
 router.get('/organizer/bookings-count', authenticate, authorizeRole('organizer'), eventController.getEventsWithBookingCounts);
 
 module.exports = router;

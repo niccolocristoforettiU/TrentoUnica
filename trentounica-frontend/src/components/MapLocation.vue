@@ -32,6 +32,12 @@
               <input type="checkbox" v-model="showOnlyMine" @change="fetchLocations" />
             </label>
           </template>
+          <template v-if="role === 'client'">
+            <label class="filters-checkbox-stacked">
+              Solo i miei eventi preferiti
+              <input type="checkbox" v-model="showOnlyPreferred" @change="fetchLocations" />
+            </label>
+          </template>
         </div>
 
         <div class="filter-actions">
@@ -99,6 +105,7 @@ export default {
       endDate: "",
       category: "",
       showOnlyMine: false,
+      showOnlyPreferred: false,
     };
   },
   computed: {
@@ -141,6 +148,9 @@ export default {
           if (this.startDate) params.startDate = this.startDate;
           if (this.endDate) params.endDate = this.endDate;
           if (this.category) params.category = this.category;
+          if (this.role === "client") {
+            params.onlyPreferred = this.showOnlyPreferred;
+          }
         } else {
           alert("Ruolo utente non autorizzato.");
           return;
@@ -212,6 +222,7 @@ export default {
       this.endDate = "";
       this.category = "";
       this.showOnlyMine = false;
+      this.showOnlyPreferred = false;
       this.fetchLocations();
     },
     openOnlyThis(index) {

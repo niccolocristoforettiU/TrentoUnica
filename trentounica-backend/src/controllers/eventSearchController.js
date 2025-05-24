@@ -2,7 +2,7 @@ const Event = require('../models/eventModel');
 
 async function searchEvents(req, res) {
     try {
-        const { query, category, sortByDate, sortByPopularity, onlyUpcoming, onlyMine } = req.query;
+        const { query, category, sortByDate, sortByPopularity, onlyUpcoming, onlyMine, onlyPreferred } = req.query;
         const filter = {};
 
         // Mostra solo eventi futuri
@@ -28,6 +28,14 @@ async function searchEvents(req, res) {
 
         if (onlyMine === 'true' && req.user?.role === 'organizer') {
             filter.organizer = req.user.userId;
+        }
+
+        let preferredEventIds = null;
+        if (onlyPreferred === 'true' && req.user?.role === 'client') {
+            const EventPreference = require('../models/eventPreferenceModel');
+            const prefs = await EventPreference.find({ user: req.user.userId }).select('event');
+            preferredEventIds = prefs.map(p => p.event);
+            filter._id = { $in: preferredEventIds };
         }
 
         // Imposta ordinamento

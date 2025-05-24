@@ -13,7 +13,7 @@ router.get("/export/:id", authenticate, calendarController.getSingleEventICalend
 // Elenco eventi (filtrabili per data)
 router.get("/", authenticate, async (req, res) => {
     try {
-        const { startDate, endDate, category, onlyMine } = req.query;
+        const { startDate, endDate, category, onlyMine, onlyPreferred } = req.query;
         const filter = {};
 
         if (startDate) filter.date = { $gte: new Date(startDate) };
@@ -21,6 +21,18 @@ router.get("/", authenticate, async (req, res) => {
 
         if (onlyMine === 'true' && req.user?.role === 'organizer') {
             filter.organizer = req.user.userId;
+        }
+
+        if (onlyPreferred === 'true' && req.user?.role === 'client') {
+            const EventPreference = require('../models/eventPreferenceModel');
+            const prefs = await EventPreference.find({ user: req.user.userId }).select('event');
+            const preferredEventIds = prefs.map(p => p.event.toString());
+
+            if (preferredEventIds.length > 0) {
+                filter._id = { $in: preferredEventIds };
+            } else {
+                return res.json([]);
+            }
         }
 
         const events = await Event.find(filter)
