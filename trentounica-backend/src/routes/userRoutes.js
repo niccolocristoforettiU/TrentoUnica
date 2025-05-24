@@ -8,9 +8,6 @@ const { authenticate, authorizeRole } = require('../middlewares/authMiddleware')
 // Rotta di registrazione
 router.post('/register', userController.register);
 
-// Rotta per verificare gli organizzatori
-router.put('/verify/:userId', authenticate, authorizeRole('admin'), userController.verifyOrganizer);
-
 // Rotta per ottenere tutti gli organizer con le location (solo admin)
 router.get('/organizers/all', authenticate, authorizeRole('admin'), userController.getAllOrganizersWithLocations);
 

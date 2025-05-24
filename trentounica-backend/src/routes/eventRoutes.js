@@ -10,8 +10,8 @@ router.get('/locations', authenticate, authorizeRole('organizer'), (req, res, ne
 // Ottenere gli eventi gestiti dall'organizer autenticato
 router.get('/organizer', authenticate, authorizeRole('organizer'), (req, res, next) => eventController.getOrganizerEvents(req, res, next));
 
-// Eventi filtrati per mappa (client/admin)
-router.get('/filter', authenticate, authorizeRole(['client', 'admin']), eventController.getFilteredEvents);
+// Eventi filtrati per mappa (client/admin/organizer)
+router.get('/filter', authenticate, authorizeRole(['client', 'admin', 'organizer']), eventController.getFilteredEvents);
 
 // Elenco eventi (pubblici)
 router.get('/', (req, res, next) => eventController.getAllEvents(req, res, next));
