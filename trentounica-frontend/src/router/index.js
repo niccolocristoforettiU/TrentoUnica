@@ -11,7 +11,7 @@ import AdminDashboardPage from '@/views/AdminDashboardPage.vue';
 import OrganizerDashboard from '@/components/OrganizerDashboard.vue';
 import EventForm from '@/components/EventForm.vue';
 import MapLocation from '@/components/MapLocation.vue';
-
+import OrganizerScanner from '@/components/OrganizerScanner.vue';
 
 const routes = [
   {
@@ -72,6 +72,13 @@ const routes = [
     name: 'AdminDashboardPage',
     component: AdminDashboardPage,
     meta: { requiresAuth: true, role: 'admin' },
+  },
+  {
+    path: '/organizer/event/:eventId/scan',
+    name: 'OrganizerScanner',
+    component: OrganizerScanner,
+    props: true, // 👈 ESSENZIALE!
+    meta: { requiresAuth: true, role: 'organizer' }
   }
 ];
 
