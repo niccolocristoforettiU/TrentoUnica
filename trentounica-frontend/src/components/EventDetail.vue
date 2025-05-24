@@ -155,7 +155,16 @@ export default {
       }
     },
     loadPayPal() {
-      if (this.paypalRendered) return;
+      // ✅ Se l'evento non richiede prenotazione o è già stato prenotato, non fare nulla
+      if (
+        !this.event ||
+        !this.event.bookingRequired || 
+        this.hasBooking || 
+        this.userRole !== "client" || 
+        this.paypalRendered
+      ) {
+        return;
+      }
 
       if (document.getElementById("paypal-sdk")) {
         this.waitForPayPal().then(() => this.renderPayPalButton());
