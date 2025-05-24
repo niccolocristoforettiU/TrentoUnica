@@ -144,10 +144,22 @@ const getFilteredEvents = async (req, res) => {
     const { startDate, endDate, category } = req.query;
     const filter = {};
 
+    if (req.user && req.user.role === 'organizer' && req.query.onlyMine === 'true') {
+      filter.organizer = req.user.userId;
+    }
+
     if (startDate || endDate) {
       filter.date = {};
-      if (startDate) filter.date.$gte = new Date(startDate);
-      if (endDate) filter.date.$lte = new Date(endDate);
+      if (startDate) {
+        const start = new Date(startDate);
+        start.setHours(0, 0, 0, 0);
+        filter.date.$gte = start;
+      }
+      if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        filter.date.$lte = end;
+      }
     }
 
     const events = await Event.find(filter)

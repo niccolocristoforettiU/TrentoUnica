@@ -4,27 +4,40 @@
     <button class="back-button" @click="$router.back()">← Torna indietro</button>
 
     <div v-if="showFilters" class="filters">
-      <label>
-        Data Inizio:
-        <input type="date" v-model="startDate" @change="fetchLocations" />
-      </label>
+      <div class="filter-row">
+        <div class="filter-group">
+          <label>
+            Data Inizio:
+            <input type="date" v-model="startDate" @change="fetchLocations" />
+          </label>
 
-      <label>
-        Data Fine:
-        <input type="date" v-model="endDate" @change="fetchLocations" />
-      </label>
+          <label>
+            Data Fine:
+            <input type="date" v-model="endDate" @change="fetchLocations" />
+          </label>
 
-      <label>
-        Categoria:
-        <select v-model="category" @change="fetchLocations">
-          <option value="">Tutte</option>
-          <option value="bar">Bar</option>
-          <option value="discoteca">Discoteca</option>
-          <option value="concerto">Concerto</option>
-        </select>
-      </label>
+          <label>
+            Categoria:
+            <select v-model="category" @change="fetchLocations">
+              <option value="">Tutte</option>
+              <option value="bar">Bar</option>
+              <option value="discoteca">Discoteca</option>
+              <option value="concerto">Concerto</option>
+            </select>
+          </label>
 
-      <button @click="resetFilters">Reset filtri</button>
+          <template v-if="role === 'organizer'">
+            <label class="filters-checkbox-stacked">
+              Solo i miei eventi
+              <input type="checkbox" v-model="showOnlyMine" @change="fetchLocations" />
+            </label>
+          </template>
+        </div>
+
+        <div class="filter-actions">
+          <button @click="resetFilters">Reset filtri</button>
+        </div>
+      </div>
     </div>
 
     <GMapMap :center="defaultCenter" :zoom="13" style="width: 100%; height: 500px">
@@ -41,20 +54,29 @@
           :options="{ disableAutoPan: true }"
         >
           <div class="info-window" @click.stop>
-            <template v-if="role === 'organizer'">
-              <strong>{{ marker.name }}</strong><br />
-              {{ marker.address }}
-            </template>
-            <template v-else>
-              <div v-for="(event, idx) in marker.events" :key="idx" style="margin-bottom: 8px;">
-                <strong>{{ event.title }}</strong><br />
-                {{ event.date }}<br />
-                Prezzo: €{{ event.price }}<br />
-                {{ event.description }}
-                <hr v-if="idx < marker.events.length - 1" />
-              </div>
-              <small><em>{{ marker.name }} - {{ marker.address }}</em></small>
-            </template>
+            <div
+              v-for="(event, idx) in marker.events"
+              :key="idx"
+              style="margin-bottom: 8px; cursor: pointer;"
+              @click="() => goToEventDetail(event.id)"
+            >
+              <strong>{{ event.title }}</strong><br />
+              {{ event.date }}<br />
+              Prezzo: €{{ event.price }}<br />
+              {{ event.description }}
+              <hr v-if="idx < marker.events.length - 1" />
+            </div>
+            <small><em>{{ marker.name }} - {{ marker.address }}</em></small>
+            <div style="margin-top: 6px;">
+              <a
+                :href="`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(marker.address)}`"
+                target="_blank"
+                rel="noopener noreferrer"
+                style="color: #1a73e8; text-decoration: underline; font-size: 13px;"
+              >
+                Ottieni indicazioni
+              </a>
+            </div>
           </div>
         </GMapInfoWindow>
       </GMapMarker>
@@ -75,7 +97,8 @@ export default {
       role: localStorage.getItem("role") || "",
       startDate: "",
       endDate: "",
-      category: ""
+      category: "",
+      showOnlyMine: false,
     };
   },
   computed: {
@@ -92,7 +115,7 @@ export default {
       return this.role === "organizer" ? "Mappa Location" : "Mappa Eventi";
     },
     showFilters() {
-      return this.role === "client" || this.role === "admin";
+      return this.role === "client" || this.role === "admin" || this.role === "organizer";
     }
   },
   mounted() {
@@ -107,7 +130,12 @@ export default {
         let params = {};
 
         if (this.role === "organizer") {
-          endpoint = "/locations/organizer";
+          endpoint = "/events/filter";
+          params.onlyMine = this.showOnlyMine;
+
+          if (this.startDate) params.startDate = this.startDate;
+          if (this.endDate) params.endDate = this.endDate;
+          if (this.category) params.category = this.category;
         } else if (this.role === "client" || this.role === "admin") {
           endpoint = "/events/filter";
           if (this.startDate) params.startDate = this.startDate;
@@ -121,12 +149,30 @@ export default {
         const response = await api.get(endpoint, { params, headers });
 
         if (this.role === "organizer") {
-          this.locations = response.data.map(loc => ({
-            lat: loc.lat,
-            lon: loc.lon,
-            name: loc.name,
-            address: loc.address
-          }));
+          const grouped = {};
+          response.data
+            .filter(e => e.location)
+            .forEach(e => {
+              const locId = e.location._id;
+              if (!grouped[locId]) {
+                grouped[locId] = {
+                  lat: e.location.lat,
+                  lon: e.location.lon,
+                  name: e.location.name,
+                  address: e.location.address,
+                  events: []
+                };
+              }
+              grouped[locId].events.push({
+                id: e._id,
+                title: e.title,
+                description: e.description,
+                date: new Date(e.date).toLocaleString(),
+                price: e.price
+              });
+            });
+
+          this.locations = Object.values(grouped).filter(loc => loc.events.length > 0);
         } else {
           const grouped = {};
           response.data
@@ -143,6 +189,7 @@ export default {
                 };
               }
               grouped[locId].events.push({
+                id: e._id,
                 title: e.title,
                 description: e.description,
                 date: new Date(e.date).toLocaleString(),
@@ -150,7 +197,7 @@ export default {
               });
             });
 
-          this.locations = Object.values(grouped);
+          this.locations = Object.values(grouped).filter(loc => loc.events.length > 0);
         }
 
         this.infoWindowOpen = this.locations.map(() => false);
@@ -164,6 +211,7 @@ export default {
       this.startDate = "";
       this.endDate = "";
       this.category = "";
+      this.showOnlyMine = false;
       this.fetchLocations();
     },
     openOnlyThis(index) {
@@ -172,6 +220,9 @@ export default {
     },
     handleClose(index) {
       this.infoWindowOpen[index] = false;
+    },
+    goToEventDetail(eventId) {
+      this.$router.push({ name: 'EventDetail', params: { id: eventId } });
     }
   }
 };
@@ -195,12 +246,42 @@ export default {
   margin-bottom: 20px;
 }
 
+.filter-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 16px;
+  width: 100%;
+}
+
+.filter-group {
+  display: flex;
+  align-items: flex-end;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.checkbox-inline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.filter-actions {
+  display: flex;
+  align-items: center;
+}
+
 .filters label {
   font-size: 14px;
   color: #333;
   display: flex;
   flex-direction: column;
+  justify-content: flex-end;
   gap: 5px;
+  height: 58px;
 }
 
 .filters input,
@@ -247,6 +328,14 @@ export default {
 .info-window small {
   color: #777;
 }
+.filters-checkbox-stacked {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  font-size: 14px;
+  color: #333;
+  height: 58px;
+}
 .back-button {
   margin-bottom: 15px;
   background-color: transparent;
@@ -259,5 +348,4 @@ export default {
 .back-button:hover {
   text-decoration: underline;
 }
-
 </style>

@@ -229,7 +229,7 @@ exports.updateProfile = async (req, res) => {
 exports.getAllOrganizersWithLocations = async (req, res) => {
   try {
     const organizers = await User.find({ role: 'organizer' })
-      .populate('locations', 'name address category') // Seleziona solo info chiave
+      .populate('locations', 'name address category maxSeats openingTime closingTime') // Seleziona solo info chiave
       .select('-password');
     res.status(200).json(organizers);
   } catch (error) {

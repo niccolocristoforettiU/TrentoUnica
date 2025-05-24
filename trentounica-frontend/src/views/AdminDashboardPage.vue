@@ -25,7 +25,9 @@
               <td>
                 <ul>
                   <li v-for="loc in organizer.locations" :key="loc._id">
-                    {{ loc.name }} - {{ loc.address }} ({{ loc.category }})
+                    {{ loc.name }} - {{ loc.address }} ({{ loc.category }})<br />
+                    Capienza: {{ loc.maxSeats }}<br />
+                    Orari: {{ loc.openingTime }} - {{ loc.closingTime }}
                   </li>
                 </ul>
               </td>
