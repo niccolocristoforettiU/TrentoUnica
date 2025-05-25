@@ -30,8 +30,9 @@
   </div>
 </template>
 
-
 <script>
+import axios from "@/api/axios";
+
 export default {
   name: "HomePage",
   data() {
@@ -45,18 +46,17 @@ export default {
   mounted() {
     if (this.role === 'organizer') {
       const token = localStorage.getItem('token');
-      fetch('/api/events/organizer', {
+      axios.get('/events/organizer', {
         headers: {
           Authorization: `Bearer ${token}`
         }
       })
-        .then(res => res.json())
-        .then(data => {
-          this.organizerEvents = data;
-        })
-        .catch(err => {
-          console.error('Errore nel caricamento eventi organizer:', err);
-        });
+      .then(response => {
+        this.organizerEvents = response.data;
+      })
+      .catch(err => {
+        console.error('Errore nel caricamento eventi organizer:', err);
+      });
     }
   },
   methods: {

@@ -25,7 +25,14 @@
             <p><strong>Location:</strong> {{ event.location.name }}</p>
             <p><strong>Descrizione:</strong> {{ event.description }}</p>
             <p><strong>Prezzo:</strong> €{{ event.price }}</p>
+            <p v-if="event.price > 0">
+              <strong>Incasso evento:</strong>
+              {{
+                eventRevenues.find(e => e.eventId === event._id)?.revenue || 0
+              }} €
+            </p>
             <p><strong>Categoria:</strong> {{ event.category }}</p>
+            <p v-if="event.ageRestricted"><strong>Età minima:</strong> {{ event.minAge }} anni</p>
             <p><strong>Popolarità:</strong> {{ event.popularity }}</p>
             <p v-if="event.bookingRequired"><strong>N. prenotati:</strong> {{ event.bookingCount }}</p>
           </div>
@@ -60,10 +67,12 @@ export default {
       events: [],
       loading: false,
       showUpcomingOnly: false,
+      eventRevenues: [],
     };
   },
   created() {
     this.fetchEvents();
+    this.fetchEventRevenues();
   },
   computed: {
     filteredEvents() {
@@ -87,6 +96,19 @@ export default {
         console.error("Errore nel caricamento degli eventi:", error);
       } finally {
         this.loading = false;
+      }
+    },
+    async fetchEventRevenues() {
+      try {
+        const token = localStorage.getItem("token");
+        const response = await axios.get("/events/organizer/event-revenues", {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+        this.eventRevenues = response.data;
+      } catch (error) {
+        console.error("Errore nel caricamento degli incassi degli eventi:", error);
       }
     },
     async editEvent(event) {

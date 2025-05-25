@@ -20,7 +20,7 @@ exports.register = async (req, res) => {
     }
 
     if (role === 'client' && (!address || !birthDate || lat == null || lon == null)) {
-      return res.status(400).json({ message: 'Indirizzo, età e coordinate sono obbligatorie per i clienti.' });
+      return res.status(400).json({ message: 'Indirizzo, data di nascita e coordinate sono obbligatorie per i clienti.' });
     }
 
     if (role === 'organizer' && (!partitaIva || !locations || !Array.isArray(locations))) {

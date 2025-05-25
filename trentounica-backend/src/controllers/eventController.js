@@ -31,7 +31,7 @@ const getOrganizerEvents = async (req, res) => {
 // Creazione evento con verifica permessi location e categoria
 const createEvent = async (req, res) => {
   try {
-    const { title, description, date, locationId, price, category, duration, bookingRequired} = req.body;
+    const { title, description, date, locationId, price, category, duration, bookingRequired, ageRestricted, minAge } = req.body;
     const userId = req.user.userId;
     const loc = await Location.findOne({ _id: locationId, organizer: userId });
     if (!loc) {
@@ -47,7 +47,9 @@ const createEvent = async (req, res) => {
       category,
       price,
       organizer: userId,
-      bookingRequired
+      bookingRequired,
+      ageRestricted,
+      minAge: ageRestricted ? minAge : undefined
     });
 
     await event.save();
@@ -95,7 +97,7 @@ const getEventById = async (req, res) => {
 // Modifica evento
 const updateEvent = async (req, res) => {
   try {
-    const { title, description, date, locationId, price, duration, bookingRequired } = req.body;
+    const { title, description, date, locationId, price, duration, bookingRequired, ageRestricted, minAge } = req.body;
     const event = await Event.findById(req.params.id);
     if (!event) return res.status(404).json({ message: 'Evento non trovato' });
 
@@ -111,6 +113,8 @@ const updateEvent = async (req, res) => {
     event.location = loc._id;
     event.price = price;
     event.bookingRequired = bookingRequired;
+    event.ageRestricted = ageRestricted;
+    event.minAge = ageRestricted ? minAge : undefined;
 
     await event.save();
     res.status(200).json(event);
@@ -212,6 +216,27 @@ const getEventsWithBookingCounts = async (req, res) => {
   res.json(data);
 };
 
+const getOrganizerRevenue = async (req, res) => {
+  try {
+    const organizerId = req.user.userId;
+
+    const events = await Event.find({ organizer: organizerId }).select('_id price');
+    const eventIds = events.map(e => e._id);
+
+    const bookings = await Booking.find({
+      event: { $in: eventIds },
+      status: 'confirmed',
+      paymentStatus: 'paid'
+    }).populate('event', 'price');
+
+    const totalRevenue = bookings.reduce((sum, b) => sum + (b.event.price || 0), 0);
+
+    res.status(200).json({ revenue: totalRevenue });
+  } catch (error) {
+    res.status(500).json({ message: 'Errore nel calcolo degli incassi.', error: error.message });
+  }
+};
+
 // Aggiungi una preferenza
 const expressPreference = async (req, res) => {
   try {
@@ -248,6 +273,38 @@ const removePreference = async (req, res) => {
 };
 
 
+// Calcola gli incassi per evento per l'organizer autenticato
+const getEventRevenues = async (req, res) => {
+  try {
+    const organizerId = req.user.userId;
+
+    const events = await Event.find({ organizer: organizerId, price: { $gt: 0 } }).select('_id title price');
+    const eventIds = events.map(e => e._id);
+
+    const bookings = await Booking.find({
+      event: { $in: eventIds },
+      status: 'confirmed',
+      paymentStatus: 'paid'
+    });
+
+    const revenueByEvent = events.map(event => {
+      const revenue = bookings
+        .filter(b => b.event.toString() === event._id.toString())
+        .reduce((sum, b) => sum + (event.price || 0), 0);
+
+      return {
+        eventId: event._id,
+        title: event.title,
+        revenue
+      };
+    });
+
+    res.status(200).json(revenueByEvent);
+  } catch (error) {
+    res.status(500).json({ message: 'Errore nel calcolo degli incassi per evento.', error: error.message });
+  }
+};
+
 // Esportazione delle funzioni del controller
 module.exports = {
   getAllEvents,
@@ -260,5 +317,7 @@ module.exports = {
   getFilteredEvents,
   getEventsWithBookingCounts,
   expressPreference,
-  removePreference
+  removePreference,
+  getOrganizerRevenue,
+  getEventRevenues
 };
