@@ -86,6 +86,13 @@ const routes = [
     name: 'TratteDashboard',
     component: TratteDashboard,
     meta: { requiresAuth: true, roles: ['trasporti', 'admin'] },
+  },
+  {
+    path: '/organizer/event/:eventId/edit',
+    name: 'EditEvent',
+    component: EventForm,
+    props: true,
+    meta: { requiresAuth: true, role: 'organizer' }
   }
 ];
 

@@ -3,7 +3,13 @@ const webpack = require('webpack');
 
 module.exports = {
   devServer: {
-    port: 8080, // Forza il server a utilizzare la porta 8080
+    port: 8080,
+    proxy: {
+      '^/api': {
+        target: 'http://localhost:5050', // Dove gira il backend
+        changeOrigin: true,
+      },
+    },
   },
   configureWebpack: {
     plugins: [
