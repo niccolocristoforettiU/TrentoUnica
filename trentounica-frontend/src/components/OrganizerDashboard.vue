@@ -9,10 +9,15 @@
 
       <h3>I Tuoi Eventi</h3>
 
+      <label>
+        <input type="checkbox" v-model="showUpcomingOnly" />
+        Mostra solo eventi futuri
+      </label>
+
       <div v-if="loading" class="loading-text">Caricamento eventi...</div>
 
-      <div v-else-if="events.length > 0" class="event-list">
-        <div v-for="event in events" :key="event._id" class="event-card">
+      <div v-else-if="filteredEvents.length > 0" class="event-list">
+        <div v-for="event in filteredEvents" :key="event._id" class="event-card">
           <h3 class="event-title">{{ event.title }}</h3>
 
           <div class="event-details">
@@ -54,10 +59,18 @@ export default {
     return {
       events: [],
       loading: false,
+      showUpcomingOnly: false,
     };
   },
   created() {
     this.fetchEvents();
+  },
+  computed: {
+    filteredEvents() {
+      if (!this.showUpcomingOnly) return this.events;
+      const now = new Date();
+      return this.events.filter(event => new Date(event.date) > now);
+    }
   },
   methods: {
     async fetchEvents() {
@@ -225,4 +238,3 @@ h3 {
 }
 
 </style>
-

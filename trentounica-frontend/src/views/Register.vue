@@ -23,7 +23,10 @@
         <div v-if="role === 'client'" class="client-section">
           <input v-model="name" type="text" placeholder="Nome completo" required />
           <AddressSearch @address-selected="updateClientAddress" required />
-          <input v-model="age" type="number" placeholder="Età" required />
+          <label>
+            Data di nascita:
+            <input v-model="birthDate" type="date" required />
+          </label>
         </div>
 
         <div v-if="role === 'organizer'" class="organizer-section">
@@ -72,7 +75,7 @@ export default {
       role: "client",
       companyName: "",
       address: "",
-      age: "",
+      birthDate: "",
       partitaIva: "",
       clientLat: null,
       clientLon: null,
@@ -126,7 +129,6 @@ export default {
         payload.address = this.address;
         payload.lat = this.clientLat;
         payload.lon = this.clientLon;
-        payload.age = this.age;
 
       } else if (this.role === "organizer") {
         payload.companyName = this.companyName;
@@ -204,7 +206,16 @@ form {
   gap: 15px;
 }
 
-input, select {
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="date"],
+input[type="time"],
+select,
+label > input {
+  width: 100%;
+  box-sizing: border-box;
   padding: 10px;
   font-size: 16px;
   border-radius: 6px;
@@ -261,5 +272,19 @@ input:focus, select:focus {
   color: red;
   font-size: 14px;
   text-align: center;
+}
+address-search {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px;
+  font-size: 16px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+
+address-search:focus {
+  border-color: #2e7d32;
+  outline: none;
 }
 </style>
