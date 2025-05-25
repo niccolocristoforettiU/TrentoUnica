@@ -31,7 +31,7 @@ const userSchema = new mongoose.Schema({
   },
   role: { 
     type: String, 
-    enum: ['client', 'organizer', 'admin'], 
+    enum: ['client', 'organizer', 'admin', 'trasporti'], 
     default: 'client' 
   },
   address: {
@@ -85,7 +85,7 @@ const userSchema = new mongoose.Schema({
   verified: { 
     type: Boolean, 
     default: function() {
-      return this.role === 'client' || this.role === 'admin';
+      return this.role === 'client' || this.role === 'admin' || this.role === 'trasporti' ;
     }
   }
 });
