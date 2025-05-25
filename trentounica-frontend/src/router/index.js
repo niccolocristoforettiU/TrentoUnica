@@ -9,6 +9,7 @@ import SearchBar from '@/components/SearchBar.vue';
 import ClientDashboard from '@/components/ClientDashboard.vue';
 import AdminDashboard from '@/components/AdminDashboard.vue';
 import OrganizerDashboard from '@/components/OrganizerDashboard.vue';
+import TratteDashboard from '@/components/TratteDashboard.vue';
 import EventForm from '@/components/EventForm.vue';
 import MapLocation from '@/components/MapLocation.vue';
 import OrganizerScanner from '@/components/OrganizerScanner.vue';
@@ -77,8 +78,14 @@ const routes = [
     path: '/organizer/event/:eventId/scan',
     name: 'OrganizerScanner',
     component: OrganizerScanner,
-    props: true, // 👈 ESSENZIALE!
+    props: true,
     meta: { requiresAuth: true, role: 'organizer' }
+  },
+    {
+    path: '/trasporti/dashboard',
+    name: 'TratteDashboard',
+    component: TratteDashboard,
+    meta: { requiresAuth: true, roles: ['trasporti', 'admin'] },
   }
 ];
 
@@ -97,6 +104,10 @@ router.beforeEach((to, from, next) => {
   }
 
   if (to.meta.role && userRole !== to.meta.role) {
+    return next('/');
+  }
+
+  if (to.meta.roles && !to.meta.roles.includes(userRole)) {
     return next('/');
   }
 
