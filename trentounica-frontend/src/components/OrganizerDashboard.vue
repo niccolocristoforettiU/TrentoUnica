@@ -38,7 +38,9 @@
           </div>
 
           <div class="button-group">
-            <button class="edit-btn" @click="editEvent(event)">Modifica</button>
+            <router-link :to="`/organizer/event/${event._id}/edit`">
+              <button class="edit-btn">Modifica</button>
+            </router-link>
             <button class="delete-btn" @click="deleteEvent(event._id)">Elimina</button>
             <router-link
               v-if="event.bookingRequired"

@@ -1,12 +1,12 @@
 <template>
   <div class="event-form">
     <button class="back-button" @click="$router.back()">← Torna indietro</button>
-    <h2 class="form-title">Crea un Nuovo Evento</h2>
+    <h2 class="form-title">{{ isEditMode ? "Modifica Evento" : "Crea un Nuovo Evento" }}</h2>
 
     <div v-if="successMessage" class="success-message">{{ successMessage }}</div>
     <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
 
-    <form @submit.prevent="createEvent" class="event-fields">
+    <form @submit.prevent="handleSubmit" class="event-fields">
       <div>
         <label for="title">Titolo</label>
         <input type="text" v-model="event.title" required minlength="5" placeholder="Inserisci il titolo dell'evento" />
@@ -61,7 +61,9 @@
         <input type="number" v-model="event.minAge" min="0" placeholder="Età minima per partecipare" />
       </div>
 
-      <button type="submit">Crea Evento</button>
+      <button type="submit">
+        {{ isEditMode ? "Salva modifiche" : "Crea Evento" }}
+      </button>
     </form>
   </div>
 </template>
@@ -88,38 +90,54 @@ export default {
       loading: false,
       successMessage: '',
       errorMessage: '',
-      minDate: new Date().toISOString().slice(0, 16)
+      minDate: new Date().toISOString().slice(0, 16),
     };
+  },
+  computed: {
+    isEditMode() {
+      return !!this.$route.params.eventId;
+    }
   },
   created() {
     this.fetchLocations();
+    if (this.isEditMode) {
+      this.loadEvent();
+    }
   },
   methods: {
     async fetchLocations() {
-      this.loading = true;
       try {
         const token = localStorage.getItem('token');
-        if (!token) {
-          this.errorMessage = "Autenticazione non valida. Effettua il login.";
-          return;
-        }
-
         const response = await axios.get('/locations/organizer', {
           headers: { Authorization: `Bearer ${token}` }
         });
-
         this.locations = response.data;
-
-        if (this.locations.length === 0) {
-          this.errorMessage = "Non ci sono location associate a questo organizer.";
-        } else {
-          this.errorMessage = "";
-        }
       } catch (error) {
-        console.error("Errore nel caricamento delle location:", error);
-        this.errorMessage = error.response?.data?.message || "Errore nel caricamento delle location.";
-      } finally {
-        this.loading = false;
+        this.errorMessage = "Errore nel caricamento delle location.";
+      }
+    },
+    async loadEvent() {
+      try {
+        const token = localStorage.getItem('token');
+        const eventId = this.$route.params.eventId;
+        const response = await axios.get(`/events/${eventId}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const data = response.data;
+        this.event = {
+          title: data.title,
+          description: data.description,
+          date: new Date(data.date).toISOString().slice(0, 16),
+          locationId: data.location._id,
+          category: data.category,
+          price: data.price,
+          duration: data.duration,
+          bookingRequired: data.bookingRequired,
+          ageRestricted: data.ageRestricted,
+          minAge: data.minAge || null
+        };
+      } catch (error) {
+        this.errorMessage = "Errore nel caricamento dell'evento.";
       }
     },
     onLocationChange() {
@@ -128,45 +146,25 @@ export default {
         this.event.category = selectedLocation.category;
       }
     },
-    async createEvent() {
+    async handleSubmit() {
+      const token = localStorage.getItem('token');
+      const headers = { Authorization: `Bearer ${token}` };
+
       try {
-        const token = localStorage.getItem('token');
-        if (!token) {
-          this.errorMessage = "Autenticazione non valida. Effettua il login.";
-          return;
-        }
-
-        if (!this.event.locationId) {
-          this.errorMessage = "Seleziona una location valida.";
-          return;
-        }
-
-        await axios.post('/events', this.event, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-
-        this.successMessage = "Evento creato con successo!";
-        this.errorMessage = '';
-        this.resetForm();
-      } catch (error) {
-        console.error("Errore durante la creazione dell'evento:", error);
-        this.successMessage = '';
-
-        if (error.response) {
-          if (error.response.status === 400) {
-            this.errorMessage = "Richiesta non valida. Verifica i campi e riprova.";
-          } else if (error.response.status === 401) {
-            this.errorMessage = "Sessione scaduta. Effettua di nuovo il login.";
-            localStorage.removeItem('token');
-            this.$router.push('/login');
-          } else if (error.response.status === 403) {
-            this.errorMessage = "Non hai i permessi per creare questo evento.";
-          } else {
-            this.errorMessage = error.response.data?.message || "Errore nella creazione dell'evento.";
-          }
+        if (this.isEditMode) {
+          const eventId = this.$route.params.eventId;
+          await axios.put(`/events/${eventId}`, this.event, { headers });
+          this.successMessage = "Evento aggiornato con successo!";
         } else {
-          this.errorMessage = "Errore nella creazione dell'evento.";
+          await axios.post('/events', this.event, { headers });
+          this.successMessage = "Evento creato con successo!";
+          this.resetForm();
         }
+
+        this.errorMessage = '';
+      } catch (error) {
+        this.successMessage = '';
+        this.errorMessage = error.response?.data?.message || "Errore nella creazione/modifica dell'evento.";
       }
     },
     resetForm() {
