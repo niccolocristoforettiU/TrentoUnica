@@ -11,7 +11,7 @@ exports.register = async (req, res) => {
   try {
     const {
       name, email, password, ripetiPassword, role,
-      companyName, address, age, partitaIva, locations,
+      companyName, address, birthDate, partitaIva, locations,
       lat, lon // aggiunti per il client
     } = req.body;
 
@@ -19,8 +19,8 @@ exports.register = async (req, res) => {
       return res.status(400).json({ message: 'Le password non coincidono' });
     }
 
-    if (role === 'client' && (!address || !age || lat == null || lon == null)) {
-      return res.status(400).json({ message: 'Indirizzo, età e coordinate sono obbligatorie per i clienti.' });
+    if (role === 'client' && (!address || !birthDate || lat == null || lon == null)) {
+      return res.status(400).json({ message: 'Indirizzo, data di nascita e coordinate sono obbligatorie per i clienti.' });
     }
 
     if (role === 'organizer' && (!partitaIva || !locations || !Array.isArray(locations))) {
@@ -39,7 +39,7 @@ exports.register = async (req, res) => {
       password,
       role,
       address: role === 'client' ? address : undefined,
-      age: role === 'client' ? age : undefined,
+      birthDate: role === 'client' ? birthDate : undefined,
       lat: role === 'client' ? lat : undefined,
       lon: role === 'client' ? lon : undefined,
       companyName: role === 'organizer' ? companyName : undefined,

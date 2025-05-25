@@ -53,8 +53,8 @@ const userSchema = new mongoose.Schema({
       return this.role === 'client';
     }
   },
-  age: {
-    type: Number,
+  birthDate: {
+    type: Date,
     required: function() {
       return this.role === 'client';
     }

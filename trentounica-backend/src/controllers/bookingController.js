@@ -53,6 +53,18 @@ const createBooking = async (req, res) => {
   const userId = req.user.userId;
 
   try {
+    // Controllo età minima evento
+    const event = await Event.findById(eventId);
+    const user = await require('../models/userModel').findById(userId);
+
+    if (event.ageRestricted && event.minAge) {
+      const birthDate = new Date(user.birthDate);
+      const age = Math.floor((Date.now() - birthDate.getTime()) / (1000 * 60 * 60 * 24 * 365.25));
+      if (age < event.minAge) {
+        return res.status(403).json({ message: `L'età minima per questo evento è ${event.minAge} anni.` });
+      }
+    }
+
     // Evita prenotazioni duplicate
     const existing = await Booking.findOne({ user: userId, event: eventId });
     if (existing) {

@@ -9,10 +9,15 @@
 
       <h3>I Tuoi Eventi</h3>
 
+      <label>
+        <input type="checkbox" v-model="showUpcomingOnly" />
+        Mostra solo eventi futuri
+      </label>
+
       <div v-if="loading" class="loading-text">Caricamento eventi...</div>
 
-      <div v-else-if="events.length > 0" class="event-list">
-        <div v-for="event in events" :key="event._id" class="event-card">
+      <div v-else-if="filteredEvents.length > 0" class="event-list">
+        <div v-for="event in filteredEvents" :key="event._id" class="event-card">
           <h3 class="event-title">{{ event.title }}</h3>
 
           <div class="event-details">
@@ -20,7 +25,14 @@
             <p><strong>Location:</strong> {{ event.location.name }}</p>
             <p><strong>Descrizione:</strong> {{ event.description }}</p>
             <p><strong>Prezzo:</strong> €{{ event.price }}</p>
+            <p v-if="event.price > 0">
+              <strong>Incasso evento:</strong>
+              {{
+                eventRevenues.find(e => e.eventId === event._id)?.revenue || 0
+              }} €
+            </p>
             <p><strong>Categoria:</strong> {{ event.category }}</p>
+            <p v-if="event.ageRestricted"><strong>Età minima:</strong> {{ event.minAge }} anni</p>
             <p><strong>Popolarità:</strong> {{ event.popularity }}</p>
             <p v-if="event.bookingRequired"><strong>N. prenotati:</strong> {{ event.bookingCount }}</p>
           </div>
@@ -54,10 +66,20 @@ export default {
     return {
       events: [],
       loading: false,
+      showUpcomingOnly: false,
+      eventRevenues: [],
     };
   },
   created() {
     this.fetchEvents();
+    this.fetchEventRevenues();
+  },
+  computed: {
+    filteredEvents() {
+      if (!this.showUpcomingOnly) return this.events;
+      const now = new Date();
+      return this.events.filter(event => new Date(event.date) > now);
+    }
   },
   methods: {
     async fetchEvents() {
@@ -74,6 +96,19 @@ export default {
         console.error("Errore nel caricamento degli eventi:", error);
       } finally {
         this.loading = false;
+      }
+    },
+    async fetchEventRevenues() {
+      try {
+        const token = localStorage.getItem("token");
+        const response = await axios.get("/events/organizer/event-revenues", {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+        this.eventRevenues = response.data;
+      } catch (error) {
+        console.error("Errore nel caricamento degli incassi degli eventi:", error);
       }
     },
     async editEvent(event) {
@@ -225,4 +260,3 @@ h3 {
 }
 
 </style>
-

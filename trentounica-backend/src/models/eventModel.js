@@ -20,6 +20,8 @@ const eventSchema = new mongoose.Schema({
   },
   popularity: { type: Number, default: 0 },
   bookingRequired: { type: Boolean, default: false },
+  ageRestricted: { type: Boolean, default: false },
+  minAge: { type: Number }
 }, {
   timestamps: true
 });
