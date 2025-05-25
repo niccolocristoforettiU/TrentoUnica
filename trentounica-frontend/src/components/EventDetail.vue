@@ -7,7 +7,9 @@
     <p><strong>Descrizione:</strong> {{ event.description }}</p>
     <p><strong>Organizzatore:</strong> {{ event.organizer.companyName }} ({{ event.organizer.email }})</p>
     <p><strong>Prezzo:</strong> €{{ event.price }}</p>
+    <p v-if="event.ageRestricted"><strong>Età minima:</strong> {{ event.minAge }} anni</p>
     <p><strong>Popolarità:</strong> {{ event.popularity }}</p>
+    <p v-if="event.ageRestricted"><strong>Età minima:</strong> {{ event.minAge }} anni</p>
 
     <!-- Preferenza evento -->
     <div v-if="userRole === 'client' && !hasBooking && !isPastEvent">
@@ -24,7 +26,10 @@
     </div>
 
     <div v-if="event.bookingRequired && userRole === 'client'">
-      <p v-if="event.bookingCount >= event.location.maxSeats" class="text-danger">
+      <p v-if="event.ageRestricted && !isPastEvent && !hasBooking && userAge !== null && userAge < event.minAge" class="text-danger">
+        Non puoi prenotare questo evento: età minima richiesta {{ event.minAge }} anni.
+      </p>
+      <p v-else-if="event.bookingCount >= event.location.maxSeats" class="text-danger">
         Evento sold out 🚫
       </p>
 
@@ -84,7 +89,8 @@ export default {
       token: localStorage.getItem("token"),
       paypalRendered: false,
       hasPreferred: false,
-      hasLocationPreferred: false
+      hasLocationPreferred: false,
+      userAge: null
     };
   },
   computed: {
@@ -99,6 +105,7 @@ export default {
       this.event = response.data;
 
       if (this.token && this.userRole === "client") {
+        this.getUserAge();
         this.$nextTick(async () => {
           await this.checkBooking();
           await this.checkPreference();
@@ -319,6 +326,19 @@ export default {
         }
       } catch (error) {
         console.error("Errore nella gestione preferenza location:", error);
+      }
+    },
+    async getUserAge() {
+      try {
+        const res = await axios.get('/users/profile', {
+          headers: { Authorization: `Bearer ${this.token}` }
+        });
+        const birthDate = new Date(res.data.birthDate);
+        const age = Math.floor((Date.now() - birthDate.getTime()) / (1000 * 60 * 60 * 24 * 365.25));
+        this.userAge = age;
+      } catch (err) {
+        console.error("Errore nel recupero età utente:", err);
+        this.userAge = null;
       }
     }
   }

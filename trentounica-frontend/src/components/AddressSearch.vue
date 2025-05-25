@@ -6,7 +6,7 @@
       @input="onInput"
       @blur="handleBlur"
       @focus="onInput"
-      placeholder="Indirizzo location"
+      placeholder="Indirizzo"
       class="input"
       autocomplete="off"
     />
@@ -121,9 +121,7 @@ function handleBlur() {
 
 <style scoped>
 .address-wrapper {
-  max-width: 300px;
   width: 100%;
-  margin: 0 auto;
   position: relative;
   display: block;
 }
