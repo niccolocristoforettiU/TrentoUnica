@@ -1,22 +1,56 @@
 <template>
-  <div class="admin-container">
-    <div class="admin-box">
+  <div class="page-container">
+    <div class="dashboard-box">
       <!-- Bottone indietro -->
       <button class="back-button" @click="$router.back()">← Torna indietro</button>
 
-      <h2>Dashboard Amministratore</h2>
+      <h2>Gestione Organizer</h2>
 
-      <ul class="organizer-list">
-        <li v-for="organizer in organizers" :key="organizer._id" class="organizer-item">
-          <div class="organizer-info">
-            <strong>{{ organizer.companyName || organizer.name }}</strong>
-            <span>{{ organizer.email }}</span>
-          </div>
-          <button @click="verifyOrganizer(organizer._id)" class="verify-btn">Verifica</button>
-        </li>
-      </ul>
-
-      <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Nome Azienda</th>
+              <th>Email</th>
+              <th>Verificato</th>
+              <th>Location</th>
+              <th>Azioni</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="organizer in organizers" :key="organizer._id">
+              <td>{{ organizer.companyName }}</td>
+              <td>{{ organizer.email }}</td>
+              <td>{{ organizer.verified ? "Sì" : "No" }}</td>
+              <td>
+                <ul>
+                  <li v-for="loc in organizer.locations" :key="loc._id">
+                    {{ loc.name }} - {{ loc.address }} ({{ loc.category }})<br />
+                    Capienza: {{ loc.maxSeats }}<br />
+                    Orari: {{ loc.openingTime }} - {{ loc.closingTime }}
+                  </li>
+                </ul>
+              </td>
+              <td>
+                <button
+                  v-if="!organizer.verified"
+                  @click="verifyOrganizer(organizer._id)"
+                  class="action-btn green"
+                >
+                  Verifica
+                </button>
+                <button
+                  v-else
+                  @click="disableOrganizer(organizer._id)"
+                  class="action-btn red"
+                >
+                  Disabilita
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 </template>
@@ -28,61 +62,66 @@ export default {
   name: "AdminDashboard",
   data() {
     return {
-      organizers: [],
-      errorMessage: ""
+      organizers: []
     };
   },
-  async created() {
-    try {
-      const token = localStorage.getItem("token");
-      const response = await axios.get("/users/organizers/pending", {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-      this.organizers = response.data;
-    } catch (error) {
-      console.error("Errore durante il caricamento degli organizzatori:", error.response || error);
-      this.errorMessage = error.response?.data?.message || "Errore durante il caricamento degli organizzatori";
-    }
-  },
   methods: {
+    async fetchOrganizers() {
+      try {
+        const token = localStorage.getItem("token");
+        const res = await axios.get("/users/organizers/all", {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        this.organizers = res.data;
+      } catch (error) {
+        console.error("Errore nel caricamento degli organizer:", error);
+      }
+    },
     async verifyOrganizer(userId) {
       try {
         const token = localStorage.getItem("token");
         await axios.put(`/users/verify/${userId}`, {}, {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
+          headers: { Authorization: `Bearer ${token}` }
         });
-        this.organizers = this.organizers.filter(org => org._id !== userId);
-        alert("Organizzatore verificato con successo");
+        this.fetchOrganizers();
       } catch (error) {
-        console.error("Errore durante la verifica dell'organizzatore:", error.response || error);
-        this.errorMessage = error.response?.data?.message || "Errore durante la verifica";
+        console.error("Errore nella verifica dell'organizer:", error);
+      }
+    },
+    async disableOrganizer(userId) {
+      try {
+        const token = localStorage.getItem("token");
+        await axios.put(`/users/disable/${userId}`, {}, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        this.fetchOrganizers();
+      } catch (error) {
+        console.error("Errore nella disabilitazione dell'organizer:", error);
       }
     }
+  },
+  mounted() {
+    this.fetchOrganizers();
   }
 };
 </script>
 
 <style scoped>
-.admin-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
+.page-container {
   padding: 60px 20px;
   background-color: #f5f7fa;
   min-height: 100vh;
+  display: flex;
+  justify-content: center;
 }
 
-.admin-box {
+.dashboard-box {
   position: relative;
   background-color: white;
-  padding: 40px;
+  padding: 30px;
   border-radius: 10px;
   width: 100%;
-  max-width: 700px;
+  max-width: 1100px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
 
@@ -102,55 +141,65 @@ export default {
 }
 
 h2 {
-  margin-bottom: 20px;
-  color: #2e7d32;
   text-align: center;
+  color: #2e7d32;
+  margin-bottom: 25px;
 }
 
-.organizer-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
+.table-wrapper {
+  overflow-x: auto;
 }
 
-.organizer-item {
-  background-color: #f1f1f1;
-  padding: 15px;
-  border-radius: 8px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 15px;
 }
 
-.organizer-info {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.verify-btn {
+thead {
   background-color: #2e7d32;
   color: white;
+}
+
+th, td {
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+  vertical-align: top;
+}
+
+td ul {
+  padding-left: 15px;
+  margin: 0;
+}
+
+td ul li {
+  margin-bottom: 5px;
+}
+
+.action-btn {
+  padding: 8px 12px;
   border: none;
-  padding: 8px 14px;
   border-radius: 6px;
   font-size: 14px;
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  color: white;
+  margin-bottom: 5px;
 }
 
-.verify-btn:hover {
-  background-color: #1b5e20;
+.action-btn.green {
+  background-color: #388e3c;
 }
 
-.error-message {
-  margin-top: 20px;
-  color: red;
-  text-align: center;
-  font-size: 14px;
+.action-btn.green:hover {
+  background-color: #2e7d32;
+}
+
+.action-btn.red {
+  background-color: #c62828;
+}
+
+.action-btn.red:hover {
+  background-color: #b71c1c;
 }
 </style>

@@ -129,7 +129,7 @@ export default {
         payload.address = this.address;
         payload.lat = this.clientLat;
         payload.lon = this.clientLon;
-
+        payload.birthDate = this.birthDate;
       } else if (this.role === "organizer") {
         payload.companyName = this.companyName;
         payload.partitaIva = this.partitaIva;

@@ -33,6 +33,9 @@ router.delete('/:id', authenticate, authorizeRole('organizer'), (req, res, next)
 router.post('/:id/preference', authenticate, authorizeRole('client'), eventController.expressPreference);
 router.delete('/:id/preference', authenticate, authorizeRole('client'), eventController.removePreference);
 
+
+router.get('/organizer/revenue', authenticate, authorizeRole('organizer'), eventController.getOrganizerRevenue);
+router.get('/organizer/event-revenues', authenticate, authorizeRole('organizer'), eventController.getEventRevenues);
 router.get('/organizer/bookings-count', authenticate, authorizeRole('organizer'), eventController.getEventsWithBookingCounts);
 
 module.exports = router;

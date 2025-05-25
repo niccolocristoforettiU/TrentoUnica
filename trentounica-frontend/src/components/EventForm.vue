@@ -49,6 +49,18 @@
         </label>
       </div>
 
+      <div>
+        <label>
+          <input type="checkbox" v-model="event.ageRestricted" />
+          Evento con limite d'età
+        </label>
+      </div>
+
+      <div v-if="event.ageRestricted">
+        <label for="minAge">Età minima</label>
+        <input type="number" v-model="event.minAge" min="0" placeholder="Età minima per partecipare" />
+      </div>
+
       <button type="submit">Crea Evento</button>
     </form>
   </div>
@@ -69,6 +81,8 @@ export default {
         price: 0,
         duration: '',
         bookingRequired: false,
+        ageRestricted: false,
+        minAge: null
       },
       locations: [],
       loading: false,
@@ -164,7 +178,9 @@ export default {
         category: '',
         price: 0,
         duration: '',
-        bookingRequired: false
+        bookingRequired: false,
+        ageRestricted: false,
+        minAge: null
       };
     }
   }

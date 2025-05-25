@@ -7,7 +7,7 @@ import AppCalendar from "@/components/AppCalendar.vue";
 import EventDetail from '@/components/EventDetail.vue';
 import SearchBar from '@/components/SearchBar.vue';
 import ClientDashboard from '@/components/ClientDashboard.vue';
-import AdminDashboardPage from '@/views/AdminDashboardPage.vue';
+import AdminDashboard from '@/components/AdminDashboard.vue';
 import OrganizerDashboard from '@/components/OrganizerDashboard.vue';
 import EventForm from '@/components/EventForm.vue';
 import MapLocation from '@/components/MapLocation.vue';
@@ -69,8 +69,8 @@ const routes = [
   },
   {
     path: '/admin/dashboard',
-    name: 'AdminDashboardPage',
-    component: AdminDashboardPage,
+    name: 'AdminDashboard',
+    component: AdminDashboard,
     meta: { requiresAuth: true, role: 'admin' },
   },
   {
