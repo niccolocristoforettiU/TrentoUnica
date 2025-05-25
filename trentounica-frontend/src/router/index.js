@@ -13,6 +13,7 @@ import TratteDashboard from '@/components/TratteDashboard.vue';
 import EventForm from '@/components/EventForm.vue';
 import MapLocation from '@/components/MapLocation.vue';
 import OrganizerScanner from '@/components/OrganizerScanner.vue';
+import ChatWidget from '@/components/ChatWidget.vue';
 
 const routes = [
   {
@@ -93,6 +94,12 @@ const routes = [
     component: EventForm,
     props: true,
     meta: { requiresAuth: true, role: 'organizer' }
+  },
+  {
+    path: '/chat',
+    name: 'Chat',
+    component: ChatWidget,
+    meta: { requiresAuth: false }
   }
 ];
 

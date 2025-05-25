@@ -68,6 +68,7 @@ export default {
       this.isAuthenticated = false;
       this.userName = "";
       this.role = "";
+      window.dispatchEvent(new Event('token-updated'));
     }
   }
 };

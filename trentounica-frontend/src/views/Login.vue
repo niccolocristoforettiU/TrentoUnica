@@ -47,7 +47,7 @@ export default {
         localStorage.setItem("token", token);
         localStorage.setItem("role", role);
         localStorage.setItem("name", response.data.name);
-
+        window.dispatchEvent(new Event('token-updated'));
         this.$router.push("/");
       } catch (error) {
         this.errorMessage = error.response?.data?.message || "Errore durante il login";
