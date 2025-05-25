@@ -80,7 +80,7 @@ export default {
       return this.role === "organizer" ? "Mappa Location" : "Mappa Eventi";
     },
     showFilters() {
-      return ["client", "admin", "organizer"].includes(this.role);
+      return ["client", "admin", "organizer", "trasporti"].includes(this.role);
     },
     defaultCenter() {
       if (this.locations.length) {

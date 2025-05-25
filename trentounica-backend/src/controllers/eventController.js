@@ -144,7 +144,7 @@ const deleteEvent = async (req, res) => {
   }
 };
 
-// Per mappe con filtri per utenti e admin
+// Per mappe con filtri per utenti e admin e trasporti
 const getFilteredEvents = async (req, res) => {
   try {
     const { startDate, endDate, category } = req.query;
