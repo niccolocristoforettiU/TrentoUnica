@@ -3,6 +3,10 @@
     <button @click="exportMapAsImage" style="margin-bottom: 10px">
       Esporta mappa come PNG
     </button>
+    <div style="margin-bottom: 10px;">
+      <label><input type="checkbox" v-model="selectedFlowTypes" value="main" /> Flussi principali</label>
+      <label><input type="checkbox" v-model="selectedFlowTypes" value="poi" /> Post-evento (POI)</label>
+    </div>
     <div v-if="flows.length === 0" style="margin-bottom: 10px; color: gray;">
       Nessun flusso disponibile per il pediodo selezionato.
     </div>
@@ -10,10 +14,10 @@
       <l-map :zoom="13" :center="[46.0701, 11.119]" style="height: 600px; width: 100%">
         <l-tile-layer :url="tileUrl" :attribution="tileAttribution" />
         <l-polyline
-          v-for="(f, idx) in flows"
+          v-for="(f, idx) in filteredFlows"
           :key="'line-' + idx"
           :lat-lngs="f.route"
-          :color="f.weight > 10 ? '#003399' : f.weight > 5 ? '#3366cc' : '#FF8C00'"
+          :color="f.weight >= 0.9 ? '#003399' : f.weight >= 0.7 ? '#3366cc' : f.weight >= 0.5 ? '#FF8C00' : '#00cc66'"
           :weight="Math.max(3, f.weight * 2)"
           :opacity="0.8"
         />
@@ -37,6 +41,7 @@
         <div class="legend-item"><span class="legend-line low"></span> Basso flusso</div>
         <div class="legend-item"><span class="legend-line medium"></span> Medio flusso</div>
         <div class="legend-item"><span class="legend-line high"></span> Alto flusso</div>
+        <div class="legend-item"><span class="legend-line poi"></span> Flusso post-evento (POI)</div>
         <div class="legend-item"><span class="legend-circle"></span> Punto di afflusso (dimensione proporzionale)</div>
       </div>
     </div>
@@ -73,6 +78,9 @@
 }
 .legend-line.high {
   background-color: #003399;
+}
+.legend-line.poi {
+  background-color: #00cc66;
 }
 
 .legend-circle {
@@ -131,6 +139,9 @@
 .legend-popup .legend-line.high {
   background-color: #003399;
 }
+.legend-popup .legend-line.poi {
+  background-color: #00cc66;
+}
 
 .legend-popup .legend-circle {
   width: 12px;
@@ -155,6 +166,18 @@ const props = defineProps({
 })
 
 const flows = ref([])
+
+const selectedFlowTypes = ref(['main', 'poi'])
+
+const filteredFlows = computed(() => {
+  return flows.value.filter(f => {
+    if (f.weight >= 0.5) {
+      return selectedFlowTypes.value.includes('main')
+    } else {
+      return selectedFlowTypes.value.includes('poi')
+    }
+  })
+})
 
 const groupedFlows = computed(() => {
   const groups = {}

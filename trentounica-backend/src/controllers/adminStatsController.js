@@ -2,7 +2,7 @@ const Booking = require('../models/bookingModel');
 const Event = require('../models/eventModel');
 const EventPreference = require('../models/eventPreferenceModel');
 const User = require('../models/userModel');
-const { getStreetRoute } = require('../utils/routingUtils');
+const { getStreetRoute, getPostEventWalkRoutes } = require('../utils/routingUtils');
 
 // Utile per calcolare età da birthDate
 const calculateAge = (birthDate) => {
@@ -66,17 +66,21 @@ exports.getEstimatedFlows = async (req, res) => {
         const to = { lat: event.location.lat, lon: event.location.lon };
         const route = await getStreetRoute(from, to);
         flows.push({ route, weight: 0.9 });
+        const postFlows = await getPostEventWalkRoutes(to);
+        flows.push(...postFlows);
       }
     }
 
-    // Flussi da preferenze (presenza stimata al 50%)
+    // Flussi da preferenze (presenza stimata al 55%)
     for (const p of preferences) {
       const event = events.find(e => e._id.toString() === p.event.toString());
       if (event && p.user?.lat && p.user?.lon && event.location?.lat && event.location?.lon) {
         const from = { lat: p.user.lat, lon: p.user.lon };
         const to = { lat: event.location.lat, lon: event.location.lon };
         const route = await getStreetRoute(from, to);
-        flows.push({ route, weight: (0.5) });
+        flows.push({ route, weight: (0.55) });
+        const postFlows = await getPostEventWalkRoutes(to);
+        flows.push(...postFlows);
       }
     }
 
