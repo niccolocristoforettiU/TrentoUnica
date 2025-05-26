@@ -33,6 +33,7 @@ TrentoUnica/
 │   │   ├── middlewares/        --> Middleware (Autenticazione JWT, ecc.)
 │   │   ├── services/           --> Servizi di utilità (es. invio email)
 │   │   ├── utils/              --> Utility functions (es. routing OSRM)
+│   │   ├── data/               --> Dati geografici statici (es. ZTL GeoJSON)
 │   │   └── scripts/            --> Script di utilità per il backend
 │   │       └── createAdmin.js  --> Script per creare un utente amministratore in MongoDB
 │   ├── index.js                --> File principale del server Express
