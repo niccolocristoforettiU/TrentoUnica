@@ -4,8 +4,8 @@ const Location = require('../models/locationModel');
 const LocationPreference = require('../models/locationPreferenceModel');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const { sendAccountActivationEmail } = require('../services/emailService');
-
+const { sendAccountActivationEmail, sendPasswordResetEmail } = require('../services/emailService');
+const crypto = require('crypto');
 
 exports.register = async (req, res) => {
   try {
@@ -261,4 +261,56 @@ exports.disableOrganizer = async (req, res) => {
     console.error(error);
     res.status(500).json({ message: 'Errore durante la disabilitazione dell\'organizzatore', error: error.message });
   }
+};
+
+exports.forgotPassword = async (req, res) => {
+  const { email } = req.body;
+  if (!email) {
+    return res.status(400).json({ message: 'Email mancante nel body' });
+  }
+
+  try {
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: 'Utente non trovato' });
+    }
+
+    const token = crypto.randomBytes(20).toString('hex');
+    user.resetPasswordToken = token;
+    user.resetPasswordExpires = Date.now() + 3600000;
+    await user.save();
+
+    await sendPasswordResetEmail(email, token);
+    res.status(200).json({ message: 'Email per il reset inviata' });
+
+  } catch (error) {
+    console.error("Errore nel reset:", error);
+    res.status(500).json({ message: 'Errore nel reset password', error: error.message });
+  }
+};
+
+
+exports.resetPassword = async (req, res) => {
+  const { token } = req.params;
+  const { newPassword, confirmPassword } = req.body;
+
+  const user = await User.findOne({
+    resetPasswordToken: token,
+    resetPasswordExpires: { $gt: Date.now() }
+  });
+
+  if (!user) {
+    return res.status(400).json({ message: 'Token non valido o scaduto' });
+  }
+
+  if (newPassword !== confirmPassword) {
+    return res.status(400).json({ message: 'Le password non coincidono' });
+  }
+
+  user.password = newPassword;
+  user.resetPasswordToken = undefined;
+  user.resetPasswordExpires = undefined;
+  await user.save();
+
+  res.status(200).json({ message: 'Password reimpostata con successo' });
 };

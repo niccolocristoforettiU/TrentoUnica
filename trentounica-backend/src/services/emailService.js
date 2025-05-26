@@ -48,4 +48,47 @@ async function sendAccountActivationEmail(to, name) {
     }
 }
 
-module.exports = { sendAccountActivationEmail };
+async function sendPasswordResetEmail(to, token) {
+    try {
+        const accessToken = await oAuth2Client.getAccessToken();
+
+        const transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+                type: 'OAuth2',
+                user: GMAIL_USER,
+                clientId: CLIENT_ID,
+                clientSecret: CLIENT_SECRET,
+                refreshToken: REFRESH_TOKEN,
+                accessToken: accessToken.token,
+            },
+        });
+
+        const resetLink = `http://localhost:8080/reset-password/${token}`; // Cambia con URL reale se necessario
+
+        const mailOptions = {
+            from: `TrentoUnica <${GMAIL_USER}>`,
+            to: to,
+            subject: 'Reimposta la tua password su TrentoUnica',
+            html: `
+                <h2>Richiesta di reimpostazione password</h2>
+                <p>Abbiamo ricevuto una richiesta per reimpostare la tua password. Clicca il link qui sotto per sceglierne una nuova:</p>
+                <a href="${resetLink}" target="_blank">${resetLink}</a>
+                <p>Il link sarà valido per 1 ora.</p>
+                <p>Se non hai richiesto nulla, ignora questo messaggio.</p>
+                <br>
+                <p>Il team di TrentoUnica</p>
+            `,
+        };
+
+        const result = await transporter.sendMail(mailOptions);
+        console.log(`Email reset password inviata a ${to}`);
+        return result;
+    } catch (error) {
+        console.error("Errore durante l'invio dell'email di reset:", error);
+        throw error;
+    }
+}
+
+
+module.exports = { sendAccountActivationEmail, sendPasswordResetEmail };

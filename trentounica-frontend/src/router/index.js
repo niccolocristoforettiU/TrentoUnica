@@ -13,6 +13,8 @@ import TratteDashboard from '@/components/TratteDashboard.vue';
 import EventForm from '@/components/EventForm.vue';
 import MapLocation from '@/components/MapLocation.vue';
 import OrganizerScanner from '@/components/OrganizerScanner.vue';
+import ForgotPassword from '@/views/ForgotPassword.vue';
+import ResetPassword from '@/views/ResetPassword.vue';
 
 const routes = [
   {
@@ -111,6 +113,16 @@ const routes = [
     component: EventForm,
     props: true,
     meta: { requiresAuth: true, role: 'organizer' }
+  },
+  {
+    path: '/forgot-password',
+    name: 'ForgotPassword',
+    component: ForgotPassword
+  },
+  {
+    path: '/reset-password/:token',
+    name: 'ResetPassword',
+    component: ResetPassword
   }
 ];
 
