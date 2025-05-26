@@ -22,7 +22,7 @@
 
         <div v-if="role === 'client'" class="client-section">
           <input v-model="name" type="text" placeholder="Nome completo" required />
-          <AddressSearch @address-selected="updateClientAddress" required />
+          <AddressSearch @address-selected="updateClientAddress" />
           <label>
             Data di nascita:
             <input v-model="birthDate" type="date" required />
@@ -36,7 +36,7 @@
           <h3>Locations</h3>
           <div v-for="(loc, index) in locations" :key="index" class="location-entry">
             <input v-model="loc.name" type="text" placeholder="Nome Location" required />
-            <AddressSearch @address-selected="(data) => updateLocationAddress(index, data)" />
+            <AddressSearch @address-selected="(data) => updateLocationAddress(index, data)"/>
             <input v-model="loc.openingTime" type="time" required />
             <input v-model="loc.closingTime" type="time" required />
             <input v-model="loc.maxSeats" type="number" placeholder="Posti Massimi" required />
