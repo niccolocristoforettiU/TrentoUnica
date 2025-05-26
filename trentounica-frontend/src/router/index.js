@@ -75,6 +75,24 @@ const routes = [
     meta: { requiresAuth: true, role: 'admin' },
   },
   {
+    path: '/admin/statistiche',
+    name: 'AdminStatistiche',
+    component: () => import('@/components/AdminStatistiche.vue'),
+    meta: { requiresAuth: true, role: 'admin' }
+  },
+  {
+    path: '/admin/statistiche/mappa',
+    name: 'AdminStatMap',
+    component: () => import('@/components/FlowMap.vue'),
+    meta: { requiresAuth: true, role: 'admin' }
+  },
+  {
+    path: '/admin/statistiche/istogramma',
+    name: 'AdminStatHistogram',
+    component: () => import('@/components/AttendanceHistogram.vue'),
+    meta: { requiresAuth: true, role: 'admin' }
+  },
+  {
     path: '/organizer/event/:eventId/scan',
     name: 'OrganizerScanner',
     component: OrganizerScanner,

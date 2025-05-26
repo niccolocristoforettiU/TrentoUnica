@@ -15,6 +15,7 @@
         <li v-if="role === 'organizer'"><router-link to="/organizer/create-event">Crea Evento</router-link></li>
         <li v-if="role === 'admin'"><router-link to="/admin/dashboard">Dashboard Admin</router-link></li>
         <li v-if="role === 'trasporti' || role === 'admin'"><router-link to="/trasporti/dashboard">Dashboard Tratte</router-link></li>
+        <li v-if="role === 'admin'"><router-link to="/admin/statistiche">Statistiche Eventi</router-link></li>
         <li v-if="isAuthenticated"><router-link to="/searchbar">Cerca Eventi</router-link></li>
         <li v-if="isAuthenticated"><router-link to="/Appcalendar">Calendario</router-link></li>
       </ul>
