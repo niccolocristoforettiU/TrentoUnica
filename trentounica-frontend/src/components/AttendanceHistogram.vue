@@ -1,7 +1,10 @@
 <template>
   <div>
-    <button @click="exportChartAsImage" style="margin-bottom: 10px">
-      Esporta istogramma come PNG
+    <div v-if="loadingProgress > 0 && loadingProgress < 100" style="margin-bottom: 10px; color: #555;">
+      Caricamento: {{ loadingProgress }}%
+    </div>
+    <button @click="exportHistogramAsCSV" style="margin-bottom: 10px">
+      Esporta dati istogramma come CSV
     </button>
     <Bar v-if="chartData" :data="chartData" :options="chartOptions" ref="chartComponent" />
     <p v-else>Caricamento istogramma...</p>
@@ -20,9 +23,10 @@ import {
   Legend
 } from 'chart.js'
 import axios from "@/api/axios";
-import html2canvas from 'html2canvas'
 
 ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend)
+
+const loadingProgress = ref(0);
 
 const props = defineProps({
   date: String
@@ -59,32 +63,66 @@ const fetchData = async () => {
     const res = await axios.get(`/admin/stats/histogram?date=${props.date}`)
     const data = res.data.histogram
 
-    const labels = data.map(event => event.title)
+    const dataWithDates = data.map(e => ({
+      ...e,
+      startDate: new Date(e.startDate).toLocaleString('it-IT', { timeZone: 'Europe/Rome' }),
+      endDate: new Date(e.endDate).toLocaleString('it-IT', { timeZone: 'Europe/Rome' })
+    }));
+
+    loadingProgress.value = 0;
+    const total = dataWithDates.length;
+    for (let i = 0; i < total; i++) {
+      await new Promise(resolve => setTimeout(resolve, 0));
+      loadingProgress.value = Math.floor(((i + 1) / total) * 100);
+    }
+
+    const labels = dataWithDates.map(event => event.title)
     const datasetByAge = ageGroups.map(group => ({
       label: group,
-      data: data.map(e => e.ageGroups[group] || 0),
+      data: dataWithDates.map(e => e.ageGroups[group] || 0),
       backgroundColor: ageColors[group],
       stack: 'stack1'
     }))
 
     chartData.value = {
       labels,
-      datasets: datasetByAge
+      datasets: datasetByAge,
+      rawData: dataWithDates
     }
   } catch (err) {
     console.error(err)
   }
 }
 
-const exportChartAsImage = async () => {
-  const canvas = chartComponent.value?.$el?.querySelector('canvas')
-  if (!canvas) return
-  const image = await html2canvas(canvas)
-  const link = document.createElement('a')
-  link.download = `istogramma_presenze_${props.date}.png`
-  link.href = image.toDataURL()
-  link.click()
-}
+
+const exportHistogramAsCSV = () => {
+  if (!chartData.value) return;
+
+  loadingProgress.value = 0;
+
+  const data = chartData.value.rawData;
+  const headers = ['Evento', 'Data Inizio', 'Data Fine', ...ageGroups];
+  const rows = [];
+  const total = data.length;
+  data.forEach((event, i) => {
+    const row = [event.title, event.startDate, event.endDate];
+    chartData.value.datasets.forEach(dataset => {
+      row.push(dataset.data[i]);
+    });
+    rows.push(row);
+    loadingProgress.value = Math.floor(((i + 1) / total) * 100);
+  });
+
+  const csvContent = '\uFEFF' + [headers.join(';'), ...rows.map(r => r.join(';'))].join('\n');
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.setAttribute('download', `istogramma_presenze_${props.date}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
 
 onMounted(fetchData)
 watch(() => props.date, fetchData)
