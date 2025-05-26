@@ -1,16 +1,12 @@
 const axios = require('axios');
+const { isInZTL } = require('./ztlUtils');
+const { findNearestParking } = require('./parkingUtils');
+const { getRouteSegment } = require('./osrmUtils');
 
-async function getStreetRoute(from, to) {
-  const url = `https://router.project-osrm.org/route/v1/driving/${from.lon},${from.lat};${to.lon},${to.lat}?overview=full&geometries=geojson`;
-
-  try {
-    const res = await axios.get(url);
-    const coords = res.data.routes[0].geometry.coordinates;
-    return coords.map(([lon, lat]) => ({ lat, lon }));
-  } catch (err) {
-    console.error('Errore OSRM routing:', err.message);
-    return [from, to]; // fallback diretto
-  }
+async function getSplitRoute(from, parking, to) {
+  const drivingRoute = (await getRouteSegment(from, parking, 'driving')).map(p => ({ ...p, mode: 'driving' }));
+  const walkingRoute = (await getRouteSegment(parking, to, 'walking')).map(p => ({ ...p, mode: 'walking' }));
+  return { drivingRoute, walkingRoute };
 }
 
-module.exports = { getStreetRoute };
+module.exports = { getSplitRoute, getRouteSegment };
