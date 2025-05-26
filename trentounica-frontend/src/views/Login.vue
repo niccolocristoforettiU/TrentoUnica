@@ -11,7 +11,9 @@
         <input v-model="password" type="password" placeholder="Password" required />
         <button type="submit">Login</button>
       </form>
-
+      <div class="forgot-password">
+        <router-link to="/forgot-password">Recupera Password</router-link>
+      </div>
       <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
     </div>
   </div>

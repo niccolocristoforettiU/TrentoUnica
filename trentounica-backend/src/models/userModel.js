@@ -87,7 +87,9 @@ const userSchema = new mongoose.Schema({
     default: function() {
       return this.role === 'client' || this.role === 'admin' || this.role === 'trasporti' ;
     }
-  }
+  },
+  resetPasswordToken: String,
+  resetPasswordExpires: Date,
 });
 
 // Cripta la password prima di salvarla
