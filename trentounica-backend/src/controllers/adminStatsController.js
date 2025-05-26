@@ -1,8 +1,10 @@
+const { assignParkingSpots } = require('../utils/parkingUtils');
 const Booking = require('../models/bookingModel');
 const Event = require('../models/eventModel');
 const EventPreference = require('../models/eventPreferenceModel');
 const User = require('../models/userModel');
 const { getStreetRoute } = require('../utils/routingUtils');
+const { getRouteSegment } = require('../utils/osrmUtils');
 
 // Utile per calcolare età da birthDate
 const calculateAge = (birthDate) => {
@@ -58,25 +60,61 @@ exports.getEstimatedFlows = async (req, res) => {
 
     const flows = [];
 
-    // Flussi da booking (presenza con percentuale 0.9)
-    for (const b of bookings) {
-      const event = events.find(e => e._id.toString() === b.event.toString());
-      if (event && b.user?.lat && b.user?.lon && event.location?.lat && event.location?.lon) {
-        const from = { lat: b.user.lat, lon: b.user.lon };
-        const to = { lat: event.location.lat, lon: event.location.lon };
-        const route = await getStreetRoute(from, to);
-        flows.push({ route, weight: 0.9 });
-      }
-    }
+    for (const event of events) {
+      const eventBookings = bookings.filter(b => b.event.toString() === event._id.toString());
+      const eventPreferences = preferences.filter(p => p.event.toString() === event._id.toString());
+      const users = [
+        ...eventBookings.map(b => ({ user: b.user, weight: 0.9 })),
+        ...eventPreferences.map(p => ({ user: p.user, weight: 0.55 }))
+      ].filter(u => u.user?.lat && u.user?.lon);
 
-    // Flussi da preferenze (presenza stimata al 50%)
-    for (const p of preferences) {
-      const event = events.find(e => e._id.toString() === p.event.toString());
-      if (event && p.user?.lat && p.user?.lon && event.location?.lat && event.location?.lon) {
-        const from = { lat: p.user.lat, lon: p.user.lon };
-        const to = { lat: event.location.lat, lon: event.location.lon };
-        const route = await getStreetRoute(from, to);
-        flows.push({ route, weight: (0.5) });
+      const assigned = assignParkingSpots({ lat: event.location.lat, lon: event.location.lon }, users.length);
+      let userIndex = 0;
+
+      for (const { parking, assigned: count } of assigned) {
+        for (let i = 0; i < count; i++) {
+          const u = users[userIndex++];
+          if (!u) continue;
+          const from = { lat: u.user.lat, lon: u.user.lon };
+          const to = { lat: event.location.lat, lon: event.location.lon };
+
+          const drivingRoute = await getRouteSegment(from, parking, 'driving');
+          const walkingRoute = (parking.lat === to.lat && parking.lon === to.lon)
+            ? []
+            : await getRouteSegment(parking, to, 'walking');
+          const postWalk = await getRouteSegment(to, {
+            lat: to.lat + (Math.random() - 0.5) * 0.001,
+            lon: to.lon + (Math.random() - 0.5) * 0.001
+          }, 'walking');
+
+          flows.push({
+            route: drivingRoute.map(p => ({ ...p, mode: 'driving' })),
+            weight: u.weight,
+            mode: 'driving',
+            type: 'to_event',
+            eventStart: event.date,
+            eventEnd: new Date(event.date.getTime() + event.duration * 60000)
+          });
+          if (walkingRoute.length > 0) {
+            flows.push({
+              route: walkingRoute.map(p => ({ ...p, mode: 'walking' })),
+              weight: u.weight,
+              mode: 'walking',
+              type: 'to_event',
+              eventLocationName: event.location.name,
+              eventStart: event.date,
+              eventEnd: new Date(event.date.getTime() + event.duration * 60000)
+            });
+          }
+          flows.push({
+            route: postWalk.map(p => ({ ...p, mode: 'walking' })),
+            weight: 0.2,
+            mode: 'walking',
+            type: 'from_event',
+            eventStart: event.date,
+            eventEnd: new Date(event.date.getTime() + event.duration * 60000)
+          });
+        }
       }
     }
 
@@ -114,6 +152,8 @@ exports.getEventHistogram = async (req, res) => {
         eventId: event._id,
         title: event.title,
         location: event.location?.name,
+        startDate: event.date,
+        endDate: new Date(event.date.getTime() + event.duration * 60000),
         ageGroups: {
           '0-17': 0,
           '18-30': 0,
