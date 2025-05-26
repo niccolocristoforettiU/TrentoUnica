@@ -32,4 +32,38 @@ function findNearestParking(to) {
   return { lat: validParkings[0].lat, lon: validParkings[0].lon };
 }
 
-module.exports = { findNearestParking };
+/**
+ * Assegna utenti ai parcheggi più vicini fuori dalla ZTL.
+ * @param {Object} destination - Oggetto con lat e lon dell'evento.
+ * @param {number} nUsers - Numero di utenti da distribuire.
+ * @returns {Array<{parking: {lat: number, lon: number}, assigned: number}>}
+ */
+function assignParkingSpots(destination, nUsers) {
+  const destinationPoint = turf.point([destination.lon, destination.lat]);
+
+  const candidates = parkingData.features
+    .filter(f => f.geometry.type === 'Point')
+    .map(f => {
+      const lat = f.geometry.coordinates[1];
+      const lon = f.geometry.coordinates[0];
+      const capacity = f.properties?.capacity || 7;
+      const distance = turf.distance(destinationPoint, turf.point([lon, lat]), { units: 'kilometers' });
+      return { lat, lon, capacity, distance };
+    })
+    .filter(p => !isInZTL(p.lat, p.lon))
+    .sort((a, b) => a.distance - b.distance);
+
+  const assignments = [];
+  let remaining = nUsers;
+
+  for (const p of candidates) {
+    if (remaining <= 0) break;
+    const assigned = Math.min(p.capacity, remaining);
+    assignments.push({ parking: { lat: p.lat, lon: p.lon }, assigned });
+    remaining -= assigned;
+  }
+
+  return assignments;
+}
+
+module.exports = { findNearestParking, assignParkingSpots };

@@ -1,24 +1,31 @@
 <template>
   <div>
-    <button @click="exportMapAsImage" style="margin-bottom: 10px">
-      Esporta mappa come PNG
-    </button>
+    <div v-if="loadingProgress > 0 && loadingProgress < 100" style="margin-bottom: 10px; color: #555;">
+      Caricamento flussi: {{ loadingProgress }}%
+    </div>
     <div style="margin-bottom: 10px;">
       <label><input type="checkbox" v-model="selectedFlowTypes" value="main" /> Flussi principali</label>
-      <label><input type="checkbox" v-model="selectedFlowTypes" value="poi" /> Post-evento (POI)</label>
     </div>
+    <div v-if="exportProgress > 0 && exportProgress < 100" style="margin-bottom: 10px; color: #555;">
+      Esportazione CSV: {{ exportProgress }}%
+    </div>
+    <button @click="exportCSV" style="margin-bottom: 10px;">
+      Esporta dati come CSV
+    </button>
     <div v-if="flows.length === 0" style="margin-bottom: 10px; color: gray;">
       Nessun flusso disponibile per il pediodo selezionato.
     </div>
     <div ref="mapContainer" style="position: relative">
-      <l-map :zoom="13" :center="[46.0701, 11.119]" style="height: 600px; width: 100%">
+      <l-map ref="map" :zoom="13" :center="[46.0701, 11.119]" style="height: 600px; width: 100%">
         <l-tile-layer :url="tileUrl" :attribution="tileAttribution" />
         <l-polyline
-          v-for="(f, idx) in filteredFlows"
+          v-for="(s, idx) in aggregatedSegments"
           :key="'line-' + idx"
-          :lat-lngs="f.route"
-          :color="f.weight >= 0.9 ? '#003399' : f.weight >= 0.7 ? '#3366cc' : f.weight >= 0.5 ? '#FF8C00' : '#00cc66'"
-          :weight="Math.max(3, f.weight * 2)"
+          :lat-lngs="s.route"
+          :color="s.mode === 'walking'
+            ? (s.weight / maxSegmentWeight >= 0.8 ? '#1b5e20' : s.weight / maxSegmentWeight >= 0.5 ? '#c0ca33' : '#a5d6a7')
+            : (s.weight / maxSegmentWeight >= 0.8 ? '#0d47a1' : s.weight / maxSegmentWeight >= 0.5 ? '#42a5f5' : '#b3e5fc')"
+          :weight="Math.max(3, s.weight)"
           :opacity="0.8"
         />
         <l-circle-marker
@@ -30,7 +37,7 @@
           :weight="2"
           :color="g.totalWeight > 10 ? 'darkred' : 'red'"
         >
-          <l-tooltip :content="`${Math.ceil(g.totalWeight)} persone`" :permanent="true" direction="top" />
+          <l-tooltip :content="`${Math.ceil(g.totalWeight)} persone - ${g.name || 'Location'}`" :permanent="true" direction="top" />
         </l-circle-marker>
       </l-map>
       <div class="legend-toggle" @click="showLegend = !showLegend">
@@ -38,11 +45,34 @@
       </div>
       <div v-if="showLegend" class="legend-popup">
         <h3>Legenda</h3>
-        <div class="legend-item"><span class="legend-line low"></span> Basso flusso</div>
-        <div class="legend-item"><span class="legend-line medium"></span> Medio flusso</div>
-        <div class="legend-item"><span class="legend-line high"></span> Alto flusso</div>
-        <div class="legend-item"><span class="legend-line poi"></span> Flusso post-evento (POI)</div>
-        <div class="legend-item"><span class="legend-circle"></span> Punto di afflusso (dimensione proporzionale)</div>
+        <div class="legend-item">
+          <span class="legend-line low"></span>
+          Basso flusso (0–{{ lowThreshold }})
+        </div>
+        <div class="legend-item">
+          <span class="legend-line medium"></span>
+          Medio flusso ({{ lowThreshold + 1 }}–{{ highThreshold }})
+        </div>
+        <div class="legend-item">
+          <span class="legend-line high"></span>
+          Alto flusso ({{ highThreshold + 1 }}+)
+        </div>
+        <div class="legend-item">
+          <span class="legend-line walk-low"></span>
+          Basso flusso a piedi (0–{{ lowThreshold }})
+        </div>
+        <div class="legend-item">
+          <span class="legend-line walk-medium"></span>
+          Medio flusso a piedi ({{ lowThreshold + 1 }}–{{ highThreshold }})
+        </div>
+        <div class="legend-item">
+          <span class="legend-line walk-high"></span>
+          Alto flusso a piedi ({{ highThreshold + 1 }}+)
+        </div>
+        <div class="legend-item">
+          <span class="legend-circle"></span>
+          Punto di afflusso (il diametro scala in base al numero di persone)
+        </div>
       </div>
     </div>
   </div>
@@ -71,15 +101,18 @@
 }
 
 .legend-line.low {
-  background-color: #FF8C00;
+  background-color: #1e88e5;
 }
 .legend-line.medium {
-  background-color: #3366cc;
+  background-color: #1976d2;
 }
 .legend-line.high {
-  background-color: #003399;
+  background-color: #1565c0;
 }
 .legend-line.poi {
+  background-color: #00cc66;
+}
+.legend-line.walk {
   background-color: #00cc66;
 }
 
@@ -131,16 +164,25 @@
 }
 
 .legend-popup .legend-line.low {
-  background-color: #FF8C00;
+  background-color: #b3e5fc; /* auto - basso */
 }
 .legend-popup .legend-line.medium {
-  background-color: #3366cc;
+  background-color: #42a5f5; /* auto - medio */
 }
 .legend-popup .legend-line.high {
-  background-color: #003399;
+  background-color: #0d47a1; /* auto - alto */
 }
 .legend-popup .legend-line.poi {
   background-color: #00cc66;
+}
+.legend-popup .legend-line.walk-low {
+  background-color: #a5d6a7; /* piedi - basso */
+}
+.legend-popup .legend-line.walk-medium {
+  background-color: #c0ca33; /* piedi - medio */
+}
+.legend-popup .legend-line.walk-high {
+  background-color: #1b5e20; /* piedi - alto */
 }
 
 .legend-popup .legend-circle {
@@ -157,7 +199,6 @@ import { ref, onMounted, watch, computed } from 'vue'
 import { LMap, LTileLayer, LPolyline, LCircleMarker, LTooltip } from '@vue-leaflet/vue-leaflet'
 import 'leaflet/dist/leaflet.css'
 import axios from "@/api/axios";
-import html2canvas from 'html2canvas'
 
 const props = defineProps({
   date: String,
@@ -167,26 +208,75 @@ const props = defineProps({
 
 const flows = ref([])
 
-const selectedFlowTypes = ref(['main', 'poi'])
+const loadingProgress = ref(0)
 
-const filteredFlows = computed(() => {
-  return flows.value.filter(f => {
-    if (f.weight >= 0.5) {
-      return selectedFlowTypes.value.includes('main')
-    } else {
-      return selectedFlowTypes.value.includes('poi')
+const selectedFlowTypes = ref(['main'])
+
+const exportProgress = ref(0);
+
+const aggregatedSegments = computed(() => {
+  const segments = new Map();
+
+  for (const f of flows.value) {
+    const points = f.route;
+    for (let i = 0; i < points.length - 1; i++) {
+      const a = points[i];
+      const b = points[i + 1];
+      const key = `${a.lat.toFixed(5)},${a.lon.toFixed(5)}|${b.lat.toFixed(5)},${b.lon.toFixed(5)}`;
+      const reverseKey = `${b.lat.toFixed(5)},${b.lon.toFixed(5)}|${a.lat.toFixed(5)},${a.lon.toFixed(5)}`;
+
+      const existing = segments.get(key) || segments.get(reverseKey);
+      const weight = f.weight || 1;
+
+      if (existing) {
+        existing.weight += weight;
+        existing.modes.push(f.mode);
+      } else {
+        segments.set(key, {
+          route: [a, b],
+          weight,
+          modes: [f.mode]
+        });
+      }
     }
-  })
-})
+  }
+
+  for (const seg of segments.values()) {
+    const modeCounts = seg.modes.reduce((acc, m) => {
+      acc[m] = (acc[m] || 0) + 1;
+      return acc;
+    }, {});
+    seg.mode = modeCounts.walking >= (modeCounts.driving || 0) ? 'walking' : 'driving';
+    delete seg.modes;
+  }
+
+  return Array.from(segments.values());
+});
+
+const maxSegmentWeight = computed(() => {
+  return Math.max(...aggregatedSegments.value.map(s => s.weight), 1);
+});
+
+const lowThreshold = computed(() => Math.floor(maxSegmentWeight.value * 0.5));
+const highThreshold = computed(() => Math.floor(maxSegmentWeight.value * 0.8));
 
 const groupedFlows = computed(() => {
   const groups = {}
   for (const f of flows.value) {
+    if (f.type !== 'to_event' || !f.eventLocationName) continue
+    if (f.mode === 'walking') {
+      const last = f.route.at(-1)
+      const secondLast = f.route.at(-2)
+      // Se la tratta è molto breve o non ha movimento, la saltiamo
+      if (secondLast && last.lat === secondLast.lat && last.lon === secondLast.lon) continue
+      // Escludi i flussi pedonali che terminano ai parcheggi (cioè che partono da un parcheggio e non vanno verso un evento)
+      // Qui assumiamo che i flussi pedonali che non puntano a un evento abbiano un qualche identificativo, ma con le informazioni date, filtriamo solo se la tratta è 'inutile'
+    }
     const dest = f.route.at(-1)
     if (!dest?.lat || !dest?.lon) continue
     const key = `${dest.lat.toFixed(5)},${dest.lon.toFixed(5)}`
     if (!groups[key]) {
-      groups[key] = { lat: dest.lat, lon: dest.lon, totalWeight: 0, route: f.route }
+      groups[key] = { lat: dest.lat, lon: dest.lon, totalWeight: 0, route: f.route, name: f.eventLocationName }
     }
     groups[key].totalWeight += f.weight
   }
@@ -194,17 +284,20 @@ const groupedFlows = computed(() => {
 })
 
 const mapContainer = ref(null)
+const map = ref(null)
 
 const tileUrl = 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
 const tileAttribution = '&copy; CartoDB, &copy; OpenStreetMap contributors'
 
 const showLegend = ref(true)
 
+
 const fetchFlows = async () => {
   if (!props.date) {
     console.warn("Data non fornita a FlowMap.vue")
     return
   }
+  loadingProgress.value = 0
   try {
     const params = new URLSearchParams({ date: props.date })
     if (props.startHour !== '' && props.startHour !== null) {
@@ -215,25 +308,108 @@ const fetchFlows = async () => {
     }
 
     const res = await axios.get(`/admin/stats/flows?${params.toString()}`)
-    flows.value = res.data.flows
-    console.log('Flussi ricevuti:', flows.value)
+    flows.value = [];
+    const total = res.data.flows.length;
+    for (let i = 0; i < total; i++) {
+      const f = res.data.flows[i];
+      flows.value.push({
+        ...f,
+        weight: f.weight ?? 1
+      });
+      loadingProgress.value = Math.floor(((i + 1) / total) * 100);
+      await new Promise(resolve => setTimeout(resolve, 0));
+    }
+    // Per sicurezza, se non ci sono flussi, progress a 100
+    if (total === 0) loadingProgress.value = 100;
+    console.log('Flussi ricevuti (semplificati):', flows.value.map(f => ({
+      type: f.type,
+      mode: f.mode,
+      weight: f.weight,
+      event: f.eventLocationName,
+      firstCoord: f.route?.[0],
+      lastCoord: f.route?.at(-1),
+    })));
   } catch (err) {
     console.error("Errore nel recupero dei flussi:", err)
+  } finally {
+    // In caso di errore o fine, assicurati che sia 100 se non lo è già
+    if (loadingProgress.value < 100) loadingProgress.value = 100;
   }
 }
 
-const exportMapAsImage = async () => {
-  if (!mapContainer.value) {
-    console.warn("Contenitore mappa non trovato per esportazione.")
-    return
-  }
-  const canvas = await html2canvas(mapContainer.value)
-  const link = document.createElement('a')
-  link.download = `mappa_flussi_${props.date}.png`
-  link.href = canvas.toDataURL()
-  link.click()
-}
 
-onMounted(fetchFlows)
+onMounted(() => {
+  fetchFlows()
+})
 watch(() => [props.date, props.startHour, props.endHour], fetchFlows)
+
+// Esporta i dati flussi come CSV con delimitatore ;, BOM UTF-8 e quoting dei percorsi
+const exportCSV = async () => {
+  exportProgress.value = 0;
+  const headers = [
+    'type', 
+    'mode', 
+    'weight', 
+    'route_lat_lon', 
+    'eventLocationName',
+    'eventStart',
+    'eventEnd',
+    'date',
+    'startHour',
+    'endHour'
+  ];
+  const rows = [];
+
+  const totalRows = flows.value.length + groupedFlows.value.length;
+  let processedRows = 0;
+
+  for (const flow of flows.value) {
+    const routeString = flow.route.map(p => `${p.lat.toFixed(5)}:${p.lon.toFixed(5)}`).join(' -> ');
+    rows.push([
+      flow.type || '',
+      flow.mode || '',
+      flow.weight || '',
+      `"${routeString}"`,
+      flow.eventLocationName || '',
+      flow.eventStart ? new Date(flow.eventStart).toLocaleString('it-IT', { timeZone: 'Europe/Rome' }) : '',
+      flow.eventEnd ? new Date(flow.eventEnd).toLocaleString('it-IT', { timeZone: 'Europe/Rome' }) : '',
+      props.date || '',
+      props.startHour || '',
+      props.endHour || ''
+    ]);
+    processedRows++;
+    exportProgress.value = Math.floor((processedRows / totalRows) * 100);
+    await new Promise(resolve => setTimeout(resolve, 0));
+  }
+
+  for (const g of groupedFlows.value) {
+    rows.push([
+      'grouped',
+      '',
+      g.totalWeight || '',
+      `"${g.lat.toFixed(5)}:${g.lon.toFixed(5)}"`,
+      g.name || '',
+      props.date || '',
+      props.startHour || '',
+      props.endHour || ''
+    ]);
+    processedRows++;
+    exportProgress.value = Math.floor((processedRows / totalRows) * 100);
+    await new Promise(resolve => setTimeout(resolve, 0));
+  }
+
+  const csvContent = '\uFEFF' + [headers.join(';'), ...rows.map(r => r.join(';'))].join('\n');
+
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+
+  const link = document.createElement('a');
+  link.href = url;
+  link.setAttribute('download', `flow_data_${props.date}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+
+  exportProgress.value = 100;
+};
 </script>
