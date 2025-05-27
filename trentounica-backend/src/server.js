@@ -23,9 +23,9 @@ const app = express();
 // Configurazione CORS
 app.use(cors({
   origin: 'http://localhost:8080',
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
   credentials: true,
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-guest-id']
 }));
 
 // Middleware per il parsing del corpo delle richieste
@@ -42,6 +42,7 @@ app.use('/api/search', require('./routes/eventSearchRoutes'));
 app.use('/api/locations', require('./routes/locationRoutes'));
 app.use('/api/admin/stats', require('./routes/adminStatsRoutes'));
 app.use('/api/tratte', require('./routes/tratteRoutes'));
+app.use('/api/organizer/stats', require('./routes/organizerStatsRoutes'));
 
 // Rotta protetta per testare JWT
 app.get('/api/protected', authenticate, (req, res) => {

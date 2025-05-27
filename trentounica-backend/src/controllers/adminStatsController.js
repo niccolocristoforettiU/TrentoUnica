@@ -58,6 +58,17 @@ exports.getEstimatedFlows = async (req, res) => {
       event: { $in: events.map(e => e._id) }
     }).populate('user', 'lat lon');
 
+    function generateRandomGuestPosition() {
+      const center = { lat: 46.0679, lon: 11.1211 }; // Centro Trento
+      const radius = 5; // ~5 km
+      const angle = Math.random() * 2 * Math.PI;
+      const distance = Math.random() * radius;
+      return {
+        lat: center.lat + (Math.cos(angle) * distance) / 111,
+        lon: center.lon + (Math.sin(angle) * distance) / (111 * Math.cos(center.lat * Math.PI / 180))
+      };
+    }
+
     const flows = [];
 
     for (const event of events) {
@@ -65,8 +76,11 @@ exports.getEstimatedFlows = async (req, res) => {
       const eventPreferences = preferences.filter(p => p.event.toString() === event._id.toString());
       const users = [
         ...eventBookings.map(b => ({ user: b.user, weight: 0.9 })),
-        ...eventPreferences.map(p => ({ user: p.user, weight: 0.55 }))
-      ].filter(u => u.user?.lat && u.user?.lon);
+        ...eventPreferences.map(p => ({
+          user: p.user || generateRandomGuestPosition(),
+          weight: 0.55
+        }))
+      ];
 
       const assigned = assignParkingSpots({ lat: event.location.lat, lon: event.location.lon }, users.length);
       let userIndex = 0;
@@ -159,7 +173,8 @@ exports.getEventHistogram = async (req, res) => {
           '18-30': 0,
           '31-45': 0,
           '46-60': 0,
-          '60+': 0
+          '60+': 0,
+          'undefined': 0
         }
       };
 
@@ -173,19 +188,27 @@ exports.getEventHistogram = async (req, res) => {
 
       // Prenotati (0.9)
       bookings
-        .filter(b => b.event.toString() === event._id.toString() && b.user?.birthDate)
+        .filter(b => b.event.toString() === event._id.toString())
         .forEach(b => {
-          const age = calculateAge(new Date(b.user.birthDate));
-          const group = ageGroup(age);
+          let group = 'undefined';
+          if (b.user?.birthDate) {
+            const age = calculateAge(new Date(b.user.birthDate));
+            group = ageGroup(age);
+          }
+          if (!eventData.ageGroups[group]) eventData.ageGroups[group] = 0;
           eventData.ageGroups[group] += 0.9;
         });
 
       // Preferiti (peso parziale, 0.6)
       preferences
-        .filter(p => p.event.toString() === event._id.toString() && p.user?.birthDate)
+        .filter(p => p.event.toString() === event._id.toString())
         .forEach(p => {
-          const age = calculateAge(new Date(p.user.birthDate));
-          const group = ageGroup(age);
+          let group = 'undefined';
+          if (p.user?.birthDate) {
+            const age = calculateAge(new Date(p.user.birthDate));
+            group = ageGroup(age);
+          }
+          if (!eventData.ageGroups[group]) eventData.ageGroups[group] = 0;
           eventData.ageGroups[group] += 0.6;
         });
 

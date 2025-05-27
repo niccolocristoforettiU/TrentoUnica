@@ -12,7 +12,7 @@
     <p v-if="event.ageRestricted"><strong>Età minima:</strong> {{ event.minAge }} anni</p>
 
     <!-- Preferenza evento -->
-    <div v-if="userRole === 'client' && !hasBooking && !isPastEvent">
+    <div v-if="((userRole === 'client' && !hasBooking) || isGuest) && !isPastEvent">
       <button @click="togglePreference" class="btn" :class="hasPreferred ? 'btn-secondary' : 'btn-outline-secondary'">
         {{ hasPreferred ? 'Rimuovi preferenza' : 'Mi interessa questo evento' }}
       </button>
@@ -25,17 +25,20 @@
       </button>
     </div>
 
-    <div v-if="event.bookingRequired && userRole === 'client'">
-      <p v-if="event.ageRestricted && !isPastEvent && !hasBooking && userAge !== null && userAge < event.minAge" class="text-danger">
+    <div v-if="event.bookingRequired && (userRole === 'client' || isGuest)">
+      <p v-if="isGuest" class="text-info">
+        Per prenotare questo evento è necessaria la registrazione.
+      </p>
+      <p v-if="userRole === 'client' && event.ageRestricted && !isPastEvent && !hasBooking && userAge !== null && userAge < event.minAge" class="text-danger">
         Non puoi prenotare questo evento: età minima richiesta {{ event.minAge }} anni.
       </p>
-      <p v-else-if="event.bookingCount >= event.location.maxSeats" class="text-danger">
+      <p v-else-if="userRole === 'client' && event.bookingCount >= event.location.maxSeats" class="text-danger">
         Evento sold out 🚫
       </p>
 
       <!-- Prenotazione gratuita -->
       <button
-        v-else-if="!hasBooking && event.price === 0 && !isPastEvent"
+        v-else-if="!hasBooking && event.price === 0 && !isPastEvent && userRole === 'client'"
         @click="prenotaEvento"
         class="btn btn-primary"
       >
@@ -43,7 +46,7 @@
       </button>
 
       <!-- Prenotazione con pagamento PayPal -->
-      <template v-else-if="!hasBooking && event.price > 0 && !isPastEvent">
+      <template v-else-if="!hasBooking && event.price > 0 && !isPastEvent && userRole === 'client'">
         <p class="text-info">
           Utilizza uno dei metodi di pagamento qui sotto per effettuare la prenotazione:
         </p>
@@ -52,13 +55,14 @@
         </div>
       </template>
 
-      <p v-else-if="hasBooking" class="text-success">
+      <p v-else-if="hasBooking && userRole === 'client'" class="text-success">
         Prenotazione già effettuata ✔️
       </p>
-      <p v-else-if="isPastEvent" class="text-muted">
-        Evento concluso
-      </p>
     </div>
+
+    <p v-if="isPastEvent" class="text-muted">
+      Evento concluso
+    </p>
 
     <!-- Mostra biglietto se disponibile -->
     <div v-if="ticket" class="ticket-popup">
@@ -90,7 +94,9 @@ export default {
       paypalRendered: false,
       hasPreferred: false,
       hasLocationPreferred: false,
-      userAge: null
+      userAge: null,
+      isGuest: !!localStorage.getItem("guestId") && !localStorage.getItem("token"),
+      guestId: localStorage.getItem("guestId") || null,
     };
   },
   computed: {
@@ -104,14 +110,17 @@ export default {
       const response = await axios.get(`/events/${id}`);
       this.event = response.data;
 
-      if (this.token && this.userRole === "client") {
+      if (this.userRole === "client") {
         this.getUserAge();
         this.$nextTick(async () => {
           await this.checkBooking();
-          await this.checkPreference();
           await this.checkLocationPreference();
         });
       }
+
+      this.$nextTick(async () => {
+        await this.checkPreference();
+      });
 
       this.$nextTick(() => {
         if (
@@ -264,11 +273,13 @@ export default {
     },
     async checkPreference() {
       try {
-        if (!this.token || this.userRole !== "client") return;
+        const headers = this.token
+          ? { Authorization: `Bearer ${this.token}` }
+          : this.guestId
+            ? { "x-guest-id": this.guestId }
+            : {};
 
-        const res = await axios.get(`/preferences/${this.event._id}`, {
-          headers: { Authorization: `Bearer ${this.token}` }
-        });
+        const res = await axios.get(`/preferences/${this.event._id}`, { headers });
 
         this.hasPreferred = res.data.hasPreference === true;
       } catch (err) {
@@ -282,16 +293,18 @@ export default {
         return;
       }
       try {
+        const headers = this.token
+          ? { Authorization: `Bearer ${this.token}` }
+          : this.guestId
+            ? { "x-guest-id": this.guestId }
+            : {};
+
         if (this.hasPreferred) {
-          await axios.delete(`/events/${this.event._id}/preference`, {
-            headers: { Authorization: `Bearer ${this.token}` }
-          });
+          await axios.delete(`/events/${this.event._id}/preference`, { headers });
           this.hasPreferred = false;
           this.event.popularity--;
         } else {
-          await axios.post(`/events/${this.event._id}/preference`, {}, {
-            headers: { Authorization: `Bearer ${this.token}` }
-          });
+          await axios.post(`/events/${this.event._id}/preference`, {}, { headers });
           this.hasPreferred = true;
           this.event.popularity++;  
         }

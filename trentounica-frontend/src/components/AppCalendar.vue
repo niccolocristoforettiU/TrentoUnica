@@ -24,15 +24,15 @@
             <option value="concerto">Concerto</option>
           </select>
         </label>
-        <label v-if="role === 'organizer'" class="checkbox-inline">
+        <label v-if="role === 'organizer' && !isGuest" class="checkbox-inline">
           <span style="font-size: 14px;">Solo i miei eventi</span>
           <input type="checkbox" v-model="showOnlyMine" @change="fetchEvents" />
         </label>
-        <label v-if="role === 'client'" class="checkbox-inline">
+        <label v-if="role === 'client' && !isGuest" class="checkbox-inline">
           <span style="font-size: 14px;">Solo i miei eventi preferiti</span>
           <input type="checkbox" v-model="showOnlyPreferred" @change="fetchEvents" />
         </label>
-        <label v-if="role === 'client'" class="checkbox-inline">
+        <label v-if="role === 'client' && !isGuest" class="checkbox-inline">
           <span style="font-size: 14px;">Solo eventi in location preferite</span>
           <input type="checkbox" v-model="showOnlyPreferredLocations" @change="fetchEvents" />
         </label>
@@ -74,7 +74,8 @@ export default {
       showOnlyPreferred: false,
       showOnlyPreferredLocations: false,
       onlyUpcoming: false,
-      role: localStorage.getItem("role") || ""
+      role: localStorage.getItem("role") || "",
+      isGuest: !!localStorage.getItem("guestId") && !localStorage.getItem("token")
     };
   },
   mounted() {

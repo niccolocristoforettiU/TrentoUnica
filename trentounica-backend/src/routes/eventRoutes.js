@@ -1,7 +1,7 @@
 // src/routes/eventRoutes.js
 const express = require('express');
 const router = express.Router();
-const { authenticate, authorizeRole } = require('../middlewares/authMiddleware');
+const { authenticate, authorizeRole, optionalAuthenticate } = require('../middlewares/authMiddleware');
 const eventController = require('../controllers/eventController');
 
 // Ottenere tutte le location disponibili per la creazione degli eventi (solo per organizer)
@@ -11,7 +11,7 @@ router.get('/locations', authenticate, authorizeRole('organizer'), (req, res, ne
 router.get('/organizer', authenticate, authorizeRole('organizer'), (req, res, next) => eventController.getOrganizerEvents(req, res, next));
 
 // Eventi filtrati per mappa (client/admin/organizer/trasporti)
-router.get('/filter', authenticate, authorizeRole(['client', 'admin', 'organizer', 'trasporti']), eventController.getFilteredEvents);
+router.get('/filter', optionalAuthenticate, eventController.getFilteredEvents);
 
 // Elenco eventi (pubblici)
 router.get('/', (req, res, next) => eventController.getAllEvents(req, res, next));
@@ -29,9 +29,9 @@ router.put('/:id', authenticate, authorizeRole('organizer'), (req, res, next) =>
 router.delete('/:id', authenticate, authorizeRole('organizer'), (req, res, next) => eventController.deleteEvent(req, res, next));
 
 
-// Esprimere e rimuovere preferenze sugli eventi (solo client)
-router.post('/:id/preference', authenticate, authorizeRole('client'), eventController.expressPreference);
-router.delete('/:id/preference', authenticate, authorizeRole('client'), eventController.removePreference);
+// Esprimere e rimuovere preferenze sugli eventi (anche guest)
+router.post('/:id/preference', optionalAuthenticate, eventController.expressPreference);
+router.delete('/:id/preference', optionalAuthenticate, eventController.removePreference);
 
 
 router.get('/organizer/revenue', authenticate, authorizeRole('organizer'), eventController.getOrganizerRevenue);

@@ -2,10 +2,12 @@
 const User = require('../models/userModel');
 const Location = require('../models/locationModel');
 const LocationPreference = require('../models/locationPreferenceModel');
+const Event = require('../models/eventModel');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { sendAccountActivationEmail, sendPasswordResetEmail } = require('../services/emailService');
 const crypto = require('crypto');
+const { v4: uuidv4 } = require('uuid');
 
 exports.register = async (req, res) => {
   try {
@@ -234,7 +236,7 @@ exports.updateProfile = async (req, res) => {
 exports.getAllOrganizersWithLocations = async (req, res) => {
   try {
     const organizers = await User.find({ role: 'organizer' })
-      .populate('locations', 'name address category maxSeats openingTime closingTime') // Seleziona solo info chiave
+      .populate('locations', 'name address category maxSeats openingTime closingTime enabled') // Seleziona anche enabled
       .select('-password');
     res.status(200).json(organizers);
   } catch (error) {
@@ -255,6 +257,8 @@ exports.disableOrganizer = async (req, res) => {
 
     user.verified = false;
     await user.save();
+
+    await Event.deleteMany({ organizer: userId });
 
     res.status(200).json({ message: 'Organizzatore disabilitato con successo' });
   } catch (error) {
@@ -313,4 +317,20 @@ exports.resetPassword = async (req, res) => {
   await user.save();
 
   res.status(200).json({ message: 'Password reimpostata con successo' });
+};
+
+exports.initGuestSession = async (req, res) => {
+  try {
+    const existingGuestId = req.body.guestId;
+
+    if (existingGuestId && typeof existingGuestId === 'string' && existingGuestId.length > 10) {
+      return res.status(200).json({ guestId: existingGuestId });
+    }
+
+    const newGuestId = uuidv4();
+    return res.status(200).json({ guestId: newGuestId });
+  } catch (error) {
+    console.error('Errore nella generazione guestId:', error);
+    res.status(500).json({ message: 'Errore nella creazione guestId', error: error.message });
+  }
 };

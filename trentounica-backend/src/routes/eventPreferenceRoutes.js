@@ -1,15 +1,15 @@
 const express = require('express');
 const router = express.Router();
-const { authenticate } = require('../middlewares/authMiddleware');
+const { optionalAuthenticate } = require('../middlewares/authMiddleware');
 const controller = require('../controllers/eventPreferenceController');
 
 // Verifica se l'utente ha espresso preferenza per un evento
-router.get('/:eventId', authenticate, controller.checkPreference);
+router.get('/:eventId', optionalAuthenticate, controller.checkPreference);
 
 // Esprime una preferenza
-router.post('/:eventId', authenticate, controller.expressPreference);
+router.post('/:eventId', optionalAuthenticate, controller.expressPreference);
 
 // Rimuove una preferenza
-router.delete('/:eventId', authenticate, controller.removePreference);
+router.delete('/:eventId', optionalAuthenticate, controller.removePreference);
 
 module.exports = router;

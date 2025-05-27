@@ -74,6 +74,7 @@ export default {
       showOnlyPreferredEvents: false,
       locations: [],
       AdvancedMarkerElement: null,
+      isGuest: !!localStorage.getItem("guestId") && !localStorage.getItem("token"),
     };
   },
   computed: {
@@ -81,7 +82,7 @@ export default {
       return this.role === "organizer" ? "Mappa Location" : "Mappa Eventi";
     },
     showFilters() {
-      return ["client", "admin", "organizer", "trasporti"].includes(this.role);
+      return ["client", "admin", "organizer", "trasporti"].includes(this.role) && !this.isGuest;
     },
     defaultCenter() {
       if (this.locations.length) {
@@ -117,7 +118,12 @@ export default {
     async fetchLocations() {
       try {
         const token = localStorage.getItem("token");
-        const headers = { Authorization: `Bearer ${token}` };
+        const headers = {};
+        if (token) headers.Authorization = `Bearer ${token}`;
+        else {
+          const guestId = localStorage.getItem("guestId");
+          if (guestId) headers["x-guest-id"] = guestId;
+        }
         const todayStr = new Date().toISOString().split("T")[0];
 
         const params = {
