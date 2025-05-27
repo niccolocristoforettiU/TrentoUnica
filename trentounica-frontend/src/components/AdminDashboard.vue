@@ -28,6 +28,12 @@
                     {{ loc.name }} - {{ loc.address }} ({{ loc.category }})<br />
                     Capienza: {{ loc.maxSeats }}<br />
                     Orari: {{ loc.openingTime }} - {{ loc.closingTime }}
+                    <div style="margin-top: 5px;">
+                      <label>
+                        <input type="checkbox" :checked="loc.enabled" @change="toggleLocation(loc._id, $event.target.checked)" />
+                        {{ loc.enabled ? 'Attiva' : 'Disabilitata' }}
+                      </label>
+                    </div>
                   </li>
                 </ul>
               </td>
@@ -97,6 +103,17 @@ export default {
         this.fetchOrganizers();
       } catch (error) {
         console.error("Errore nella disabilitazione dell'organizer:", error);
+      }
+    },
+    async toggleLocation(locationId, enabled) {
+      try {
+        const token = localStorage.getItem("token");
+        await axios.patch(`/locations/${locationId}/status`, { enabled }, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        this.fetchOrganizers();
+      } catch (error) {
+        console.error("Errore nel cambio stato location:", error);
       }
     }
   },
