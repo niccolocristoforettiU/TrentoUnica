@@ -241,9 +241,14 @@ const getOrganizerRevenue = async (req, res) => {
 const expressPreference = async (req, res) => {
   try {
     const { id: eventId } = req.params;
-    const userId = req.user.userId;
+    const userId = req.user?.userId;
+    const guestId = req.headers['x-guest-id'];
 
-    await EventPreference.create({ user: userId, event: eventId });
+    if (!userId && !guestId) {
+      return res.status(401).json({ message: 'Utente non autenticato o guestId mancante' });
+    }
+
+    await EventPreference.create({ user: userId, guestId, event: eventId });
     await Event.findByIdAndUpdate(eventId, { $inc: { popularity: 1 } });
 
     res.status(200).json({ message: 'Preferenza registrata con successo.' });
@@ -259,9 +264,14 @@ const expressPreference = async (req, res) => {
 const removePreference = async (req, res) => {
   try {
     const { id: eventId } = req.params;
-    const userId = req.user.userId;
+    const userId = req.user?.userId;
+    const guestId = req.headers['x-guest-id'];
 
-    const pref = await EventPreference.findOneAndDelete({ user: userId, event: eventId });
+    if (!userId && !guestId) {
+      return res.status(401).json({ message: 'Utente non autenticato o guestId mancante' });
+    }
+
+    const pref = await EventPreference.findOneAndDelete({ event: eventId, ...(userId ? { user: userId } : { guestId }) });
     if (pref) {
       await Event.findByIdAndUpdate(eventId, { $inc: { popularity: -1 } });
     }

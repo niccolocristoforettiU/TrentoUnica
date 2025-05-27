@@ -3,6 +3,9 @@ const Event = require('../models/eventModel');
 const EventPreference = require('../models/eventPreferenceModel');
 
 const getTicketForEvent = async (req, res) => {
+  if (!req.user?.userId) {
+    return res.status(401).json({ message: 'Autenticazione richiesta per effettuare questa operazione.' });
+  }
   try {
     const booking = await Booking.findOne({
       user: req.user.userId,
@@ -36,6 +39,9 @@ const getTicketForEvent = async (req, res) => {
 };
 
 const getClientBookings = async (req, res) => {
+  if (!req.user?.userId) {
+    return res.status(401).json({ message: 'Autenticazione richiesta per effettuare questa operazione.' });
+  }
   const bookings = await Booking.find({
     user: req.user.userId,
     status: 'confirmed',
@@ -49,6 +55,9 @@ const getClientBookings = async (req, res) => {
 };
 
 const createBooking = async (req, res) => {
+  if (!req.user?.userId) {
+    return res.status(401).json({ message: 'Autenticazione richiesta per effettuare questa operazione.' });
+  }
   const { eventId } = req.body;
   const userId = req.user.userId;
 
@@ -103,6 +112,9 @@ const createBooking = async (req, res) => {
 
 // Annulla prenotazione (solo se gratuita e confermata)
 const cancelBooking = async (req, res) => {
+  if (!req.user?.userId) {
+    return res.status(401).json({ message: 'Autenticazione richiesta per effettuare questa operazione.' });
+  }
   try {
     const { bookingId } = req.params;
     const userId = req.user.userId;
@@ -140,6 +152,9 @@ const cancelBooking = async (req, res) => {
 };
 
 const validateTicket = async (req, res) => {
+  if (!req.user?.userId) {
+    return res.status(401).json({ message: 'Autenticazione richiesta per effettuare questa operazione.' });
+  }
   const { ticketId, eventId } = req.body;
   const organizerId = req.user.userId;
 
