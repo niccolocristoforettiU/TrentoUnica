@@ -1,5 +1,6 @@
 const Location = require('../models/locationModel');
 const LocationPreference = require('../models/locationPreferenceModel');
+const Event = require('../models/eventModel');
 
 // Ottenere tutte le location (solo per admin)
 const getAllLocations = async (req, res) => {
@@ -137,6 +138,10 @@ const deleteLocation = async (req, res) => {
 // Aggiungi una location alle preferenze dell'utente
 const addLocationPreference = async (req, res) => {
   try {
+    if (!req.user?.userId) {
+      return res.status(401).json({ message: 'Solo utenti registrati possono esprimere preferenze sulle location.' });
+    }
+
     const { locationId } = req.params;
     const userId = req.user.userId;
 
@@ -153,6 +158,10 @@ const addLocationPreference = async (req, res) => {
 // Rimuovi una location dalle preferenze dell'utente
 const removeLocationPreference = async (req, res) => {
   try {
+    if (!req.user?.userId) {
+      return res.status(401).json({ message: 'Solo utenti registrati possono rimuovere preferenze sulle location.' });
+    }
+
     const { locationId } = req.params;
     const userId = req.user.userId;
 
@@ -160,6 +169,35 @@ const removeLocationPreference = async (req, res) => {
     res.status(200).json({ message: 'Location rimossa dalle preferenze.' });
   } catch (error) {
     res.status(500).json({ message: 'Errore nella rimozione della preferenza.', error: error.message });
+  }
+};
+
+const toggleLocationStatus = async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Accesso negato. Solo l\'admin può modificare lo stato della location.' });
+    }
+
+    const { id } = req.params;
+    const { enabled } = req.body;
+
+    const location = await Location.findByIdAndUpdate(
+      id,
+      { enabled },
+      { new: true }
+    );
+
+    if (!location) {
+      return res.status(404).json({ message: 'Location non trovata' });
+    }
+
+    if (!enabled) {
+      await Event.deleteMany({ location: id });
+    }
+
+    res.status(200).json({ message: `Location ${enabled ? 'attivata' : 'disabilitata'} con successo`, location });
+  } catch (err) {
+    res.status(500).json({ message: 'Errore nella modifica dello stato della location', error: err.message });
   }
 };
 
@@ -171,5 +209,6 @@ module.exports = {
   updateLocationTimesAndSeats,
   deleteLocation,
   addLocationPreference,
-  removeLocationPreference
+  removeLocationPreference,
+  toggleLocationStatus
 };

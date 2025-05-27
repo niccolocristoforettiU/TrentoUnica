@@ -39,6 +39,10 @@ const locationSchema = new mongoose.Schema({
     enum: ['bar', 'discoteca', 'concerto'],
     trim: true
   },
+  enabled: {
+    type: Boolean,
+    default: true
+  },
   organizer: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',

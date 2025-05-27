@@ -11,6 +11,7 @@
         <input v-model="password" type="password" placeholder="Password" required />
         <button type="submit">Login</button>
       </form>
+      <button @click="initGuest" type="button" class="guest-button">Continua come ospite</button>
       <div class="forgot-password">
         <router-link to="/forgot-password">Recupera Password</router-link>
       </div>
@@ -53,6 +54,20 @@ export default {
         this.$router.push("/");
       } catch (error) {
         this.errorMessage = error.response?.data?.message || "Errore durante il login";
+      }
+    },
+    async initGuest() {
+      try {
+        const existingGuestId = localStorage.getItem("guestId");
+
+        const response = await axios.post("/users/guest/init", {
+          guestId: existingGuestId || null,
+        });
+
+        localStorage.setItem("guestId", response.data.guestId);
+        this.$router.push("/");
+      } catch (error) {
+        this.errorMessage = "Errore nell'accesso come ospite";
       }
     }
   }
@@ -137,5 +152,22 @@ button[type="submit"]:hover {
   margin-top: 15px;
   color: red;
   font-size: 14px;
+}
+
+.guest-button {
+  margin-top: 10px;
+  padding: 12px;
+  background-color: transparent;
+  color: #2e7d32;
+  border: 2px solid #2e7d32;
+  border-radius: 6px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.guest-button:hover {
+  background-color: #2e7d32;
+  color: white;
 }
 </style>

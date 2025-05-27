@@ -35,14 +35,15 @@ const props = defineProps({
 const chartComponent = ref(null)
 const chartData = ref(null)
 
-const ageGroups = ['0-17', '18-30', '31-45', '46-60', '60+']
+const ageGroups = ['0-17', '18-30', '31-45', '46-60', '60+', 'undefined']
 
 const ageColors = {
   '0-17': '#FF6384',
   '18-30': '#36A2EB',
   '31-45': '#FFCE56',
   '46-60': '#4BC0C0',
-  '60+': '#9966FF'
+  '60+': '#9966FF',
+  'undefined': '#999999'
 }
 
 const chartOptions = {
@@ -66,7 +67,9 @@ const fetchData = async () => {
     const dataWithDates = data.map(e => ({
       ...e,
       startDate: new Date(e.startDate).toLocaleString('it-IT', { timeZone: 'Europe/Rome' }),
-      endDate: new Date(e.endDate).toLocaleString('it-IT', { timeZone: 'Europe/Rome' })
+      endDate: new Date(e.endDate).toLocaleString('it-IT', { timeZone: 'Europe/Rome' }),
+      locationName: e.location,
+      locationAddress: e.address ?? ''
     }));
 
     loadingProgress.value = 0;
@@ -78,7 +81,7 @@ const fetchData = async () => {
 
     const labels = dataWithDates.map(event => event.title)
     const datasetByAge = ageGroups.map(group => ({
-      label: group,
+      label: group === 'undefined' ? 'N.D.' : group,
       data: dataWithDates.map(e => e.ageGroups[group] || 0),
       backgroundColor: ageColors[group],
       stack: 'stack1'
@@ -101,11 +104,11 @@ const exportHistogramAsCSV = () => {
   loadingProgress.value = 0;
 
   const data = chartData.value.rawData;
-  const headers = ['Evento', 'Data Inizio', 'Data Fine', ...ageGroups];
+  const headers = ['Evento', 'Location', 'Indirizzo', 'Data Inizio', 'Data Fine', ...ageGroups];
   const rows = [];
   const total = data.length;
   data.forEach((event, i) => {
-    const row = [event.title, event.startDate, event.endDate];
+    const row = [event.title, event.locationName, event.locationAddress, event.startDate, event.endDate];
     chartData.value.datasets.forEach(dataset => {
       row.push(dataset.data[i]);
     });
