@@ -15,6 +15,9 @@ import MapLocation from '@/components/MapLocation.vue';
 import OrganizerScanner from '@/components/OrganizerScanner.vue';
 import ForgotPassword from '@/views/ForgotPassword.vue';
 import ResetPassword from '@/views/ResetPassword.vue';
+import OrganizerStats from '@/components/OrganizerStats.vue';
+import AdminStatistiche from '@/components/AdminStatistiche.vue';
+import AdminAttendanceHistogram from '@/components/AdminAttendanceHistogram.vue';
 
 const routes = [
   {
@@ -67,7 +70,7 @@ const routes = [
   {
     path: '/organizer/statistiche',
     name: 'OrganizerStatistiche',
-    component: () => import('@/components/OrganizerStats.vue'),
+    component: OrganizerStats,
     meta: { requiresAuth: true, role: 'organizer' }
   },
   {
@@ -85,7 +88,7 @@ const routes = [
   {
     path: '/admin/statistiche',
     name: 'AdminStatistiche',
-    component: () => import('@/components/AdminStatistiche.vue'),
+    component: AdminStatistiche,
     meta: { requiresAuth: true, role: 'admin' }
   },
   {
@@ -97,7 +100,7 @@ const routes = [
   {
     path: '/admin/statistiche/istogramma',
     name: 'AdminStatHistogram',
-    component: () => import('@/components/AdminAttendanceHistogram.vue'),
+    component: AdminAttendanceHistogram,
     meta: { requiresAuth: true, role: 'admin' }
   },
   {
