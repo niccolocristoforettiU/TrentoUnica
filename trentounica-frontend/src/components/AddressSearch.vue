@@ -13,7 +13,6 @@ const emit = defineEmits(['address-selected'])
 const autocompleteElementId = `autocomplete-${Math.random().toString(36).substring(2, 10)}`
 const GOOGLE_API_KEY = process.env.VUE_APP_GOOGLE_MAPS_API_KEY
 
-const selectedPlace = ref(null)
 
 onMounted(async () => {
   const loader = new Loader({
