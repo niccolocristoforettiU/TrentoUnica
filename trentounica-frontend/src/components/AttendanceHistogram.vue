@@ -66,7 +66,9 @@ const fetchData = async () => {
     const dataWithDates = data.map(e => ({
       ...e,
       startDate: new Date(e.startDate).toLocaleString('it-IT', { timeZone: 'Europe/Rome' }),
-      endDate: new Date(e.endDate).toLocaleString('it-IT', { timeZone: 'Europe/Rome' })
+      endDate: new Date(e.endDate).toLocaleString('it-IT', { timeZone: 'Europe/Rome' }),
+      locationName: e.location,
+      locationAddress: e.address ?? ''
     }));
 
     loadingProgress.value = 0;
@@ -101,11 +103,11 @@ const exportHistogramAsCSV = () => {
   loadingProgress.value = 0;
 
   const data = chartData.value.rawData;
-  const headers = ['Evento', 'Data Inizio', 'Data Fine', ...ageGroups];
+  const headers = ['Evento', 'Location', 'Indirizzo', 'Data Inizio', 'Data Fine', ...ageGroups];
   const rows = [];
   const total = data.length;
   data.forEach((event, i) => {
-    const row = [event.title, event.startDate, event.endDate];
+    const row = [event.title, event.locationName, event.locationAddress, event.startDate, event.endDate];
     chartData.value.datasets.forEach(dataset => {
       row.push(dataset.data[i]);
     });
