@@ -31,7 +31,7 @@
 <script setup>
 import { ref } from 'vue'
 import FlowMap from '@/components/FlowMap.vue'
-import AttendanceHistogram from '@/components/AttendanceHistogram.vue'
+import AttendanceHistogram from '@/components/AdminAttendanceHistogram.vue'
 
 const today = new Date().toISOString().split('T')[0]
 const selectedDate = ref(today)
