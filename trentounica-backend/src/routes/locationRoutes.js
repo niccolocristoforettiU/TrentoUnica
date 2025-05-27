@@ -21,6 +21,9 @@ router.patch('/:id/times-seats', authenticate, authorizeRole('organizer'), locat
 // Eliminare una location
 router.delete('/:id', authenticate, authorizeRole('organizer'), locationController.deleteLocation);
 
+// Admin: abilitare/disabilitare una location
+router.patch('/:id/status', authenticate, authorizeRole('admin'), locationController.toggleLocationStatus);
+
 // Client: aggiungi/rimuovi location dalle preferenze
 router.post('/:locationId/preference', authenticate, authorizeRole('client'), locationController.addLocationPreference);
 router.delete('/:locationId/preference', authenticate, authorizeRole('client'), locationController.removeLocationPreference);

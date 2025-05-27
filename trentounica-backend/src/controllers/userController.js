@@ -2,6 +2,7 @@
 const User = require('../models/userModel');
 const Location = require('../models/locationModel');
 const LocationPreference = require('../models/locationPreferenceModel');
+const Event = require('../models/eventModel');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { sendAccountActivationEmail, sendPasswordResetEmail } = require('../services/emailService');
@@ -235,7 +236,7 @@ exports.updateProfile = async (req, res) => {
 exports.getAllOrganizersWithLocations = async (req, res) => {
   try {
     const organizers = await User.find({ role: 'organizer' })
-      .populate('locations', 'name address category maxSeats openingTime closingTime') // Seleziona solo info chiave
+      .populate('locations', 'name address category maxSeats openingTime closingTime enabled') // Seleziona anche enabled
       .select('-password');
     res.status(200).json(organizers);
   } catch (error) {
@@ -256,6 +257,8 @@ exports.disableOrganizer = async (req, res) => {
 
     user.verified = false;
     await user.save();
+
+    await Event.deleteMany({ organizer: userId });
 
     res.status(200).json({ message: 'Organizzatore disabilitato con successo' });
   } catch (error) {

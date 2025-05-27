@@ -18,6 +18,7 @@ import ResetPassword from '@/views/ResetPassword.vue';
 import OrganizerStats from '@/components/OrganizerStats.vue';
 import AdminStatistiche from '@/components/AdminStatistiche.vue';
 import AdminAttendanceHistogram from '@/components/AdminAttendanceHistogram.vue';
+import OrganizerLocation from '@/components/OrganizerLocation.vue';
 
 const routes = [
   {
@@ -110,7 +111,7 @@ const routes = [
     props: true,
     meta: { requiresAuth: true, role: 'organizer' }
   },
-    {
+  {
     path: '/trasporti/dashboard',
     name: 'TratteDashboard',
     component: TratteDashboard,
@@ -121,6 +122,12 @@ const routes = [
     name: 'EditEvent',
     component: EventForm,
     props: true,
+    meta: { requiresAuth: true, role: 'organizer' }
+  },
+  {
+    path: '/organizer/locations',
+    name: 'OrganizerLocations',
+    component: OrganizerLocation,
     meta: { requiresAuth: true, role: 'organizer' }
   },
   {
