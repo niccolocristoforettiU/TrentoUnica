@@ -210,6 +210,16 @@ export default {
       footer.innerHTML = `<em>${marker.name} - ${marker.address}</em>`;
       container.appendChild(footer);
 
+      // Add directions link after the footer
+      const directionsLink = document.createElement("a");
+      directionsLink.href = `https://www.google.com/maps/dir/?api=1&destination=${marker.lat},${marker.lon}`;
+      directionsLink.target = "_blank";
+      directionsLink.style.display = "block";
+      directionsLink.style.marginTop = "8px";
+      directionsLink.style.color = "#2e7d32";
+      directionsLink.textContent = "Ottieni indicazioni stradali";
+      container.appendChild(directionsLink);
+
       return container;
     },
 
