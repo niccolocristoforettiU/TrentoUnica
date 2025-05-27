@@ -44,7 +44,11 @@ router.post('/locations', authenticate, authorizeRole('organizer'), locationCont
 router.put('/locations/:id', authenticate, authorizeRole('organizer'), locationController.updateLocation);
 router.delete('/locations/:id', authenticate, authorizeRole('organizer'), locationController.deleteLocation);
 
+
 router.post('/forgot-password', userController.forgotPassword);
 router.post('/reset-password/:token', userController.resetPassword);
+
+// Rotta per inizializzare una sessione guest
+router.post('/guest/init', userController.initGuestSession);
 
 module.exports = router;

@@ -54,7 +54,7 @@ exports.getPreferencesHistogram = async (req, res) => {
     preferences.forEach(pref => {
       const eventId = pref.event.toString();
       if (!grouped[eventId]) grouped[eventId] = [];
-      grouped[eventId].push(pref.user);
+      grouped[eventId].push(pref.user || null);
     });
 
     const result = events.map(event => {
