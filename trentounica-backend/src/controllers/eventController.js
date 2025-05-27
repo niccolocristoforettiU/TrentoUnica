@@ -3,6 +3,8 @@ const Location = require('../models/locationModel');
 const Booking = require('../models/bookingModel');
 const EventPreference = require('../models/eventPreferenceModel');
 const LocationPreference = require('../models/locationPreferenceModel');
+const { checkTrattaConditionsForEvent } = require('../utils/tratteUtils');
+
 // Elenco eventi (pubblici)
 const getAllEvents = async (req, res) => {
   try {
@@ -205,7 +207,7 @@ const getEventsWithBookingCounts = async (req, res) => {
     const count = await Booking.countDocuments({
       event: event._id,
       status: 'confirmed'
-    });
+    }); 
 
     return {
       ...event.toObject(),
@@ -245,6 +247,9 @@ const expressPreference = async (req, res) => {
 
     await EventPreference.create({ user: userId, event: eventId });
     await Event.findByIdAndUpdate(eventId, { $inc: { popularity: 1 } });
+
+    // Controllo tratta post-preferenza
+    await checkTrattaConditionsForEvent(eventId);
 
     res.status(200).json({ message: 'Preferenza registrata con successo.' });
   } catch (error) {
@@ -304,6 +309,8 @@ const getEventRevenues = async (req, res) => {
     res.status(500).json({ message: 'Errore nel calcolo degli incassi per evento.', error: error.message });
   }
 };
+
+
 
 // Esportazione delle funzioni del controller
 module.exports = {

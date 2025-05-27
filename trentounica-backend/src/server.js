@@ -41,6 +41,7 @@ app.use("/api/calendar", require("./routes/calendarRoutes"));
 app.use('/api/search', require('./routes/eventSearchRoutes'));
 app.use('/api/locations', require('./routes/locationRoutes'));
 app.use('/api/admin/stats', require('./routes/adminStatsRoutes'));
+app.use('/api/tratte', require('./routes/tratteRoutes'));
 
 // Rotta protetta per testare JWT
 app.get('/api/protected', authenticate, (req, res) => {
