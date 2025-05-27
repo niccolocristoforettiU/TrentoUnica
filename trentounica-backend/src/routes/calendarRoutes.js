@@ -2,7 +2,7 @@
 
 const express = require("express");
 const router = express.Router();
-const { authenticate } = require("../middlewares/authMiddleware");
+const { authenticate, optionalAuthenticate } = require("../middlewares/authMiddleware");
 const calendarController = require("../controllers/calendarController");
 const Event = require("../models/eventModel");
 // Esporta tutti gli eventi filtrati per data
@@ -11,7 +11,7 @@ router.get("/export", authenticate, calendarController.getICalendar);
 router.get("/export/:id", authenticate, calendarController.getSingleEventICalendar);
 
 // Elenco eventi (filtrabili per data)
-router.get("/", authenticate, async (req, res) => {
+router.get("/", optionalAuthenticate, async (req, res) => {
     try {
         const { startDate, endDate, category, onlyMine, onlyPreferred } = req.query;
         const filter = {};

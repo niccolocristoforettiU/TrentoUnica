@@ -1,3 +1,28 @@
+exports.optionalAuthenticate = (req, res, next) => {
+  const authHeader = req.header('Authorization');
+  if (!authHeader) {
+    return next(); // Nessun token, trattato come guest
+  }
+
+  const token = authHeader.split(' ')[1];
+  if (!token) return next();
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = decoded;
+
+    const currentTime = Math.floor(Date.now() / 1000);
+    if (decoded.exp && decoded.exp < currentTime) {
+      return next(); // Token scaduto, trattato come guest
+    }
+
+    next();
+  } catch (err) {
+    console.warn('Token non valido, trattato come guest.');
+    next(); // Token invalido → trattato come guest
+  }
+};
+
 // src/middlewares/authMiddleware.js
 const jwt = require('jsonwebtoken');
 const User = require('../models/userModel');

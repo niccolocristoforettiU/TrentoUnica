@@ -4,9 +4,11 @@ const Event = require('../models/eventModel');
 // Verifica se l'utente ha già espresso una preferenza per un evento
 exports.checkPreference = async (req, res) => {
   try {
-    const userId = req.user.userId;
+    const userId = req.user?.userId;
+    const guestId = req.headers['x-guest-id'];
     const eventId = req.params.eventId;
-    const pref = await EventPreference.findOne({ user: userId, event: eventId });
+
+    const pref = await EventPreference.findOne({ event: eventId, ...(userId ? { user: userId } : { guestId }) });
     if (!pref) return res.status(200).json({ hasPreference: false });
     res.status(200).json({ hasPreference: true });
   } catch (error) {
@@ -18,9 +20,14 @@ exports.checkPreference = async (req, res) => {
 exports.expressPreference = async (req, res) => {
   try {
     const { eventId } = req.params;
-    const userId = req.user.userId;
+    const userId = req.user?.userId;
+    const guestId = req.headers['x-guest-id'];
 
-    await EventPreference.create({ user: userId, event: eventId });
+    if (!userId && !guestId) {
+      return res.status(401).json({ message: 'Utente non autenticato o guestId mancante' });
+    }
+
+    await EventPreference.create({ user: userId, guestId, event: eventId });
     await Event.findByIdAndUpdate(eventId, { $inc: { popularity: 1 } });
 
     res.status(200).json({ message: 'Preferenza registrata' });
@@ -36,9 +43,14 @@ exports.expressPreference = async (req, res) => {
 exports.removePreference = async (req, res) => {
   try {
     const { eventId } = req.params;
-    const userId = req.user.userId;
+    const userId = req.user?.userId;
+    const guestId = req.headers['x-guest-id'];
 
-    const pref = await EventPreference.findOneAndDelete({ user: userId, event: eventId });
+    if (!userId && !guestId) {
+      return res.status(401).json({ message: 'Utente non autenticato o guestId mancante' });
+    }
+
+    const pref = await EventPreference.findOneAndDelete({ event: eventId, ...(userId ? { user: userId } : { guestId }) });
     if (pref) {
       await Event.findByIdAndUpdate(eventId, { $inc: { popularity: -1 } });
     }

@@ -7,9 +7,10 @@
       </div>
       <ul class="nav-links">
         <li><router-link to="/">Home</router-link></li>
-        <li v-if="isAuthenticated"><router-link to="/map">Mappa</router-link></li>
+        <li v-if="isAuthenticated || isGuest"><router-link to="/map">Mappa</router-link></li>
         <li v-if="!isAuthenticated"><router-link to="/login">Login</router-link></li>
         <li v-if="!isAuthenticated"><router-link to="/register">Registrati</router-link></li>
+        <li v-if="isGuest"><router-link to="/searchbar">Esplora Eventi</router-link></li>
         <li v-if="role === 'client'"><router-link to="/client/dashboard">Dashboard Client</router-link></li>
         <li v-if="role === 'organizer'"><router-link to="/organizer/dashboard">Dashboard Organizer</router-link></li>
         <li v-if="role === 'organizer'"><router-link to="/organizer/statistiche">Statistiche Organizer</router-link></li>
@@ -18,16 +19,22 @@
         <li v-if="role === 'trasporti' || role === 'admin'"><router-link to="/trasporti/dashboard">Dashboard Tratte</router-link></li>
         <li v-if="role === 'admin'"><router-link to="/admin/statistiche">Statistiche Eventi</router-link></li>
         <li v-if="isAuthenticated"><router-link to="/searchbar">Cerca Eventi</router-link></li>
-        <li v-if="isAuthenticated"><router-link to="/Appcalendar">Calendario</router-link></li>
+        <li v-if="isAuthenticated || isGuest"><router-link to="/Appcalendar">Calendario</router-link></li>
       </ul>
-      <div v-if="isAuthenticated">
+      <div v-if="isAuthenticated || isGuest">
         <button @click="logout" class="logout-btn">Logout</button>
       </div>
     </nav>
 
     <!-- Contenuto principale -->
     <main class="welcome-section">
-      <h1>Benvenuto {{ userName }} in TrentoUnica</h1>
+      <h1 v-if="!isGuest">Benvenuto {{ userName }} in TrentoUnica</h1>
+      <div v-else>
+        <h1>Benvenuto Ospite in TrentoUnica</h1>
+        <p class="guest-prompt">
+          Vuoi prenotare eventi e accedere a funzionalità personalizzate? <router-link to="/register">Registrati ora</router-link>.
+        </p>
+      </div>
       <p>Esplora gli eventi, scopri le mappe o accedi alla tua area personale.</p>
     </main>
   </div>
@@ -43,7 +50,8 @@ export default {
       isAuthenticated: !!localStorage.getItem('token'),
       userName: localStorage.getItem('name') || "",
       role: localStorage.getItem('role') || "",
-      organizerEvents: []
+      organizerEvents: [],
+      isGuest: !!localStorage.getItem('guestId') && !localStorage.getItem('token')
     };
   },
   mounted() {
@@ -67,9 +75,11 @@ export default {
       localStorage.removeItem('token');
       localStorage.removeItem('role');
       localStorage.removeItem('name');
+      localStorage.removeItem('guestId');
       this.isAuthenticated = false;
       this.userName = "";
       this.role = "";
+      this.isGuest = false;
     }
   }
 };
@@ -147,5 +157,16 @@ export default {
 .welcome-section p {
   font-size: 1.1rem;
   color: #555;
+}
+
+.guest-prompt {
+  margin-top: 10px;
+  font-size: 1rem;
+  color: #444;
+}
+.guest-prompt a {
+  color: #2e7d32;
+  text-decoration: underline;
+  font-weight: bold;
 }
 </style>
