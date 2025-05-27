@@ -65,6 +65,12 @@ const routes = [
     meta: { requiresAuth: true, role: 'organizer' },
   },
   {
+    path: '/organizer/statistiche',
+    name: 'OrganizerStatistiche',
+    component: () => import('@/components/OrganizerStats.vue'),
+    meta: { requiresAuth: true, role: 'organizer' }
+  },
+  {
     path: '/organizer/create-event',
     name: 'CreateEvent',
     component: EventForm,
@@ -91,7 +97,7 @@ const routes = [
   {
     path: '/admin/statistiche/istogramma',
     name: 'AdminStatHistogram',
-    component: () => import('@/components/AttendanceHistogram.vue'),
+    component: () => import('@/components/AdminAttendanceHistogram.vue'),
     meta: { requiresAuth: true, role: 'admin' }
   },
   {
