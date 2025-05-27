@@ -6,6 +6,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { sendAccountActivationEmail, sendPasswordResetEmail } = require('../services/emailService');
 const crypto = require('crypto');
+const { v4: uuidv4 } = require('uuid');
 
 exports.register = async (req, res) => {
   try {
@@ -313,4 +314,20 @@ exports.resetPassword = async (req, res) => {
   await user.save();
 
   res.status(200).json({ message: 'Password reimpostata con successo' });
+};
+
+exports.initGuestSession = async (req, res) => {
+  try {
+    const existingGuestId = req.body.guestId;
+
+    if (existingGuestId && typeof existingGuestId === 'string' && existingGuestId.length > 10) {
+      return res.status(200).json({ guestId: existingGuestId });
+    }
+
+    const newGuestId = uuidv4();
+    return res.status(200).json({ guestId: newGuestId });
+  } catch (error) {
+    console.error('Errore nella generazione guestId:', error);
+    res.status(500).json({ message: 'Errore nella creazione guestId', error: error.message });
+  }
 };

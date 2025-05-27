@@ -24,7 +24,7 @@ const eventPreferenceSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Evita duplicati per user registrati o guest
+// Evita duplicati: un utente o guest può esprimere una preferenza una sola volta per evento
 eventPreferenceSchema.index(
   { user: 1, guestId: 1, event: 1 },
   {

@@ -137,6 +137,10 @@ const deleteLocation = async (req, res) => {
 // Aggiungi una location alle preferenze dell'utente
 const addLocationPreference = async (req, res) => {
   try {
+    if (!req.user?.userId) {
+      return res.status(401).json({ message: 'Solo utenti registrati possono esprimere preferenze sulle location.' });
+    }
+
     const { locationId } = req.params;
     const userId = req.user.userId;
 
@@ -153,6 +157,10 @@ const addLocationPreference = async (req, res) => {
 // Rimuovi una location dalle preferenze dell'utente
 const removeLocationPreference = async (req, res) => {
   try {
+    if (!req.user?.userId) {
+      return res.status(401).json({ message: 'Solo utenti registrati possono rimuovere preferenze sulle location.' });
+    }
+
     const { locationId } = req.params;
     const userId = req.user.userId;
 

@@ -5,6 +5,13 @@ const Event = require('../models/eventModel');
 exports.getICalendar = async (req, res) => {
   try {
     const { startDate, endDate, category, onlyMine, onlyPreferred, onlyEventPreferred } = req.query;
+    // Impedisci l'uso dei filtri avanzati da parte dei guest
+    if (
+      !req.user &&
+      (onlyMine === 'true' || onlyPreferred === 'true' || onlyEventPreferred === 'true')
+    ) {
+      return res.status(403).json({ message: 'Filtri avanzati disponibili solo per utenti registrati' });
+    }
     const filter = {};
 
     // Filtraggio per data se specificato

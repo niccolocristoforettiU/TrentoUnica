@@ -5,6 +5,11 @@ async function searchEvents(req, res) {
         const { query, category, sortByDate, sortByPopularity, onlyUpcoming, onlyMine, onlyPreferred, onlyEventPreferred } = req.query;
         const filter = {};
 
+        // Blocca filtri avanzati per guest
+        if (!req.user && (onlyMine === 'true' || onlyPreferred === 'true' || onlyEventPreferred === 'true')) {
+            return res.status(403).json({ message: 'Filtri riservati agli utenti registrati' });
+        }
+
         // Mostra solo eventi futuri
         if (onlyUpcoming === "true") {
             const today = new Date();

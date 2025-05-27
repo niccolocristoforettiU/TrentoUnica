@@ -25,7 +25,7 @@ app.use(cors({
   origin: 'http://localhost:8080',
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true,
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-guest-id']
 }));
 
 // Middleware per il parsing del corpo delle richieste

@@ -35,14 +35,15 @@ const props = defineProps({
 const chartComponent = ref(null)
 const chartData = ref(null)
 
-const ageGroups = ['0-17', '18-30', '31-45', '46-60', '60+']
+const ageGroups = ['0-17', '18-30', '31-45', '46-60', '60+', 'undefined']
 
 const ageColors = {
   '0-17': '#FF6384',
   '18-30': '#36A2EB',
   '31-45': '#FFCE56',
   '46-60': '#4BC0C0',
-  '60+': '#9966FF'
+  '60+': '#9966FF',
+  'undefined': '#999999'
 }
 
 const chartOptions = {
@@ -80,7 +81,7 @@ const fetchData = async () => {
 
     const labels = dataWithDates.map(event => event.title)
     const datasetByAge = ageGroups.map(group => ({
-      label: group,
+      label: group === 'undefined' ? 'N.D.' : group,
       data: dataWithDates.map(e => e.ageGroups[group] || 0),
       backgroundColor: ageColors[group],
       stack: 'stack1'
