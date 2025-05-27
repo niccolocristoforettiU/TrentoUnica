@@ -158,6 +158,11 @@ export default {
 
         this.ticket = response.data.ticket;
         this.hasBooking = true;
+
+        // Se l'evento è stato prenotato ma non era nei preferiti, aggiorna la popolarità localmente
+        if (!this.hasPreferred) {
+          this.event.popularity++;
+        }
       } catch (err) {
         console.error(err);
         alert("Prenotazione non disponibile o già effettuata.");
@@ -185,7 +190,7 @@ export default {
       }
     },
     loadPayPal() {
-      // ✅ Se l'evento non richiede prenotazione o è già stato prenotato, non fare nulla
+      //Se l'evento non richiede prenotazione o è già stato prenotato, non fare nulla
       if (
         !this.event ||
         !this.event.bookingRequired || 
@@ -288,7 +293,7 @@ export default {
             headers: { Authorization: `Bearer ${this.token}` }
           });
           this.hasPreferred = true;
-          this.event.popularity++;
+          this.event.popularity++;  
         }
       } catch (error) {
         console.error("Errore nella gestione preferenza:", error);

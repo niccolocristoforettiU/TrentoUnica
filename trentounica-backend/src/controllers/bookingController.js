@@ -1,6 +1,7 @@
 const Booking = require('../models/bookingModel');
 const Event = require('../models/eventModel');
 const EventPreference = require('../models/eventPreferenceModel');
+const { checkTrattaConditionsForEvent } = require('../utils/tratteUtils');
 
 const getTicketForEvent = async (req, res) => {
   try {
@@ -51,7 +52,6 @@ const getClientBookings = async (req, res) => {
 const createBooking = async (req, res) => {
   const { eventId } = req.body;
   const userId = req.user.userId;
-
   try {
     // Controllo età minima evento
     const event = await Event.findById(eventId);
@@ -94,6 +94,9 @@ const createBooking = async (req, res) => {
       await Event.findByIdAndUpdate(eventId, { $inc: { popularity: 1 } });
     }
 
+    // Controllo condizione per attivare tratta
+    await checkTrattaConditionsForEvent(eventId);
+    
     res.status(201).json(booking);
   } catch (error) {
     console.error("Errore nella creazione della prenotazione:", error);
@@ -125,10 +128,9 @@ const cancelBooking = async (req, res) => {
     booking.status = 'cancelled';
     await booking.save();
 
-    await EventPreference.deleteOne({ user: userId, event: booking.event }); // Assicura che venga rimossa ogni automatica
+    const pref = await EventPreference.findOneAndDelete({ user: userId, event: booking.event });
 
-    const existingPref = await EventPreference.findOne({ user: userId, event: booking.event });
-    if (!existingPref) {
+    if (pref) {
       await Event.findByIdAndUpdate(booking.event, { $inc: { popularity: -1 } });
     }
 
