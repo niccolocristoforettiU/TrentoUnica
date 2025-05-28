@@ -155,23 +155,30 @@ export default {
         return;
       }
       try {
-        await axios.post(
+        const bookingRes = await axios.post(
           "/bookings",
           { eventId: this.event._id },
           { headers: { Authorization: `Bearer ${this.token}` } }
         );
 
+        //Update event popularity from backend response
+        if (bookingRes.data.event) {
+          this.event = bookingRes.data.event;
+        }
+
+        //Then fetch the ticket
         const response = await axios.get(`/bookings/ticket/${this.event._id}`, {
           headers: { Authorization: `Bearer ${this.token}` }
         });
 
+
         this.ticket = response.data.ticket;
         this.hasBooking = true;
 
-        // Se l'evento è stato prenotato ma non era nei preferiti, aggiorna la popolarità localmente
-        if (!this.hasPreferred) {
-          this.event.popularity++;
-        }
+        await axios.post(`/tratte/generate/${this.event._id}`, null, {
+          headers: { Authorization: `Bearer ${this.token}` }
+        });
+        
       } catch (err) {
         console.error(err);
         alert("Prenotazione non disponibile o già effettuata.");

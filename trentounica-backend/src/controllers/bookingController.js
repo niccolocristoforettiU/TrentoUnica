@@ -1,7 +1,7 @@
 const Booking = require('../models/bookingModel');
 const Event = require('../models/eventModel');
 const EventPreference = require('../models/eventPreferenceModel');
-const { checkTrattaConditionsForEvent } = require('../utils/tratteUtils');
+const { generateTratte } = require('../utils/tratteUtils');
 
 const getTicketForEvent = async (req, res) => {
   if (!req.user?.userId) {
@@ -59,13 +59,19 @@ const createBooking = async (req, res) => {
   if (!req.user?.userId) {
     return res.status(401).json({ message: 'Autenticazione richiesta per effettuare questa operazione.' });
   }
+
   const { eventId } = req.body;
   const userId = req.user.userId;
+
   try {
-    // Controllo età minima evento
     const event = await Event.findById(eventId);
+    if (!event) {
+      return res.status(404).json({ message: 'Evento non trovato.' });
+    }
+
     const user = await require('../models/userModel').findById(userId);
 
+    // Verifica età minima
     if (event.ageRestricted && event.minAge) {
       const birthDate = new Date(user.birthDate);
       const age = Math.floor((Date.now() - birthDate.getTime()) / (1000 * 60 * 60 * 24 * 365.25));
@@ -74,21 +80,36 @@ const createBooking = async (req, res) => {
       }
     }
 
-    // Evita prenotazioni duplicate
+    // Verifica esistenza prenotazione
     const existing = await Booking.findOne({ user: userId, event: eventId });
     if (existing) {
       if (existing.status === 'confirmed') {
         return res.status(400).json({ message: 'Hai già prenotato questo evento.' });
       } else if (existing.status === 'cancelled') {
-        // Riattiva la prenotazione
+        // Riattiva prenotazione cancellata
         existing.status = 'confirmed';
         existing.paymentStatus = 'paid';
         await existing.save();
-        return res.status(200).json(existing);
+
+        // Crea preferenza se non esiste e incrementa popolarità
+        const pref = await EventPreference.findOne({ user: userId, event: eventId });
+        if (!pref) {
+          await EventPreference.create({ user: userId, event: eventId });
+          await Event.findByIdAndUpdate(eventId, { $inc: { popularity: 1 } });
+        }
+
+        // Verifica tratta
+        await generateTratte(eventId);
+
+        const updatedEvent = await Event.findById(eventId)
+          .populate('location', 'name address')
+          .populate('organizer', 'companyName email');
+
+        return res.status(200).json({ booking: existing, event: updatedEvent });
       }
     }
 
-    // Crea la prenotazione con pagamento confermato (simulato)
+    // Nuova prenotazione
     const booking = new Booking({
       user: userId,
       event: eventId,
@@ -98,20 +119,27 @@ const createBooking = async (req, res) => {
 
     await booking.save();
 
-    const pref = await EventPreference.findOneAndDelete({ user: userId, event: eventId });
+    // Crea preferenza se non esiste e incrementa popolarità
+    const pref = await EventPreference.findOne({ user: userId, event: eventId });
     if (!pref) {
-      await Event.findByIdAndUpdate(eventId, { $inc: { popularity: 1 } });
+      await EventPreference.create({ user: userId, event: eventId });
     }
+    await Event.findByIdAndUpdate(eventId, { $inc: { popularity: 1 } });
 
-    // Controllo condizione per attivare tratta
-    await checkTrattaConditionsForEvent(eventId);
-    
-    res.status(201).json(booking);
+    // Verifica tratta
+    await generateTratte(eventId);
+
+    const updatedEvent = await Event.findById(eventId)
+      .populate('location', 'name address')
+      .populate('organizer', 'companyName email');
+
+    return res.status(200).json({ booking: existing, event: updatedEvent });
   } catch (error) {
     console.error("Errore nella creazione della prenotazione:", error);
     res.status(500).json({ message: 'Errore nella creazione della prenotazione' });
   }
 };
+
 
 // Annulla prenotazione (solo se gratuita e confermata)
 const cancelBooking = async (req, res) => {
@@ -141,7 +169,6 @@ const cancelBooking = async (req, res) => {
     await booking.save();
 
     const pref = await EventPreference.findOneAndDelete({ user: userId, event: booking.event });
-
     if (pref) {
       await Event.findByIdAndUpdate(booking.event, { $inc: { popularity: -1 } });
     }

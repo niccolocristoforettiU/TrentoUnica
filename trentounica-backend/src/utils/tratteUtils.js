@@ -3,6 +3,8 @@ const EventPreference = require('../models/eventPreferenceModel');
 const Event = require('../models/eventModel');
 const User = require('../models/userModel');
 const Location = require('../models/locationModel');
+const Tratta = require('../models/trattaModel');
+
 
 const toRad = deg => deg * Math.PI / 180;
 const toDeg = rad => rad * 180 / Math.PI;
@@ -54,11 +56,38 @@ function geographicMidpoint(users) {
   return { lat: toDeg(lat), lon: toDeg(lon) };
 }
 
-async function checkTrattaConditionsForEvent(eventId) {
+function groupUsersByProximity(users, radiusKm, minGroupSize) {
+  const groups = [];
+
+  const remaining = [...users];
+
+  while (remaining.length > 0) {
+    const user = remaining.shift();
+    const group = [user];
+
+    for (let i = remaining.length - 1; i >= 0; i--) {
+      const candidate = remaining[i];
+      const closeToAll = group.every(u =>
+        haversineDistance(u.lat, u.lon, candidate.lat, candidate.lon) <= radiusKm
+      );
+      if (closeToAll) {
+        group.push(candidate);
+        remaining.splice(i, 1);
+      }
+    }
+
+    if (group.length >= minGroupSize) {
+      groups.push(group);
+    }
+  }
+
+  return groups;
+}
+
+async function generateTratte(eventId) {
   const event = await Event.findById(eventId).populate('location');
   if (!event || !event.location || event.location.lat == null || event.location.lon == null) {
-    console.log(" Evento o location con coordinate mancanti");
-    return;
+    throw new Error('Evento o coordinate mancanti');
   }
 
   const eventCoords = { lat: event.location.lat, lon: event.location.lon };
@@ -78,32 +107,97 @@ async function checkTrattaConditionsForEvent(eventId) {
     lon: { $ne: null }
   });
 
-  const MIN_DIST = parseFloat(process.env.DIST_MIN_PER_ATTIVAZIONE_TRATTA || "50");
-  const MAX_DIST = parseFloat(process.env.DIST_MAX_PER_ATTIVAZIONE_TRATTA || "5");
-  const MAX_DIST_BETWEEN_USERS = parseFloat(process.env.DIST_MAX_TRA_USER || "2");
-  const REQUIRED_USERS = parseInt(process.env.N_USER_UNICI_PER_ATTIVAZIONE_TRATTA || "5");
-
-  // Filter users by distance from event location
-  const usersInRange = users.filter(u => {
-    const dist = haversineDistance(eventCoords.lat, eventCoords.lon, u.lat, u.lon);
-    return dist >= MIN_DIST && dist <= MAX_DIST;
+  // Recupera utenti già assegnati a tratte attive per questo evento
+  const existingTratte = await Tratta.find({ event: eventId });
+  const alreadyAssignedUserIds = new Set();
+  existingTratte.forEach(tratta => {
+    tratta.users.forEach(uid => alreadyAssignedUserIds.add(uid.toString()));
   });
 
-  if (usersInRange.length >= REQUIRED_USERS) {
-    const allClose = allUsersWithinRadius(usersInRange, MAX_DIST_BETWEEN_USERS);
-    if (allClose) {
-      console.log("Tratta attivabile per evento ${eventId} con ${usersInRange.length} utenti validi e ravvicinati");
-    } else {
-      console.log("Utenti vicini all'evento ma troppo distanti tra loro (> ${MAX_DIST_BETWEEN_USERS} km)");
-    }
-  } else {
-    console.log("Solo ${usersInRange.length} utenti entro range evento (minimo richiesto: ${REQUIRED_USERS})");
+  const MIN_DIST = parseFloat(process.env.DIST_MIN_PER_ATTIVAZIONE_TRATTA || "50");
+  const MAX_DIST = parseFloat(process.env.DIST_MAX_PER_ATTIVAZIONE_TRATTA || "5");
+  const MAX_DIST_BETWEEN_USERS = parseFloat(process.env.DIST_MAX_TRA_USER || "3");
+  const REQUIRED_USERS = parseInt(process.env.N_USER_UNICI_PER_ATTIVAZIONE_TRATTA || "5");
+
+  const usersInRange = users.filter(u => {
+    const dist = haversineDistance(eventCoords.lat, eventCoords.lon, u.lat, u.lon);
+    return dist >= MIN_DIST && dist <= MAX_DIST && !alreadyAssignedUserIds.has(u._id.toString());
+  });
+
+  if (usersInRange.length < REQUIRED_USERS) {
+    return {
+      created: 0,
+      updated: 0,
+      message: `Solo ${usersInRange.length} utenti non assegnati entro il range (minimo richiesto: ${REQUIRED_USERS})`
+    };
   }
+
+  const groupedUsers = groupUsersByProximity(usersInRange, MAX_DIST_BETWEEN_USERS, REQUIRED_USERS);
+
+  let created = 0;
+  let updated = 0;
+  let trattaIndex = 0;
+
+  for (const group of groupedUsers) {
+    const midpoint = geographicMidpoint(group);
+    const avgDistance = group.reduce((sum, u) => sum + haversineDistance(midpoint.lat, midpoint.lon, u.lat, u.lon), 0) / group.length;
+    const estimatedDuration = Math.ceil((avgDistance / 40) * 60);
+
+    let departureTime = new Date(event.date.getTime() - (estimatedDuration * 2 * 60000));
+    departureTime = new Date(departureTime.getTime() + trattaIndex * 60 * 60000); // +1h ogni nuova tratta
+
+    let matched = false;
+
+    for (const tratta of existingTratte) {
+      const allInRange = group.every(u =>
+        haversineDistance(u.lat, u.lon, tratta.midpoint.lat, tratta.midpoint.lon) <= MAX_DIST_BETWEEN_USERS
+      );
+
+      if (allInRange) {
+        const newUserIds = group.map(u => u._id.toString());
+        const currentUserIds = tratta.users.map(id => id.toString());
+        const uniqueNewUsers = newUserIds.filter(id => !currentUserIds.includes(id));
+
+        if (uniqueNewUsers.length > 0) {
+          tratta.users.push(...uniqueNewUsers);
+          await tratta.save();
+          updated++;
+        }
+
+        matched = true;
+        break;
+      }
+    }
+
+    if (!matched) {
+      await Tratta.create({
+        event: eventId,
+        users: group.map(u => u._id),
+        midpoint,
+        departureTime,
+        date: event.date,
+        estimatedDuration,
+        capacity: process.env.BUS_CAPACITY_STANDARD,
+        status: 'pending',
+      });
+      created++;
+      trattaIndex++;
+    }
+  }
+  return {
+    created,
+    updated,
+    message: `Tratte processate con successo`
+  };
 }
+
+
+
 
 module.exports = {
   haversineDistance,
   allUsersWithinRadius,
   geographicMidpoint,
-  checkTrattaConditionsForEvent
+  groupUsersByProximity,
+  generateTratte
 };
