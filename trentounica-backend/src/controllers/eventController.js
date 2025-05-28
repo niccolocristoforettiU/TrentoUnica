@@ -3,7 +3,7 @@ const Location = require('../models/locationModel');
 const Booking = require('../models/bookingModel');
 const EventPreference = require('../models/eventPreferenceModel');
 const LocationPreference = require('../models/locationPreferenceModel');
-const { checkTrattaConditionsForEvent } = require('../utils/tratteUtils');
+const { generateTratte } = require('../utils/tratteUtils');
 
 // Elenco eventi (pubblici)
 const getAllEvents = async (req, res) => {
@@ -254,7 +254,9 @@ const expressPreference = async (req, res) => {
     await Event.findByIdAndUpdate(eventId, { $inc: { popularity: 1 } });
 
     // Controllo tratta post-preferenza
-    await checkTrattaConditionsForEvent(eventId);
+    console.log("prima della chiamata")
+    await generateTratte(eventId);
+    console.log("dopo della chiamata")
 
     res.status(200).json({ message: 'Preferenza registrata con successo.' });
   } catch (error) {

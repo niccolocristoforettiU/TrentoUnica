@@ -1,5 +1,6 @@
 const EventPreference = require('../models/eventPreferenceModel');
 const Event = require('../models/eventModel');
+const { generateTratte } = require('../utils/tratteUtils');
 
 // Verifica se l'utente ha già espresso una preferenza per un evento
 exports.checkPreference = async (req, res) => {
@@ -29,6 +30,10 @@ exports.expressPreference = async (req, res) => {
 
     await EventPreference.create({ user: userId, guestId, event: eventId });
     await Event.findByIdAndUpdate(eventId, { $inc: { popularity: 1 } });
+
+    // Controllo tratta post-preferenza
+    await generateTratte(eventId);
+
 
     res.status(200).json({ message: 'Preferenza registrata' });
   } catch (error) {
