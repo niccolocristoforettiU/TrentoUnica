@@ -249,37 +249,6 @@ export default {
 </script>
 
 <style scoped>
-.edit-form {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 15px;
-  padding: 10px 0;
-}
-.edit-form label {
-  display: flex;
-  flex-direction: column;
-  font-size: 14px;
-}
-.edit-form input {
-  padding: 6px;
-  border-radius: 4px;
-  border: 1px solid #ccc;
-}
-
-.edit-btn {
-  background-color: #1976d2;
-  color: white;
-  border: none;
-  padding: 8px 14px;
-  border-radius: 6px;
-  font-size: 14px;
-  cursor: pointer;
-}
-
-.edit-btn:hover {
-  background-color: #1565c0;
-}
-
 
 .filters {
   display: flex;
@@ -413,6 +382,7 @@ td ul li {
 }
 
 .action-btn.green {
+  margin-right:5px;
   background-color: #388e3c;
 }
 
@@ -421,11 +391,44 @@ td ul li {
 }
 
 .action-btn.red {
+  margin-right:5px;
   background-color: #c62828;
 }
 
 .action-btn.red:hover {
   background-color: #b71c1c;
+}
+
+.edit-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  padding: 10px 0;
+}
+.edit-form label {
+  display: flex;
+  flex-direction: column;
+  font-size: 14px;
+}
+.edit-form input {
+  padding: 6px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+}
+
+.edit-btn {
+  margin-right:5px;
+  background-color: #1976d2;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.edit-btn:hover {
+  background-color: #1565c0;
 }
 
 </style>
