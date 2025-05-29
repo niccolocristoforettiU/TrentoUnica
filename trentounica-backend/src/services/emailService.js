@@ -125,6 +125,45 @@ async function sendEventCancellationEmail(to, name, eventTitle) {
     }
 }
 
+async function sendEventNotificationForLocation(to, name, eventTitle, locationName, eventDate) {
+    try {
+        const accessToken = await oAuth2Client.getAccessToken();
+
+        const transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+                type: 'OAuth2',
+                user: GMAIL_USER,
+                clientId: CLIENT_ID,
+                clientSecret: CLIENT_SECRET,
+                refreshToken: REFRESH_TOKEN,
+                accessToken: accessToken.token,
+            },
+        });
+
+        const mailOptions = {
+            from: `TrentoUnica <${GMAIL_USER}>`,
+            to,
+            subject: `Nuovo evento a ${locationName}!`,
+            html: `
+                <h2>Ciao ${name || 'utente'}!</h2>
+                <p>Hai espresso una preferenza per la location <strong>${locationName}</strong>.</p>
+                <p>È stato appena creato un nuovo evento: <strong>${eventTitle}</strong></p>
+                <p><strong>Data evento:</strong> ${new Date(eventDate).toLocaleString()}</p>
+                <p>Dai un’occhiata su TrentoUnica per maggiori dettagli!</p>
+                <br>
+                <p>Il team di TrentoUnica</p>
+            `
+        };
+
+        await transporter.sendMail(mailOptions);
+        console.log(`Notifica evento inviata a ${to}`);
+    } catch (error) {
+        console.error("Errore invio email nuovo evento per location:", error);
+    }
+}
 
 
-module.exports = { sendAccountActivationEmail, sendPasswordResetEmail, sendEventCancellationEmail };
+
+
+module.exports = { sendAccountActivationEmail, sendPasswordResetEmail, sendEventCancellationEmail, sendEventNotificationForLocation };

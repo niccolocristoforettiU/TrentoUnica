@@ -4,7 +4,7 @@ const Booking = require('../models/bookingModel');
 const EventPreference = require('../models/eventPreferenceModel');
 const LocationPreference = require('../models/locationPreferenceModel');
 const { generateTratte } = require('../utils/tratteUtils');
-const { sendEventCancellationEmail } = require('../services/emailService');
+const { sendEventCancellationEmail, sendEventNotificationForLocation } = require('../services/emailService');
 
 // Elenco eventi (pubblici)
 const getAllEvents = async (req, res) => {
@@ -31,11 +31,12 @@ const getOrganizerEvents = async (req, res) => {
   }
 };
 
-// Creazione evento con verifica permessi location e categoria
 const createEvent = async (req, res) => {
   try {
     const { title, description, date, locationId, price, category, duration, bookingRequired, ageRestricted, minAge } = req.body;
     const userId = req.user.userId;
+
+    // Verifica che la location appartenga all'organizer
     const loc = await Location.findOne({ _id: locationId, organizer: userId });
     if (!loc) {
       return res.status(400).json({ message: 'Location non valida o non gestita da questo organizer.' });
@@ -56,11 +57,26 @@ const createEvent = async (req, res) => {
     });
 
     await event.save();
+
+    // 🟨 Recupera utenti che hanno espresso preferenza per questa location
+    const locationPrefs = await LocationPreference.find({ location: locationId }).populate('user');
+
+    // 🟩 Deduplicazione
+    const uniqueUsers = Array.from(
+      new Map(locationPrefs.filter(p => p.user?.email).map(p => [p.user.email, p.user])).values()
+    );
+
+    // 🟦 Invia email a ogni utente
+    for (const user of uniqueUsers) {
+      await sendEventNotificationForLocation(user.email, user.name, event.title, loc.name, date);
+    }
+
     res.status(201).json(event);
   } catch (error) {
     res.status(500).json({ message: 'Errore durante la creazione dell\'evento', error: error.message });
   }
 };
+
 
 // Ottenere tutte le location disponibili per la creazione degli eventi
 const getLocations = async (req, res) => {
