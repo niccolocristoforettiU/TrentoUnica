@@ -174,10 +174,6 @@ export default {
 
         this.ticket = response.data.ticket;
         this.hasBooking = true;
-
-        await axios.post(`/tratte/generate/${this.event._id}`, null, {
-          headers: { Authorization: `Bearer ${this.token}` }
-        });
         
       } catch (err) {
         console.error(err);

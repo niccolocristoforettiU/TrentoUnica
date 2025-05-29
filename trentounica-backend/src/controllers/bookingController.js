@@ -98,8 +98,9 @@ const createBooking = async (req, res) => {
           await Event.findByIdAndUpdate(eventId, { $inc: { popularity: 1 } });
         }
 
-        // Verifica tratta
+        console.log("prima della chiamata booking")
         await generateTratte(eventId);
+        console.log("dopo della chiamata booking")
 
         const updatedEvent = await Event.findById(eventId)
           .populate('location', 'name address')
