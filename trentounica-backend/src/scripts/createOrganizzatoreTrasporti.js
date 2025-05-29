@@ -24,7 +24,7 @@ const createOrganizzatoreTrasporti = async () => {
 
     const admin = new User({
       name: "Trasporti",
-      email: process.env.ADMIN_EMAIL || "trasporti@trasporti.com",
+      email: process.env.TRASPORTI_EMAIL || "trasporti@trasporti.com",
       password: hashedPassword,  // Assicurati che sia hashata
       role: "trasporti",
       verified: true
