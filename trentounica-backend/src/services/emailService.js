@@ -90,5 +90,41 @@ async function sendPasswordResetEmail(to, token) {
     }
 }
 
+async function sendEventCancellationEmail(to, name, eventTitle) {
+    try {
+        const accessToken = await oAuth2Client.getAccessToken();
 
-module.exports = { sendAccountActivationEmail, sendPasswordResetEmail };
+        const transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+                type: 'OAuth2',
+                user: GMAIL_USER,
+                clientId: CLIENT_ID,
+                clientSecret: CLIENT_SECRET,
+                refreshToken: REFRESH_TOKEN,
+                accessToken: accessToken.token,
+            },
+        });
+
+        const mailOptions = {
+            from: `TrentoUnica <${GMAIL_USER}>`,
+            to: to,
+            subject: `Evento "${eventTitle}" cancellato`,
+            html: `
+                <h2>Ciao ${name || 'utente'},</h2>
+                <p>Ti informiamo che l'evento <strong>"${eventTitle}"</strong>, al quale ti eri prenotato o che avevi aggiunto ai preferiti, è stato cancellato.</p>
+                <p>Ci scusiamo per il disagio.</p>
+                <p>Il team di TrentoUnica</p>
+            `,
+        };
+
+        await transporter.sendMail(mailOptions);
+        console.log(`Email di cancellazione evento inviata a ${to}`);
+    } catch (error) {
+        console.error("Errore durante l'invio dell'email di cancellazione evento:", error);
+    }
+}
+
+
+
+module.exports = { sendAccountActivationEmail, sendPasswordResetEmail, sendEventCancellationEmail };

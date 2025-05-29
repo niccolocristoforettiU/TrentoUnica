@@ -4,6 +4,7 @@ const Booking = require('../models/bookingModel');
 const EventPreference = require('../models/eventPreferenceModel');
 const LocationPreference = require('../models/locationPreferenceModel');
 const { generateTratte } = require('../utils/tratteUtils');
+const { sendEventCancellationEmail } = require('../services/emailService');
 
 // Elenco eventi (pubblici)
 const getAllEvents = async (req, res) => {
@@ -125,7 +126,6 @@ const updateEvent = async (req, res) => {
   }
 };
 
-// Eliminazione evento
 const deleteEvent = async (req, res) => {
   try {
     const event = await Event.findById(req.params.id);
@@ -138,8 +138,31 @@ const deleteEvent = async (req, res) => {
       return res.status(403).json({ message: 'Non autorizzato a eliminare questo evento' });
     }
 
-    await event.deleteOne(); // <-- questa è la soluzione!
-    res.json({ message: 'Evento eliminato con successo' });
+    // Recupera utenti prenotati
+    const bookings = await Booking.find({ event: event._id, status: 'confirmed' }).populate('user');
+
+    // Recupera utenti con preferenza
+    const preferences = await EventPreference.find({ event: event._id }).populate('user');
+
+    // Unione e deduplicazione utenti con email
+    const allUsers = [...bookings.map(b => b.user), ...preferences.map(p => p.user)];
+    const uniqueUsers = Array.from(
+      new Map(allUsers.filter(u => u?.email).map(u => [u.email, u])).values()
+    );
+
+    // Invia email a ciascun utente
+    for (const user of uniqueUsers) {
+      await sendEventCancellationEmail(user.email, user.name, event.title);
+    }
+
+    // Elimina booking e preferenze
+    await Booking.deleteMany({ event: event._id });
+    await EventPreference.deleteMany({ event: event._id });
+
+    // Elimina evento
+    await event.deleteOne();
+
+    res.json({ message: 'Evento eliminato e utenti notificati via email.' });
   } catch (error) {
     console.error("Errore durante l'eliminazione:", error);
     res.status(500).json({ message: 'Errore durante l\'eliminazione dell\'evento', error: error.message });
