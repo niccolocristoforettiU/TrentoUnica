@@ -3,14 +3,10 @@ const Location = require('../models/locationModel');
 const Booking = require('../models/bookingModel');
 const EventPreference = require('../models/eventPreferenceModel');
 const LocationPreference = require('../models/locationPreferenceModel');
-<<<<<<< HEAD
 const Tratta = require('../models/trattaModel');
 const TrattaBooking = require('../models/trattaBooking');
 const tratteUtils = require('../utils/tratteUtils');
-=======
-const { generateTratte } = require('../utils/tratteUtils');
 const { sendEventCancellationEmail, sendEventNotificationForLocation } = require('../services/emailService');
->>>>>>> ab194f2ffcc294db52a72d214e6bb1aa4968f9f0
 
 // Elenco eventi (pubblici)
 const getAllEvents = async (req, res) => {
@@ -162,17 +158,14 @@ const updateEvent = async (req, res) => {
         const avgDistance = tratteUtils.haversineDistance(locLat, locLon, tratta.midpoint.lat, tratta.midpoint.lon);
         tratta.estimatedDuration = Math.ceil((avgDistance / 40) * 60);
         tratta.departureTime = new Date(newDate.getTime() - (tratta.estimatedDuration * 2 * 60000));
-        console.log("tratta aggiornata")
       } else {
         // Se fuori range, annulla la tratta
         tratta.status = 'rejectedByAdmin';
         tratta.active = false;
-        console.log("tratta annullata fuori range")
       }
 
       await tratta.save();
     }
-    console.log("modifiche effettuate")
     res.status(200).json(event);
   } catch (error) {
     res.status(500).json({ message: 'Errore durante l\'aggiornamento dell\'evento', error: error.message });
@@ -341,9 +334,7 @@ const expressPreference = async (req, res) => {
     await Event.findByIdAndUpdate(eventId, { $inc: { popularity: 1 } });
 
     // Controllo tratta post-preferenza
-    console.log("prima della chiamata")
     await tratteUtils.generateTratte(eventId);
-    console.log("dopo della chiamata")
 
     res.status(200).json({ message: 'Preferenza registrata con successo.' });
   } catch (error) {
