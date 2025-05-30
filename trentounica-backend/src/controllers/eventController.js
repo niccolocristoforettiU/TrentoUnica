@@ -3,7 +3,9 @@ const Location = require('../models/locationModel');
 const Booking = require('../models/bookingModel');
 const EventPreference = require('../models/eventPreferenceModel');
 const LocationPreference = require('../models/locationPreferenceModel');
-const { generateTratte } = require('../utils/tratteUtils');
+const Tratta = require('../models/trattaModel');
+const TrattaBooking = require('../models/trattaBooking');
+const tratteUtils = require('../utils/tratteUtils');
 
 // Elenco eventi (pubblici)
 const getAllEvents = async (req, res) => {
@@ -119,6 +121,37 @@ const updateEvent = async (req, res) => {
     event.minAge = ageRestricted ? minAge : undefined;
 
     await event.save();
+
+     // Dopo il salvataggio, aggiorna le tratte associate
+    const tratte = await Tratta.find({ event: event._id });
+
+    const locLat = loc.lat;
+    const locLon = loc.lon;
+    const newDate = new Date(date);
+
+    const DIST_MIN = parseFloat(process.env.DIST_MIN_PER_ATTIVAZIONE_TRATTA || "50");
+    const DIST_MAX = parseFloat(process.env.DIST_MAX_PER_ATTIVAZIONE_TRATTA || "5");
+
+    for (const tratta of tratte) {
+      const dist = tratteUtils.haversineDistance(tratta.midpoint.lat, tratta.midpoint.lon, locLat, locLon);
+
+      if (dist < DIST_MAX && dist > DIST_MIN) {
+        // aggiorna i dati
+        tratta.date = newDate;
+        const avgDistance = tratteUtils.haversineDistance(locLat, locLon, tratta.midpoint.lat, tratta.midpoint.lon);
+        tratta.estimatedDuration = Math.ceil((avgDistance / 40) * 60);
+        tratta.departureTime = new Date(newDate.getTime() - (tratta.estimatedDuration * 2 * 60000));
+        console.log("tratta aggiornata")
+      } else {
+        // Se fuori range, annulla la tratta
+        tratta.status = 'rejectedByAdmin';
+        tratta.active = false;
+        console.log("tratta annullata fuori range")
+      }
+
+      await tratta.save();
+    }
+    console.log("modifiche effettuate")
     res.status(200).json(event);
   } catch (error) {
     res.status(500).json({ message: 'Errore durante l\'aggiornamento dell\'evento', error: error.message });
@@ -138,8 +171,25 @@ const deleteEvent = async (req, res) => {
       return res.status(403).json({ message: 'Non autorizzato a eliminare questo evento' });
     }
 
+    // Elimina tutte le prenotazioni associate a questo evento
+    await Booking.deleteMany({ event: event._id });
+
+    // Trova tutte le tratte legate all'evento
+    const tratte = await Tratta.find({ event: event._id });
+
+    // Raccogli gli _id delle tratte per cancellare le prenotazioni collegate
+    const trattaIds = tratte.map(t => t._id);
+
+    // Elimina tutte le prenotazioni collegate a queste tratte
+    await TrattaBooking.deleteMany({ tratta: { $in: trattaIds } });
+
+    // Elimina tutte le tratte dell'evento
+    await Tratta.deleteMany({ event: event._id });
+
     await event.deleteOne(); // <-- questa è la soluzione!
     res.json({ message: 'Evento eliminato con successo' });
+    // elimino anche le tratte per l'evento eliminato
+
   } catch (error) {
     console.error("Errore durante l'eliminazione:", error);
     res.status(500).json({ message: 'Errore durante l\'eliminazione dell\'evento', error: error.message });
@@ -255,7 +305,7 @@ const expressPreference = async (req, res) => {
 
     // Controllo tratta post-preferenza
     console.log("prima della chiamata")
-    await generateTratte(eventId);
+    await tratteUtils.generateTratte(eventId);
     console.log("dopo della chiamata")
 
     res.status(200).json({ message: 'Preferenza registrata con successo.' });

@@ -40,6 +40,7 @@ const getTicketForEvent = async (req, res) => {
 };
 
 const getClientBookings = async (req, res) => {
+  console.log("entrato")
   if (!req.user?.userId) {
     return res.status(401).json({ message: 'Autenticazione richiesta per effettuare questa operazione.' });
   }
@@ -52,6 +53,9 @@ const getClientBookings = async (req, res) => {
     populate: { path: 'location', select: 'name address' }
   });
 
+  // Filter out bookings with missing events
+  const validBookings = bookings.filter(booking => booking.event !== null);
+  console.log("fine")
   res.json(bookings);
 };
 
