@@ -90,5 +90,122 @@ async function sendPasswordResetEmail(to, token) {
     }
 }
 
+async function sendEventCancellationEmail(to, name, eventTitle) {
+    try {
+        const accessToken = await oAuth2Client.getAccessToken();
 
-module.exports = { sendAccountActivationEmail, sendPasswordResetEmail };
+        const transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+                type: 'OAuth2',
+                user: GMAIL_USER,
+                clientId: CLIENT_ID,
+                clientSecret: CLIENT_SECRET,
+                refreshToken: REFRESH_TOKEN,
+                accessToken: accessToken.token,
+            },
+        });
+
+        const mailOptions = {
+            from: `TrentoUnica <${GMAIL_USER}>`,
+            to: to,
+            subject: `Evento "${eventTitle}" cancellato`,
+            html: `
+                <h2>Ciao ${name || 'utente'},</h2>
+                <p>Ti informiamo che l'evento <strong>"${eventTitle}"</strong>, al quale ti eri prenotato o che avevi aggiunto ai preferiti, è stato cancellato.</p>
+                <p>Ci scusiamo per il disagio.</p>
+                <p>Il team di TrentoUnica</p>
+            `,
+        };
+
+        await transporter.sendMail(mailOptions);
+        console.log(`Email di cancellazione evento inviata a ${to}`);
+    } catch (error) {
+        console.error("Errore durante l'invio dell'email di cancellazione evento:", error);
+    }
+}
+
+async function sendEventNotificationForLocation(to, name, eventTitle, locationName, eventDate) {
+    try {
+        const accessToken = await oAuth2Client.getAccessToken();
+
+        const transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+                type: 'OAuth2',
+                user: GMAIL_USER,
+                clientId: CLIENT_ID,
+                clientSecret: CLIENT_SECRET,
+                refreshToken: REFRESH_TOKEN,
+                accessToken: accessToken.token,
+            },
+        });
+
+        const mailOptions = {
+            from: `TrentoUnica <${GMAIL_USER}>`,
+            to,
+            subject: `Nuovo evento a ${locationName}!`,
+            html: `
+                <h2>Ciao ${name || 'utente'}!</h2>
+                <p>Hai espresso una preferenza per la location <strong>${locationName}</strong>.</p>
+                <p>È stato appena creato un nuovo evento: <strong>${eventTitle}</strong></p>
+                <p><strong>Data evento:</strong> ${new Date(eventDate).toLocaleString()}</p>
+                <p>Dai un’occhiata su TrentoUnica per maggiori dettagli!</p>
+                <br>
+                <p>Il team di TrentoUnica</p>
+            `
+        };
+
+        await transporter.sendMail(mailOptions);
+        console.log(`Notifica evento inviata a ${to}`);
+    } catch (error) {
+        console.error("Errore invio email nuovo evento per location:", error);
+    }
+}
+
+async function sendTrattaAvailableEmailToUser(to, name, eventTitle, trattaDate, trattaDeparture, trattaMidpoint) {
+    try {
+        const accessToken = await oAuth2Client.getAccessToken();
+
+        const transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+                type: 'OAuth2',
+                user: GMAIL_USER,
+                clientId: CLIENT_ID,
+                clientSecret: CLIENT_SECRET,
+                refreshToken: REFRESH_TOKEN,
+                accessToken: accessToken.token,
+            },
+        });
+
+        const mailOptions = {
+            from: `TrentoUnica <${GMAIL_USER}>`,
+            to,
+            subject: `È disponibile una tratta per l’evento "${eventTitle}"!`,
+            html: `
+                <h2>Ciao ${name || 'utente'}!</h2>
+                <p>Abbiamo una buona notizia: ora c'è una tratta disponibile per raggiungere l'evento <strong>${eventTitle}</strong> a cui sei interessato.</p>
+                <ul>
+                    <li><strong>Data:</strong> ${new Date(trattaDate).toLocaleString()}</li>
+                    <li><strong>Punto di partenza:</strong> ${trattaDeparture}</li>
+                    <li><strong>Punto intermedio:</strong> ${trattaMidpoint || 'Non specificato'}</li>
+                </ul>
+                <p>Vai sulla piattaforma per prenotare il tuo posto!</p>
+                <br>
+                <p>Il team di TrentoUnica</p>
+            `
+        };
+
+        await transporter.sendMail(mailOptions);
+        console.log(`Email di tratta disponibile inviata a ${to}`);
+    } catch (error) {
+        console.error("Errore invio email tratta disponibile:", error);
+    }
+}
+
+
+
+
+
+module.exports = { sendAccountActivationEmail, sendPasswordResetEmail, sendEventCancellationEmail, sendEventNotificationForLocation, sendTrattaAvailableEmailToUser };

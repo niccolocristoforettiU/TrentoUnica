@@ -3,9 +3,14 @@ const Location = require('../models/locationModel');
 const Booking = require('../models/bookingModel');
 const EventPreference = require('../models/eventPreferenceModel');
 const LocationPreference = require('../models/locationPreferenceModel');
+<<<<<<< HEAD
 const Tratta = require('../models/trattaModel');
 const TrattaBooking = require('../models/trattaBooking');
 const tratteUtils = require('../utils/tratteUtils');
+=======
+const { generateTratte } = require('../utils/tratteUtils');
+const { sendEventCancellationEmail, sendEventNotificationForLocation } = require('../services/emailService');
+>>>>>>> ab194f2ffcc294db52a72d214e6bb1aa4968f9f0
 
 // Elenco eventi (pubblici)
 const getAllEvents = async (req, res) => {
@@ -32,11 +37,12 @@ const getOrganizerEvents = async (req, res) => {
   }
 };
 
-// Creazione evento con verifica permessi location e categoria
 const createEvent = async (req, res) => {
   try {
     const { title, description, date, locationId, price, category, duration, bookingRequired, ageRestricted, minAge } = req.body;
     const userId = req.user.userId;
+
+    // Verifica che la location appartenga all'organizer
     const loc = await Location.findOne({ _id: locationId, organizer: userId });
     if (!loc) {
       return res.status(400).json({ message: 'Location non valida o non gestita da questo organizer.' });
@@ -57,11 +63,26 @@ const createEvent = async (req, res) => {
     });
 
     await event.save();
+
+    // 🟨 Recupera utenti che hanno espresso preferenza per questa location
+    const locationPrefs = await LocationPreference.find({ location: locationId }).populate('user');
+
+    // 🟩 Deduplicazione
+    const uniqueUsers = Array.from(
+      new Map(locationPrefs.filter(p => p.user?.email).map(p => [p.user.email, p.user])).values()
+    );
+
+    // 🟦 Invia email a ogni utente
+    for (const user of uniqueUsers) {
+      await sendEventNotificationForLocation(user.email, user.name, event.title, loc.name, date);
+    }
+
     res.status(201).json(event);
   } catch (error) {
     res.status(500).json({ message: 'Errore durante la creazione dell\'evento', error: error.message });
   }
 };
+
 
 // Ottenere tutte le location disponibili per la creazione degli eventi
 const getLocations = async (req, res) => {
@@ -158,7 +179,6 @@ const updateEvent = async (req, res) => {
   }
 };
 
-// Eliminazione evento
 const deleteEvent = async (req, res) => {
   try {
     const event = await Event.findById(req.params.id);
@@ -171,8 +191,22 @@ const deleteEvent = async (req, res) => {
       return res.status(403).json({ message: 'Non autorizzato a eliminare questo evento' });
     }
 
-    // Elimina tutte le prenotazioni associate a questo evento
-    await Booking.deleteMany({ event: event._id });
+    // Recupera utenti prenotati
+    const bookings = await Booking.find({ event: event._id, status: 'confirmed' }).populate('user');
+
+    // Recupera utenti con preferenza
+    const preferences = await EventPreference.find({ event: event._id }).populate('user');
+
+    // Unione e deduplicazione utenti con email
+    const allUsers = [...bookings.map(b => b.user), ...preferences.map(p => p.user)];
+    const uniqueUsers = Array.from(
+      new Map(allUsers.filter(u => u?.email).map(u => [u.email, u])).values()
+    );
+
+    // Invia email a ciascun utente
+    for (const user of uniqueUsers) {
+      await sendEventCancellationEmail(user.email, user.name, event.title);
+    }
 
     // Trova tutte le tratte legate all'evento
     const tratte = await Tratta.find({ event: event._id });
@@ -186,10 +220,13 @@ const deleteEvent = async (req, res) => {
     // Elimina tutte le tratte dell'evento
     await Tratta.deleteMany({ event: event._id });
 
-    await event.deleteOne(); // <-- questa è la soluzione!
-    res.json({ message: 'Evento eliminato con successo' });
-    // elimino anche le tratte per l'evento eliminato
+    // Elimina booking e preferenze
+    await Booking.deleteMany({ event: event._id });
+    await EventPreference.deleteMany({ event: event._id });
 
+    // Elimina evento
+    await event.deleteOne();
+    res.json({ message: 'Evento eliminato e utenti notificati via email.' });
   } catch (error) {
     console.error("Errore durante l'eliminazione:", error);
     res.status(500).json({ message: 'Errore durante l\'eliminazione dell\'evento', error: error.message });
