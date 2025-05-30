@@ -53,6 +53,7 @@ export default {
           Authorization: `Bearer ${localStorage.getItem('token')}`
         }
       });
+      console.log('Loaded bookings:', res.data);
       this.bookings = res.data;
     },
     async cancelBooking(bookingId) {
