@@ -19,6 +19,7 @@ import OrganizerStats from '@/components/OrganizerStats.vue';
 import AdminStatistiche from '@/components/AdminStatistiche.vue';
 import AdminAttendanceHistogram from '@/components/AdminAttendanceHistogram.vue';
 import OrganizerLocation from '@/components/OrganizerLocation.vue';
+import TrattaScanner from '@/components/TrattaScanner.vue';
 
 const routes = [
   {
@@ -139,7 +140,14 @@ const routes = [
     path: '/reset-password/:token',
     name: 'ResetPassword',
     component: ResetPassword
-  }
+  },
+  {
+    path: '/tratta-scanner/:trattaId/scan',
+    name: 'TrattaScanner',
+    component: TrattaScanner,
+    props: true,
+    meta: { requiresAuth: true, role: 'trasporti' }
+  },
 ];
 
 const router = createRouter({

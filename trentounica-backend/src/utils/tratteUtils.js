@@ -2,9 +2,9 @@ const Booking = require('../models/bookingModel');
 const EventPreference = require('../models/eventPreferenceModel');
 const Event = require('../models/eventModel');
 const User = require('../models/userModel');
-const Location = require('../models/locationModel');
 const Tratta = require('../models/trattaModel');
 
+const axios = require('axios');
 
 const toRad = deg => deg * Math.PI / 180;
 const toDeg = rad => rad * 180 / Math.PI;
@@ -191,6 +191,30 @@ async function generateTratte(eventId) {
   };
 }
 
+const getAddressFromCoordinates = async (lat, lon) => {
+  try {
+    const apiKey = process.env.GOOGLE_MAPS_API_KEY; // assicurati che sia nel .env
+    const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lon}&key=${apiKey}`;
+    
+    const response = await axios.get(url);
+
+    if (response.data.status === 'OK') {
+      const result = response.data.results[0];
+      return {
+        address: result.formatted_address,
+        mapsUrl: `https://www.google.com/maps?q=${lat},${lon}`
+      };
+    } else {
+      console.error('Reverse geocoding fallito:', response.data.status);
+      return null;
+    }
+  } catch (err) {
+    console.error('Errore reverse geocoding:', err.message);
+    return null;
+  }
+};
+
+
 
 
 
@@ -199,5 +223,6 @@ module.exports = {
   allUsersWithinRadius,
   geographicMidpoint,
   groupUsersByProximity,
-  generateTratte
+  generateTratte,
+  getAddressFromCoordinates
 };

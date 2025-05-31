@@ -1,7 +1,16 @@
 <template>
   <div v-if="event">
     <h1>{{ event.title }}</h1>
-    <p><strong>Luogo:</strong> {{ event.location.name }} - {{ event.location.address }}</p>
+    <p>
+      <strong>Luogo:</strong> {{ event.location.name }} -
+      <a
+        :href="'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(event.location.address)"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        {{ event.location.address }}
+      </a>
+    </p>
     <p><strong>Data:</strong> {{ new Date(event.date).toLocaleString() }}</p>
     <p><strong>Durata:</strong> {{ event.duration }} minuti</p>
     <p><strong>Descrizione:</strong> {{ event.description }}</p>
@@ -44,7 +53,6 @@
       >
         Prenotazione gratuita
       </button>
-
       <!-- Prenotazione con pagamento PayPal -->
       <template v-else-if="!hasBooking && event.price > 0 && !isPastEvent && userRole === 'client'">
         <p class="text-info">
@@ -54,23 +62,79 @@
           <div id="paypal-button-container" ref="paypal"></div>
         </div>
       </template>
-
       <p v-else-if="hasBooking && userRole === 'client'" class="text-success">
         Prenotazione già effettuata ✔️
       </p>
+
+      <!-- Mostra biglietto se disponibile -->
+      <div v-if="ticket" class="ticket-popup">
+        <h3>Biglietto per {{ ticket.title }}</h3>
+        <p>{{ new Date(ticket.date).toLocaleString() }}</p>
+        <p>
+          {{ ticket.location.name }} -
+          <a
+            :href="'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(ticket.location.address)"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {{ ticket.location.address }}
+          </a>
+        </p>
+        <qrcode-vue :value="ticket.qrCodeData" :size="150" />
+      </div>
+
+
+      <div v-if="tratte.length > 0 && userRole === 'client' && !isPastEvent">
+        <h3 v-if="!trattaPrenotata">Tratte disponibili per questo evento:</h3>
+      <div v-if="trattaPrenotata" class="ticket-popup">
+        <p class="text-success mt-2">Tratta già prenotata ✔️</p>
+        <h3>Biglietto tratta per {{ event.title }}</h3>
+        <p>{{ new Date(trattaPrenotata.departureTime).toLocaleString() }}</p>
+        <p>
+          <a
+            :href="trattaPrenotata.mapsLink"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {{ trattaPrenotata.mapsAddress }}
+          </a>
+        </p>
+        <qrcode-vue :value="trattaPrenotata._id" :size="150" />
+      </div>
+      <div v-else>
+        <div v-for="tratta in tratte" :key="tratta._id" class="mb-2">
+          <p>
+            Partenza: {{ new Date(tratta.departureTime).toLocaleTimeString() }},
+            Posti disponibili: {{ tratta.capacity - tratta.bookingCount }}
+            Fermata:
+            <a
+              v-if="tratta.mapsLink"
+              :href="tratta.mapsLink"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {{ tratta.mapsAddress }}
+            </a>
+            <span v-else>
+              {{ tratta.midpoint.lat.toFixed(4) }}, {{ tratta.midpoint.lon.toFixed(4) }}
+            </span>
+          </p>
+          <button
+            class="btn btn-outline-primary"
+            @click="prenotaTratta(tratta._id)"
+            :disabled="tratta.bookingCount >= tratta.capacity"
+          >
+            Prenota questa tratta
+          </button>
+        </div>
+      </div>
+      </div>
     </div>
 
     <p v-if="isPastEvent" class="text-muted">
       Evento concluso
     </p>
 
-    <!-- Mostra biglietto se disponibile -->
-    <div v-if="ticket" class="ticket-popup">
-      <h3>Biglietto per {{ ticket.title }}</h3>
-      <p>{{ new Date(ticket.date).toLocaleString() }}</p>
-      <p>{{ ticket.location.name }} - {{ ticket.location.address }}</p>
-      <qrcode-vue :value="ticket.qrCodeData" :size="150" />
-    </div>
   </div>
   <div v-else>
     <p>Caricamento evento in corso...</p>
@@ -97,6 +161,8 @@ export default {
       userAge: null,
       isGuest: !!localStorage.getItem("guestId") && !localStorage.getItem("token"),
       guestId: localStorage.getItem("guestId") || null,
+      tratte:[],
+      trattaPrenotata: null,
     };
   },
   computed: {
@@ -109,6 +175,7 @@ export default {
       const id = this.$route.params.id;
       const response = await axios.get(`/events/${id}`);
       this.event = response.data;
+      await this.checkTrattaPrenotata();
 
       if (this.userRole === "client") {
         this.getUserAge();
@@ -132,6 +199,7 @@ export default {
           this.loadPayPal();
         }
       });
+      await this.fetchTratteAttive();
     } catch (error) {
       console.error("Errore durante il recupero dell'evento:", error);
     }
@@ -361,7 +429,103 @@ export default {
         console.error("Errore nel recupero età utente:", err);
         this.userAge = null;
       }
+    },
+    async fetchTratteAttive() {
+      try {
+        const res = await axios.get(`/tratte/event/${this.event._id}`, {
+          headers: { Authorization: `Bearer ${this.token}` }
+        });
+
+        const tratteWithAddress = await Promise.all(
+          res.data.map(async tratta => {
+            try {
+              const addrRes = await axios.get(`/tratte/reverse-geocode`, {
+                params: {
+                  lat: tratta.midpoint.lat,
+                  lon: tratta.midpoint.lon
+                },
+                headers: {
+                  Authorization: `Bearer ${this.token}`
+                }
+              });
+              tratta.mapsAddress = addrRes.data.address;
+              tratta.mapsLink = addrRes.data.mapsUrl;
+            } catch (error) {
+              console.warn('Errore nel recupero indirizzo tratta:', error);
+              tratta.mapsAddress = null;
+              tratta.mapsLink = null;
+            }
+            return tratta;
+          })
+        );
+        
+        this.tratte = tratteWithAddress;
+      } catch (err) {
+        console.error('Errore nel recupero tratte:', err);
+      }
+    },
+    async prenotaTratta(trattaId) {
+      try {
+        console.log("Invio trattaId:", trattaId);
+        await axios.post(`/trattabookings`, {
+          trattaId
+        }, {
+          headers: { Authorization: `Bearer ${this.token}` }
+        });
+
+        alert("Prenotazione della tratta completata ✅");
+        await this.fetchTratteAttive(); // aggiorna conteggio posti
+        await this.checkTrattaPrenotata();  
+      } catch (err) {
+        console.error("Errore nella prenotazione tratta:", err);
+        alert("Errore nella prenotazione della tratta.");
+      }
+    },
+    async checkTrattaPrenotata() {
+      try {
+        if (!this.token || this.userRole !== "client") return;
+
+        const res = await axios.get('/trattabookings/client', {
+          headers: { Authorization: `Bearer ${this.token}` }
+        });
+
+        const matching = res.data.find(tb => tb.tratta?.event?._id === this.event._id);
+
+        if (matching) {
+          const tratta = matching.tratta;
+
+          // Se non ha già indirizzo, chiamata al reverse-geocode
+          if (!tratta.mapsAddress) {
+            try {
+              const addrRes = await axios.get(`/tratte/reverse-geocode`, {
+                params: {
+                  lat: tratta.midpoint.lat,
+                  lon: tratta.midpoint.lon
+                },
+                headers: {
+                  Authorization: `Bearer ${this.token}`
+                }
+              });
+
+              tratta.mapsAddress = addrRes.data.address;
+              tratta.mapsLink = addrRes.data.mapsUrl;
+            } catch (error) {
+              console.warn("Errore nel reverse geocode tratta prenotata:", error);
+              tratta.mapsAddress = null;
+              tratta.mapsLink = null;
+            }
+          }
+
+          this.trattaPrenotata = tratta;
+        } else {
+          this.trattaPrenotata = null;
+        }
+      } catch (err) {
+        console.error("Errore nel checkTrattaPrenotata:", err);
+        this.trattaPrenotata = null;
+      }
     }
+
   }
 };
 </script>

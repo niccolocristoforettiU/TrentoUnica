@@ -33,7 +33,7 @@
             <tr>
               <th>Data Evento</th>
               <th>Partenza</th>
-              <th>Midpoint</th>
+              <th>Fermata</th>
               <th>{{ capacita }}</th>
               <th>Utenti Previsti</th>
               <th>Status</th>
@@ -45,7 +45,19 @@
               <tr>
                 <td>{{ new Date(tratta.date).toLocaleString() }}</td>
                 <td>{{ new Date(tratta.departureTime).toLocaleString() }}</td>
-                <td>{{ tratta.midpoint.lat.toFixed(4) }}, {{ tratta.midpoint.lon.toFixed(4) }}</td>
+                <td>
+                  <a
+                    v-if="tratta.mapsLink"
+                    :href="tratta.mapsLink"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {{ tratta.mapsAddress }}
+                  </a>
+                  <span v-else>
+                    {{ tratta.midpoint.lat.toFixed(4) }}, {{ tratta.midpoint.lon.toFixed(4) }}
+                  </span>
+                </td>
                 <td v-if="['adminApproved', 'finished'].includes(tratta.status)">
                   {{ tratta.bookingCount }} / {{ tratta.capacity }}
                 </td>
@@ -76,6 +88,14 @@
                         Concludi
                       </button>
                   </template>
+                  <template v-if="this.role === 'trasporti' && tratta.status === 'adminApproved'">
+                    <router-link
+                       :to="`/tratta-scanner/${tratta._id}/scan`"
+                      class="scan-btn"
+                    >
+                      Scanner QR
+                    </router-link>
+                  </template>
                   <template v-if="role === 'trasporti' && ['pending', 'transportApproved', 'adminApproved'].includes(tratta.status)">
                     <button class="edit-btn" @click="toggleEdit(tratta._id)">
                       ✏️ Modifica
@@ -94,14 +114,14 @@
                       Capacità:
                       <input type="number" v-model="editForm.capacity" />
                     </label>
+
                     <label>
-                      Midpoint LAT:
-                      <input type="number" step="0.0001" v-model="editForm.midpoint.lat" />
-                    </label>
-                    <label>
-                      Midpoint LON:
-                      <input type="number" step="0.0001" v-model="editForm.midpoint.lon" />
-                    </label>
+                      Punto di fermata:
+                      <AddressSearch
+                        :initial-address="editForm.address || ''"
+                        @address-selected="onAddressSelected"
+                      />
+                    </label>  
 
                     <div style="margin-top: 10px;">
                       <button class="action-btn green" @click="submitEdit(tratta._id)">Salva</button>
@@ -117,9 +137,10 @@
     </div>
   </div>
 </template>
-
 <script>
 import axios from "@/api/axios";
+import AddressSearch from '@/components/AddressSearch.vue';
+
 
 export default {
   name: "TratteDashboard",
@@ -127,7 +148,7 @@ export default {
     return {
       role: localStorage.getItem("role"),
       tratte: [],
-      selectedStatus: localStorage.getItem("role") === "admin" ? "transportApproved" :  "pending",
+      selectedStatus: localStorage.getItem("role") === "admin" ? "transportApproved" : "pending",
       startDate: "",
       endDate: "",
       statusOptions: [
@@ -145,32 +166,59 @@ export default {
         midpoint: {
           lat: "",
           lon: ""
-        }
+        },
+        address: ""
       },
       userRole: null
     };
+  },
+  components: {
+    AddressSearch
   },
   computed: {
     title() {
       return this.role === "admin" ? "Gestione tratte admin" : "Gestione tratte trasporti";
     },
     capacita() {
-      return (this.selectedStatus === "finished" || this.selectedStatus === "adminApproved") ? "Prenotazioni" : "Capacità";
+      return (this.selectedStatus === "finished" || this.selectedStatus === "adminApproved")
+        ? "Prenotazioni" : "Capacità";
     }
   },
   methods: {
     async fetchTratte() {
       try {
         const token = localStorage.getItem("token");
-        const params = {
-          startDate: this.startDate,
-          endDate: this.endDate
-        };
+        const params = { startDate: this.startDate, endDate: this.endDate };
         const res = await axios.get(`/tratte/status/${this.selectedStatus}/filter`, {
           headers: { Authorization: `Bearer ${token}` },
           params
         });
-        this.tratte = res.data;
+
+        // Ottieni indirizzo da backend proxy
+        const tratteWithAddress = await Promise.all(
+          res.data.map(async tratta => {
+            try {
+              const addrRes = await axios.get(`/tratte/reverse-geocode`, {
+                params: {
+                  lat: tratta.midpoint.lat,
+                  lon: tratta.midpoint.lon
+                },
+                headers: {
+                  Authorization: `Bearer ${token}`
+                }
+              });
+              tratta.mapsAddress = addrRes.data.address;
+              tratta.mapsLink = addrRes.data.mapsUrl;
+            } catch (error) {
+              console.warn('Errore nel recupero indirizzo:', error);
+              tratta.mapsAddress = null;
+              tratta.mapsLink = null;
+            }
+            return tratta;
+          })
+        );
+
+        this.tratte = tratteWithAddress;
       } catch (err) {
         console.error("Errore nel caricamento tratte:", err);
       }
@@ -195,7 +243,9 @@ export default {
     resetFilters() {
       this.startDate = "";
       this.endDate = "";
-      this.role === "admin" ? this.selectedStatus = "transportApproved" : this.selectedStatus = "pending";
+      this.role === "admin"
+        ? this.selectedStatus = "transportApproved"
+        : this.selectedStatus = "pending";
       this.fetchTratte();
     },
     canFinish(trattaDate) {
@@ -219,12 +269,13 @@ export default {
 
       const tratta = this.tratte.find(t => t._id === trattaId);
       this.editForm = {
-        departureTime: tratta.departureTime.slice(0, 16), // per datetime-local
+        departureTime: tratta.departureTime.slice(0, 16),
         capacity: tratta.capacity,
         midpoint: {
           lat: tratta.midpoint.lat,
           lon: tratta.midpoint.lon
-        }
+        },
+        address: tratta.mapsAddress || ''
       };
       this.editingTrattaId = trattaId;
     },
@@ -240,10 +291,20 @@ export default {
         console.error("Errore nella modifica tratta:", err);
         alert("Modifica fallita.");
       }
+    },
+    onAddressSelected({ lat, lng, address }) {
+      this.editForm.midpoint.lat = lat;
+      this.editForm.midpoint.lon = lng;
+      this.editForm.address = address;
     }
   },
   mounted() {
     this.fetchTratte();
+  },
+  onMounted(){
+    if (props.initialAddress) {
+      placeAutocomplete.value = props.initialAddress;
+    }
   }
 };
 </script>
@@ -429,6 +490,22 @@ td ul li {
 
 .edit-btn:hover {
   background-color: #1565c0;
+}
+
+.scan-btn {
+  background-color: #cb27b5;
+  color: white;
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-size: 14px;
+  text-decoration: none;
+  display: inline-block;
+  margin-bottom: 5px;
+  margin-right: 5px;
+}
+
+.scan-btn:hover {
+  background-color: #1b5e20;
 }
 
 </style>

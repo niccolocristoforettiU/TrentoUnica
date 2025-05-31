@@ -5,14 +5,21 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { Loader } from '@googlemaps/js-api-loader'
 
 const emit = defineEmits(['address-selected'])
 
+const props = defineProps({
+  initialAddress: {
+    type: String,
+    default: ''
+  }
+})
+
 const autocompleteElementId = `autocomplete-${Math.random().toString(36).substring(2, 10)}`
 const GOOGLE_API_KEY = process.env.VUE_APP_GOOGLE_MAPS_API_KEY
-
+const placeAutocomplete = ref(null)
 
 onMounted(async () => {
   const loader = new Loader({
@@ -27,23 +34,29 @@ onMounted(async () => {
   const container = document.getElementById(autocompleteElementId)
   if (!container) return
 
-  const placeAutocomplete = new google.maps.places.PlaceAutocompleteElement({
+  placeAutocomplete.value = new google.maps.places.PlaceAutocompleteElement({
     componentRestrictions: { country: ['it'] },
   })
 
-  container.appendChild(placeAutocomplete)
+  container.appendChild(placeAutocomplete.value)
 
-  placeAutocomplete.addEventListener('gmp-select', async ({ placePrediction }) => {
-    const place = placePrediction.toPlace();
-    await place.fetchFields({ fields: ['displayName', 'formattedAddress', 'location'] });
+  // ✅ Initial address fill
+  if (props.initialAddress) {
+    placeAutocomplete.value.value = props.initialAddress
+  }
+
+  placeAutocomplete.value.addEventListener('gmp-select', async ({ placePrediction }) => {
+    const place = placePrediction.toPlace()
+    await place.fetchFields({ fields: ['displayName', 'formattedAddress', 'location'] })
     emit('address-selected', {
       name: place.displayName,
       address: place.formattedAddress,
       lat: place.location.lat(),
       lng: place.location.lng(),
     })
+  })
 })
-})
+
 </script>
 
 <style scoped>
@@ -53,26 +66,24 @@ onMounted(async () => {
   border-radius: 6px;
   border: 1px solid #ccc;
   box-sizing: border-box;
-  padding: 0; /* reset padding here, padding goes to input */
+  padding: 0;
   font-size: 16px;
 }
 
-/* Se il componente crea un input al suo interno */
 .autocomplete-element input {
   width: 100%;
   box-sizing: border-box;
   padding: 10px;
   font-size: 16px;
   border-radius: 6px;
-  border: none; /* input interno senza bordo, perché c'è già quello del wrapper */
+  border: none;
   background: white;
   outline: none;
 }
 
-/* Focus sull'input */
 .autocomplete-element input:focus {
-  border-color: #2e7d32; /* verde */
+  border-color: #2e7d32;
   outline: none;
-  box-shadow: 0 0 0 2px rgba(46, 125, 50, 0.3); /* effetto focus più evidente */
+  box-shadow: 0 0 0 2px rgba(46, 125, 50, 0.3);
 }
 </style>

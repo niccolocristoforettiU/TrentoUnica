@@ -1,5 +1,6 @@
 const Tratta = require('../models/trattaModel');
 const { generateTratte } = require('../utils/tratteUtils');
+const { getAddressFromCoordinates } = require('../utils/tratteUtils');
 
 // 🔹 Cambio stato da parte dei trasporti
 const updateTrattaStatusByTransport = async (req, res) => {
@@ -38,6 +39,13 @@ const updateTrattaStatusByTransport = async (req, res) => {
     }
 
     tratta.status = newStatus;
+
+   //Attiva la tratta se approvata dall'admin
+    if (newStatus === 'finished') {
+      tratta.active = false;
+    }
+
+
     await tratta.save();
 
     res.json({ message: `Stato aggiornato a ${newStatus}`, tratta });
@@ -48,7 +56,7 @@ const updateTrattaStatusByTransport = async (req, res) => {
 };
 
 
-// 🔹 Cambio stato da parte dell'admin
+// Cambio stato da parte dell'admin
 const updateTrattaStatusByAdmin = async (req, res) => {
   try {
     const { id } = req.params;
@@ -68,6 +76,13 @@ const updateTrattaStatusByAdmin = async (req, res) => {
     }
 
     tratta.status = newStatus;
+
+    //Attiva la tratta se approvata dall'admin
+    if (newStatus === 'adminApproved') {
+      tratta.active = true;
+    }
+
+
     await tratta.save();
 
     res.json({ message: `Stato aggiornato a ${newStatus}`, tratta });
@@ -147,10 +162,62 @@ const updateTrattaByTransport = async (req, res) => {
   }
 };
 
+//Ottieni tutte le tratte attive per un evento
+const getTratteByEvent = async (req, res) => {
+  try {
+    const { eventId } = req.params;
+    const tratte = await Tratta.find({ event: eventId, active: true });
+    res.json(tratte);
+  } catch (err) {
+    console.error('Errore getTratteByEvent:', err);
+    res.status(500).json({ message: 'Errore nel recupero delle tratte.' });
+  }
+};
+
+// Verifica se una tratta è attiva
+const getTrattaActiveStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const tratta = await Tratta.findById(id);
+    if (!tratta) return res.status(404).json({ message: 'Tratta non trovata.' });
+
+    res.json({ active: tratta.active });
+  } catch (err) {
+    console.error('Errore getTrattaActiveStatus:', err);
+    res.status(500).json({ message: 'Errore interno.' });
+  }
+};
+
+// Proxy per ottenere indirizzo da coordinate
+const getAddressByCoords = async (req, res) => {
+  try {
+    const { lat, lon } = req.query;
+
+    if (!lat || !lon) {
+      return res.status(400).json({ message: 'Coordinate mancanti.' });
+    }
+
+    const result = await getAddressFromCoordinates(lat, lon);
+
+    if (!result) {
+      return res.status(500).json({ message: 'Errore nel recupero dell’indirizzo.' });
+    }
+
+    res.json(result);
+  } catch (err) {
+    console.error('Errore proxy getAddressByCoords:', err);
+    res.status(500).json({ message: 'Errore interno.' });
+  }
+};
+
+
 module.exports = {
   updateTrattaStatusByTransport,
   updateTrattaStatusByAdmin,
   getTratteByStatusAndDate,
   generateTratteForEvent,
-  updateTrattaByTransport
+  updateTrattaByTransport,
+  getTratteByEvent,
+  getTrattaActiveStatus,
+  getAddressByCoords
 };

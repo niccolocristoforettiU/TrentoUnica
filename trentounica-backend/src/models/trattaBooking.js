@@ -8,6 +8,7 @@ const trattaBookingSchema = new mongoose.Schema({
     enum: ['confirmed', 'cancelled'],
     default: 'confirmed'
   },
+  checkedIn: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now }
 });
 
