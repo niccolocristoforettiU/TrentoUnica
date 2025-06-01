@@ -1,7 +1,7 @@
 <template>
   <div>
-    <div v-if="loadingProgress > 0 && loadingProgress < 100" style="margin-bottom: 10px; color: #555;">
-      Caricamento flussi: {{ loadingProgress }}%
+    <div v-if="isLoadingFlows || (loadingProgress > 0 && loadingProgress < 100)" style="margin-bottom: 10px; color: #555;">
+      Sto generando i flussi... {{ loadingProgress }}%
     </div>
     <div style="margin-bottom: 10px;">
       <label><input type="checkbox" v-model="selectedFlowTypes" value="main" /> Flussi principali</label>
@@ -12,8 +12,8 @@
     <button @click="exportCSV" style="margin-bottom: 10px;">
       Esporta dati come CSV
     </button>
-    <div v-if="flows.length === 0" style="margin-bottom: 10px; color: gray;">
-      Nessun flusso disponibile per il pediodo selezionato.
+    <div v-if="!isLoadingFlows && flows.length === 0 && loadingProgress === 100" style="margin-bottom: 10px; color: gray;">
+      Nessun flusso disponibile per il periodo selezionato.
     </div>
     <div ref="mapContainer" style="position: relative">
       <l-map ref="map" :zoom="13" :center="[46.0701, 11.119]" style="height: 600px; width: 100%">
@@ -209,6 +209,7 @@ const props = defineProps({
 const flows = ref([])
 
 const loadingProgress = ref(0)
+const isLoadingFlows = ref(false)
 
 const selectedFlowTypes = ref(['main'])
 
@@ -291,51 +292,71 @@ const tileAttribution = '&copy; CartoDB, &copy; OpenStreetMap contributors'
 
 const showLegend = ref(true)
 
+let serverProgress = 0;
 
 const fetchFlows = async () => {
   if (!props.date) {
-    console.warn("Data non fornita a FlowMap.vue")
-    return
+    console.warn("Data non fornita a FlowMap.vue");
+    return;
   }
-  loadingProgress.value = 0
-  try {
-    const params = new URLSearchParams({ date: props.date })
-    if (props.startHour !== '' && props.startHour !== null) {
-      params.append('startHour', props.startHour)
-    }
-    if (props.endHour !== '' && props.endHour !== null) {
-      params.append('endHour', props.endHour)
-    }
 
-    const res = await axios.get(`/admin/stats/flows?${params.toString()}`)
-    flows.value = [];
-    const total = res.data.flows.length;
-    for (let i = 0; i < total; i++) {
-      const f = res.data.flows[i];
-      flows.value.push({
-        ...f,
-        weight: f.weight ?? 1
-      });
-      loadingProgress.value = Math.floor(((i + 1) / total) * 100);
-      await new Promise(resolve => setTimeout(resolve, 0));
-    }
-    // Per sicurezza, se non ci sono flussi, progress a 100
-    if (total === 0) loadingProgress.value = 100;
-    console.log('Flussi ricevuti (semplificati):', flows.value.map(f => ({
-      type: f.type,
-      mode: f.mode,
-      weight: f.weight,
-      event: f.eventLocationName,
-      firstCoord: f.route?.[0],
-      lastCoord: f.route?.at(-1),
-    })));
+  isLoadingFlows.value = true;
+  loadingProgress.value = 0;
+  serverProgress = 0;
+  flows.value = [];
+
+  try {
+    const res = await axios.post('/admin/stats/flows/async', {
+      date: props.date,
+      startHour: props.startHour || null,
+      endHour: props.endHour || null
+    });
+
+    const jobId = res.data.jobId;
+
+    const interval = setInterval(async () => {
+      if (!isLoadingFlows.value) {
+        clearInterval(interval);
+        return;
+      }
+
+      try {
+        const progressRes = await axios.get(`/admin/stats/flows/async/${jobId}/progress`);
+        serverProgress = progressRes.data.progress;
+
+        if (loadingProgress.value < serverProgress) {
+          loadingProgress.value += 1;
+        }
+
+        if (progressRes.data.status === 'done') {
+          loadingProgress.value = 100;
+          const resultRes = await axios.get(`/admin/stats/flows/async/${jobId}/result`);
+          const resultFlows = resultRes.data.flows || [];
+          flows.value = resultFlows.map(f => ({
+            ...f,
+            weight: f.weight ?? 1
+          }));
+          isLoadingFlows.value = false;
+          clearInterval(interval);
+        }
+
+        if (progressRes.data.status === 'error') {
+          console.error("Errore nel job asincrono");
+          isLoadingFlows.value = false;
+          clearInterval(interval);
+        }
+      } catch (err) {
+        console.error("Errore nel polling del progresso:", err);
+        isLoadingFlows.value = false;
+        clearInterval(interval);
+      }
+    }, 1000);
+
   } catch (err) {
-    console.error("Errore nel recupero dei flussi:", err)
-  } finally {
-    // In caso di errore o fine, assicurati che sia 100 se non lo è già
-    if (loadingProgress.value < 100) loadingProgress.value = 100;
+    console.error("Errore nell'avvio del job asincrono:", err);
+    isLoadingFlows.value = false;
   }
-}
+};
 
 
 onMounted(() => {

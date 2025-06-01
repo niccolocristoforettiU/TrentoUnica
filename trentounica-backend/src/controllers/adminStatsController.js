@@ -1,3 +1,5 @@
+const flowJobs = new Map(); // jobId => { progress, status, result }
+const crypto = require('crypto');
 const { assignParkingSpots } = require('../utils/parkingUtils');
 const Booking = require('../models/bookingModel');
 const Event = require('../models/eventModel');
@@ -136,6 +138,184 @@ exports.getEstimatedFlows = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: 'Errore nel calcolo dei flussi stimati', error: error.message });
   }
+};
+
+// Endpoint: POST /admin/stats/flows/async
+exports.startFlowGeneration = async (req, res) => {
+  const jobId = crypto.randomUUID();
+  flowJobs.set(jobId, { progress: 0, status: 'in_progress', result: null });
+
+  const { date, startHour, endHour } = req.body;
+  const dateObj = new Date(date);
+  dateObj.setHours(0, 0, 0, 0);
+
+  (async () => {
+    try {
+      const nextDay = new Date(dateObj);
+      if (startHour !== null && startHour !== undefined) {
+        dateObj.setHours(startHour, 0, 0, 0);
+      }
+      if (endHour !== null && endHour !== undefined) {
+        nextDay.setTime(dateObj.getTime());
+        nextDay.setHours(endHour, 59, 59, 999);
+      } else {
+        nextDay.setDate(dateObj.getDate() + 1);
+      }
+
+      const allEvents = await Event.find({ date: { $gte: dateObj, $lt: nextDay } })
+        .populate('location', 'lat lon name');
+
+      const filterStart = startHour !== null ? new Date(new Date(date).setHours(startHour, 0, 0, 0)) : new Date(dateObj.setHours(0, 0, 0, 0));
+      const filterEnd = endHour !== null ? new Date(new Date(date).setHours(endHour, 0, 0, 0)) : new Date(dateObj.setHours(23, 59, 59, 999));
+
+      const events = allEvents.filter(event => {
+        const eventStart = new Date(event.date);
+        const eventEnd = new Date(eventStart.getTime() + event.duration * 60000);
+        return eventStart < filterEnd && eventEnd > filterStart;
+      });
+
+      const bookings = await Booking.find({
+        event: { $in: events.map(e => e._id) },
+        status: 'confirmed',
+        paymentStatus: 'paid'
+      }).populate('user', 'lat lon');
+
+      const preferences = await EventPreference.find({
+        event: { $in: events.map(e => e._id) }
+      }).populate('user', 'lat lon');
+
+      const generateRandomGuestPosition = () => {
+        const center = { lat: 46.0679, lon: 11.1211 };
+        const radius = 5;
+        const angle = Math.random() * 2 * Math.PI;
+        const distance = Math.random() * radius;
+        return {
+          lat: center.lat + (Math.cos(angle) * distance) / 111,
+          lon: center.lon + (Math.sin(angle) * distance) / (111 * Math.cos(center.lat * Math.PI / 180))
+        };
+      };
+
+      const flows = [];
+      let processed = 0;
+      const total = events.length;
+
+      for (const event of events) {
+        const eventBookings = bookings.filter(b => b.event.toString() === event._id.toString());
+        const eventPreferences = preferences.filter(p => p.event.toString() === event._id.toString());
+        const users = [
+          ...eventBookings.map(b => ({ user: b.user, weight: 0.9 })),
+          ...eventPreferences.map(p => ({
+            user: p.user || generateRandomGuestPosition(),
+            weight: 0.55
+          }))
+        ];
+
+        const assigned = assignParkingSpots({ lat: event.location.lat, lon: event.location.lon }, users.length);
+        let userIndex = 0;
+
+        for (const { parking, assigned: count } of assigned) {
+          for (let i = 0; i < count; i++) {
+            const u = users[userIndex++];
+            if (!u) continue;
+            const from = { lat: u.user.lat, lon: u.user.lon };
+            const to = { lat: event.location.lat, lon: event.location.lon };
+
+            const drivingRoute = await getRouteSegment(from, parking, 'driving');
+            const walkingRoute = (parking.lat === to.lat && parking.lon === to.lon)
+              ? []
+              : await getRouteSegment(parking, to, 'walking');
+            const postWalk = await getRouteSegment(to, {
+              lat: to.lat + (Math.random() - 0.5) * 0.001,
+              lon: to.lon + (Math.random() - 0.5) * 0.001
+            }, 'walking');
+
+            flows.push({
+              route: drivingRoute.map(p => ({ ...p, mode: 'driving' })),
+              weight: u.weight,
+              mode: 'driving',
+              type: 'to_event',
+              eventStart: event.date,
+              eventEnd: new Date(event.date.getTime() + event.duration * 60000)
+            });
+            // Progress update after push
+            {
+              const job = flowJobs.get(jobId);
+              if (job && job.status === 'in_progress') {
+                const estimatedTotalSteps = Math.max(1, total); // evita divisione per zero
+                job.progress = Math.min(99, Math.floor(((processed + i / count) / estimatedTotalSteps) * 100));
+              }
+            }
+            if (walkingRoute.length > 0) {
+              flows.push({
+                route: walkingRoute.map(p => ({ ...p, mode: 'walking' })),
+                weight: u.weight,
+                mode: 'walking',
+                type: 'to_event',
+                eventLocationName: event.location.name,
+                eventStart: event.date,
+                eventEnd: new Date(event.date.getTime() + event.duration * 60000)
+              });
+              // Progress update after push
+              {
+                const job = flowJobs.get(jobId);
+                if (job && job.status === 'in_progress') {
+                  const estimatedTotalSteps = Math.max(1, total);
+                  job.progress = Math.min(99, Math.floor(((processed + i / count) / estimatedTotalSteps) * 100));
+                }
+              }
+            }
+            flows.push({
+              route: postWalk.map(p => ({ ...p, mode: 'walking' })),
+              weight: 0.2,
+              mode: 'walking',
+              type: 'from_event',
+              eventStart: event.date,
+              eventEnd: new Date(event.date.getTime() + event.duration * 60000)
+            });
+            // Progress update after push
+            {
+              const job = flowJobs.get(jobId);
+              if (job && job.status === 'in_progress') {
+                const estimatedTotalSteps = Math.max(1, total);
+                job.progress = Math.min(99, Math.floor(((processed + i / count) / estimatedTotalSteps) * 100));
+              }
+            }
+          }
+        }
+
+        processed++;
+        flowJobs.get(jobId).progress = Math.floor((processed / total) * 100);
+      }
+
+      flowJobs.set(jobId, { progress: 100, status: 'done', result: flows });
+    } catch (err) {
+      flowJobs.set(jobId, { progress: 100, status: 'error', result: null });
+      console.error('Errore nella generazione flussi async:', err);
+    }
+  })();
+
+  res.json({ jobId });
+};
+
+// Endpoint: GET /admin/stats/flows/async/:jobId/progress
+exports.getFlowProgress = (req, res) => {
+  const job = flowJobs.get(req.params.jobId);
+  if (!job) {
+    return res.status(404).json({ error: 'Job non trovato' });
+  }
+  res.json({ progress: job.progress, status: job.status });
+};
+
+// Endpoint: GET /admin/stats/flows/async/:jobId/result
+exports.getFlowResult = (req, res) => {
+  const job = flowJobs.get(req.params.jobId);
+  if (!job) {
+    return res.status(404).json({ error: 'Job non trovato' });
+  }
+  if (job.status !== 'done') {
+    return res.status(400).json({ error: 'Il job non è ancora completato' });
+  }
+  res.json({ flows: job.result });
 };
 
 // Endpoint: GET /admin/stats/histogram?date=YYYY-MM-DD
