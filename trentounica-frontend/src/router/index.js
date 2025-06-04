@@ -154,6 +154,16 @@ const routes = [
     name: 'MapTratte',
     component: MapTratte ,
       meta: { requiresAuth: true, roles: ['trasporti', 'admin'] },
+  },
+  {
+    path: '/error',
+    name: 'ErrorPage',
+    component: () => import('@/views/Error.vue'),
+    props: route => ({ message: route.query.message })
+  },
+  {
+    path: '/:catchAll(.*)',
+    redirect: { name: 'ErrorPage', query: { message: 'Pagina non trovata.' } }
   }
 ];
 
