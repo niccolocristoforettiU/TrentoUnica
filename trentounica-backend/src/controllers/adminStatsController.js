@@ -73,6 +73,17 @@ exports.getEstimatedFlows = async (req, res) => {
 
     const flows = [];
 
+    //Route cache and helper
+    const routeCache = new Map();
+
+    async function getCachedRoute(from, to, mode) {
+      const key = `${from.lat},${from.lon}_${to.lat},${to.lon}_${mode}`;
+      if (routeCache.has(key)) return routeCache.get(key);
+      const route = await getRouteSegment(from, to, mode);
+      routeCache.set(key, route);
+      return route;
+    }
+
     for (const event of events) {
       const eventBookings = bookings.filter(b => b.event.toString() === event._id.toString());
       const eventPreferences = preferences.filter(p => p.event.toString() === event._id.toString());
@@ -94,14 +105,15 @@ exports.getEstimatedFlows = async (req, res) => {
           const from = { lat: u.user.lat, lon: u.user.lon };
           const to = { lat: event.location.lat, lon: event.location.lon };
 
-          const drivingRoute = await getRouteSegment(from, parking, 'driving');
+          const drivingRoute = await getCachedRoute(from, parking, 'driving');
           const walkingRoute = (parking.lat === to.lat && parking.lon === to.lon)
             ? []
-            : await getRouteSegment(parking, to, 'walking');
-          const postWalk = await getRouteSegment(to, {
+            : await getCachedRoute(parking, to, 'walking');
+          const postWalkTarget = {
             lat: to.lat + (Math.random() - 0.5) * 0.001,
             lon: to.lon + (Math.random() - 0.5) * 0.001
-          }, 'walking');
+          };
+          const postWalk = await getCachedRoute(to, postWalkTarget, 'walking');
 
           flows.push({
             route: drivingRoute.map(p => ({ ...p, mode: 'driving' })),
