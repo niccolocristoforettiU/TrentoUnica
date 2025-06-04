@@ -110,7 +110,15 @@ const getTratteByStatusAndDate = async (req, res) => {
       if (endDate) filter.date.$lte = new Date(endDate);
     }
 
-    const tratte = await Tratta.find(filter).populate('event').populate('users');
+    const tratte = await Tratta.find(filter)
+      .populate({
+        path: 'event',
+        populate: {
+          path: 'location',
+          model: 'Location'
+        }
+      })
+      .populate('users');
     res.json(tratte);
   } catch (error) {
     console.error('Errore getTratteByStatusAndDate:', error);
@@ -146,7 +154,7 @@ const updateTrattaByTransport = async (req, res) => {
     }
 
     // ✅ Applica solo i campi ammessi alla modifica
-    const allowedFields = ['departureTime', 'capacity', 'midpoint']; // aggiorna con i campi che vuoi permettere
+    const allowedFields = ['departureTime', 'capacity', 'midpoint', 'estimatedDuration']; // aggiorna con i campi che vuoi permettere
     allowedFields.forEach(field => {
       if (updates[field] !== undefined) {
         tratta[field] = updates[field];

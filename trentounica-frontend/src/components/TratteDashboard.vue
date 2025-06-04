@@ -101,6 +101,21 @@
                       ✏️ Modifica
                     </button>
                   </template>
+                  <router-link
+                    :to="{
+                      name: 'MapTratte',
+                      query: {
+                        trattaId: tratta._id,
+                        startDate: startDate,
+                        endDate: endDate,
+                        status: selectedStatus
+                      }
+                    }"
+                    class="mappa-btn"
+                  >
+                    🌍 Vedi su mappa
+                  </router-link>
+
                 </td>
               </tr>
               <tr v-if="editingTrattaId === tratta._id" :key="'edit-' + tratta._id">
@@ -505,8 +520,24 @@ td ul li {
 }
 
 .scan-btn:hover {
-  background-color: #1b5e20;
+  background-color: #580840;
 }
 
+
+.mappa-btn{
+  background-color: #25b0b5;
+  color: white;
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-size: 14px;
+  text-decoration: none;
+  display: inline-block;
+  margin-bottom: 5px;
+  margin-right: 5px;
+}
+
+.mappa-btn:hover {
+  background-color: #0a5c5f;
+}
 </style>
 

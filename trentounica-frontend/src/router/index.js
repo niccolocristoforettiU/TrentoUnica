@@ -20,6 +20,7 @@ import AdminStatistiche from '@/components/AdminStatistiche.vue';
 import AdminAttendanceHistogram from '@/components/AdminAttendanceHistogram.vue';
 import OrganizerLocation from '@/components/OrganizerLocation.vue';
 import TrattaScanner from '@/components/TrattaScanner.vue';
+import MapTratte from '@/components/MapTratte.vue';
 
 const routes = [
   {
@@ -148,6 +149,12 @@ const routes = [
     props: true,
     meta: { requiresAuth: true, role: 'trasporti' }
   },
+  {
+    path: "/trasporti/mapTratte",
+    name: 'MapTratte',
+    component: MapTratte ,
+      meta: { requiresAuth: true, roles: ['trasporti', 'admin'] },
+  }
 ];
 
 const router = createRouter({

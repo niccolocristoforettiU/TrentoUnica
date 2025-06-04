@@ -8,6 +8,7 @@
       <ul class="nav-links">
         <li><router-link to="/">Home</router-link></li>
         <li v-if="isAuthenticated || isGuest"><router-link to="/map">Mappa</router-link></li>
+        <li v-if="role === 'admin' || role === 'trasporti'"><router-link to="/trasporti/mapTratte">Mappa Tratte</router-link></li>
         <li v-if="!isAuthenticated"><router-link to="/login">Login</router-link></li>
         <li v-if="!isAuthenticated"><router-link to="/register">Registrati</router-link></li>
         <li v-if="isGuest"><router-link to="/searchbar">Esplora Eventi</router-link></li>
