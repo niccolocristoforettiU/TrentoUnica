@@ -23,7 +23,8 @@
         <li v-if="isAuthenticated"><router-link to="/searchbar">Cerca Eventi</router-link></li>
         <li v-if="isAuthenticated || isGuest"><router-link to="/Appcalendar">Calendario</router-link></li>
       </ul>
-      <div v-if="isAuthenticated || isGuest">
+      <div v-if="isAuthenticated">
+        <button @click="goToProfile" class="profile-btn">Modifica Profilo</button>
         <button @click="logout" class="logout-btn">Logout</button>
       </div>
     </nav>
@@ -82,6 +83,9 @@ export default {
       this.userName = "";
       this.role = "";
       this.isGuest = false;
+    },
+    goToProfile() {
+      this.$router.push('/modifica-profilo');
     }
   }
 };
@@ -170,5 +174,26 @@ export default {
   color: #2e7d32;
   text-decoration: underline;
   font-weight: bold;
+}
+
+.profile-link {
+  margin-right: 10px;
+  color: white;
+  text-decoration: underline;
+  font-weight: bold;
+}
+
+.profile-btn {
+  background-color: #1976d2;
+  border: none;
+  color: white;
+  padding: 8px 16px;
+  margin-right: 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.profile-btn:hover {
+  background-color: #0d47a1;
 }
 </style>

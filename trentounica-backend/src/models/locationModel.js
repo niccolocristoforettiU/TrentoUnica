@@ -41,7 +41,7 @@ const locationSchema = new mongoose.Schema({
   },
   enabled: {
     type: Boolean,
-    default: true
+    default: false
   },
   organizer: {
     type: mongoose.Schema.Types.ObjectId,

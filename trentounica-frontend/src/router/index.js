@@ -164,6 +164,12 @@ const routes = [
   {
     path: '/:catchAll(.*)',
     redirect: { name: 'ErrorPage', query: { message: 'Pagina non trovata.' } }
+  },
+  {
+    path: '/modifica-profilo',
+    name: 'ModificaProfilo',
+    component: () => import('@/components/ModificaProfilo.vue'),
+    meta: { requiresAuth: true }
   }
 ];
 

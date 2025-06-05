@@ -1,78 +1,233 @@
-
-
 <template>
-  <div class="organizer-locations">
-    <h1>Le mie Location</h1>
+  <div class="register-container">
+    <div class="register-box">
+      <button class="back-button" @click="$router.back()">← Torna indietro</button>
+      <h2>Gestione Location</h2>
 
-    <div v-if="loading">Caricamento location...</div>
-    <div v-else-if="locations.length === 0">Nessuna location trovata.</div>
+      <form @submit.prevent="saveLocations">
+        <h3>Location Esistenti</h3>
+        <div v-for="(loc, index) in existingLocations" :key="loc._id" class="location-entry">
+          <input v-model="loc.name" type="text" placeholder="Nome Location" required />
+          <AddressSearch @address-selected="(data) => updateLocationAddress(existingLocations, index, data)" />
+          <input v-model="loc.openingTime" type="time" required />
+          <input v-model="loc.closingTime" type="time" required />
+          <input v-model="loc.maxSeats" type="number" placeholder="Posti Massimi" required />
+          <select v-model="loc.category" required>
+            <option disabled value="">Categoria</option>
+            <option value="bar">Bar</option>
+            <option value="discoteca">Discoteca</option>
+            <option value="concerto">Concerto</option>
+          </select>
+          <button type="button" class="remove-btn" @click="removeLocation(index, false)">Elimina location</button>
+        </div>
 
-    <ul v-else>
-      <li v-for="loc in locations" :key="loc._id" class="location-item">
-        <h3>{{ loc.name }}</h3>
-        <p><strong>Indirizzo:</strong> {{ loc.address }}</p>
-        <p><strong>Categoria:</strong> {{ loc.category }}</p>
-        <p><strong>Orari:</strong> {{ loc.openingTime }} - {{ loc.closingTime }}</p>
-        <p><strong>Capienza massima:</strong> {{ loc.maxSeats }}</p>
-        <p><strong>Latitudine/Longitudine:</strong> {{ loc.lat }}, {{ loc.lon }}</p>
-        <p><strong>Stato:</strong> 
-          <span :style="{ color: loc.enabled ? 'green' : 'red' }">
-            {{ loc.enabled ? ' Attiva' : ' Disabilitata' }}
-          </span>
-        </p>
-        <p v-if="loc.approved !== undefined"><strong>Approvazione:</strong>
-          <span :style="{ color: loc.approved ? 'green' : 'orange' }">
-            {{ loc.approved ? ' Approvata' : ' In attesa' }}
-          </span>
-        </p>
-      </li>
-    </ul>
+        <h3>Nuove Location</h3>
+        <div v-for="(loc, index) in newLocations" :key="'new-' + index" class="location-entry">
+          <input v-model="loc.name" type="text" placeholder="Nome Location" required />
+          <AddressSearch @address-selected="(data) => updateLocationAddress(newLocations, index, data)" />
+          <input v-model="loc.openingTime" type="time" required />
+          <input v-model="loc.closingTime" type="time" required />
+          <input v-model="loc.maxSeats" type="number" placeholder="Posti Massimi" required />
+          <select v-model="loc.category" required>
+            <option disabled value="">Categoria</option>
+            <option value="bar">Bar</option>
+            <option value="discoteca">Discoteca</option>
+            <option value="concerto">Concerto</option>
+          </select>
+          <button type="button" class="remove-btn" @click="removeLocation(index, true)">Rimuovi</button>
+        </div>
+
+        <button type="button" @click="addLocation" class="add-location-btn">Aggiungi Location</button>
+        <button type="submit" class="submit-btn">Salva modifiche</button>
+      </form>
+
+      <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
+    </div>
   </div>
 </template>
 
 <script>
-import axios from "@/api/axios";
+import axios from '@/api/axios';
+import AddressSearch from '@/components/AddressSearch.vue';
 
 export default {
-  name: 'OrganizerLocation',
+  name: 'OrganizerLocationsEditor',
+  components: { AddressSearch },
   data() {
     return {
-      locations: [],
-      loading: false
+      existingLocations: [],
+      newLocations: [],
+      errorMessage: ''
     };
   },
-  methods: {
-    async fetchLocations() {
-      this.loading = true;
-      try {
-        const token = localStorage.getItem("token");
-        const res = await axios.get("/locations/organizer", {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        this.locations = res.data;
-      } catch (error) {
-        console.error("Errore nel recupero delle location:", error);
-      } finally {
-        this.loading = false;
-      }
+  async mounted() {
+    try {
+      const res = await axios.get('/locations/organizer');
+      this.existingLocations = res.data || [];
+    } catch (err) {
+      console.error('Errore nel caricamento delle location:', err);
     }
   },
-  mounted() {
-    this.fetchLocations();
+  methods: {
+    addLocation() {
+      this.newLocations.push({
+        name: '', address: '', openingTime: '', closingTime: '',
+        maxSeats: '', category: '', lat: null, lon: null
+      });
+    },
+    async removeLocation(index, isNew) {
+      if (isNew) {
+        this.newLocations.splice(index, 1);
+      } else {
+        const confirmed = confirm('⚠️ Sei sicuro di voler eliminare questa location?');
+        if (!confirmed) return;
+
+        const location = this.existingLocations[index];
+        try {
+          await axios.delete(`/locations/${location._id}`);
+          this.existingLocations.splice(index, 1);
+          alert('✅ Location eliminata con successo');
+        } catch (err) {
+          console.error('Errore eliminazione:', err);
+          this.errorMessage = 'Errore durante l\'eliminazione della location';
+        }
+      }
+    },
+    updateLocationAddress(list, index, { address, lat, lng }) {
+      list[index].address = address;
+      list[index].lat = lat;
+      list[index].lon = lng;
+    },
+    async saveLocations() {
+      this.errorMessage = '';
+
+      const validate = (loc) =>
+        loc.name?.trim() &&
+        loc.address?.trim() &&
+        loc.openingTime &&
+        loc.closingTime &&
+        loc.maxSeats &&
+        loc.category &&
+        loc.lat !== null &&
+        loc.lon !== null;
+
+      for (const loc of this.newLocations) {
+        if (!validate(loc)) continue;
+        try {
+          await axios.post('/locations', loc);
+        } catch (err) {
+          console.error('Errore creazione location:', err);
+        }
+      }
+
+      for (const loc of this.existingLocations) {
+        if (!validate(loc)) continue;
+        try {
+          await axios.put(`/locations/${loc._id}`, loc);
+        } catch (err) {
+          console.error('Errore aggiornamento location:', err);
+        }
+      }
+
+      alert('Location salvate con successo!');
+      this.$router.push('/');
+    }
   }
 };
 </script>
 
 <style scoped>
-.organizer-locations {
+.register-container {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 60px 20px;
+  background-color: #f5f7fa;
+  min-height: 100vh;
+}
+.register-box {
+  background-color: white;
+  padding: 40px;
+  border-radius: 10px;
+  width: 100%;
   max-width: 800px;
-  margin: 0 auto;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  position: relative;
+}
+.back-button {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  background: transparent;
+  border: none;
+  color: #2e7d32;
+  font-size: 14px;
+  cursor: pointer;
+}
+.back-button:hover {
+  text-decoration: underline;
+}
+h2 {
+  margin-bottom: 20px;
+  color: #2e7d32;
+  text-align: center;
+}
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+input, select {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px;
+  font-size: 16px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+.location-entry {
+  background-color: #f1f1f1;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.add-location-btn, .submit-btn {
+  padding: 12px;
+  background-color: #2e7d32;
+  color: white;
+  font-size: 16px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+.add-location-btn:hover, .submit-btn:hover {
+  background-color: #1b5e20;
+}
+.remove-btn {
+  background-color: #e53935;
+  color: white;
+  border: none;
+  padding: 12px;
+  font-size: 13px;
+  font-weight: bold;
+  border-radius: 6px;
+  cursor: pointer;
+  align-self: center;
+  transition: background-color 0.2s ease;
+  width: fit-content;
 }
 
-.location-item {
-  border: 1px solid #ccc;
-  padding: 15px;
-  margin-bottom: 10px;
-  border-radius: 5px;
+.remove-btn:hover {
+  background-color: #c62828;
+}
+
+.error-message {
+  color: red;
+  text-align: center;
+  margin-top: 10px;
 }
 </style>

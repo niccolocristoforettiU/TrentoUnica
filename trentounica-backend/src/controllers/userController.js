@@ -201,49 +201,79 @@ exports.getProfile = async (req, res) => {
   }
 };
 
-// Aggiornare il profilo utente (Protetto)
 exports.updateProfile = async (req, res) => {
   try {
-    const { name, email, newPassword, confirmPassword } = req.body;
+    const userId = req.user.userId;
+    const {
+      name,
+      email,
+      address,
+      birthDate,
+      lat,
+      lon,
+      companyName,
+      partitaIva,
+      newPassword,
+      confirmPassword
+    } = req.body;
+
     const updates = {};
 
-    if (name) updates.name = name;
-    if (email) updates.email = email;
+    // Aggiungi solo i campi effettivamente forniti
+    if (name?.trim()) updates.name = name.trim();
+    if (email?.trim()) updates.email = email.trim();
+    if (address?.trim()) updates.address = address.trim();
+    if (birthDate?.trim()) updates.birthDate = new Date(birthDate);
+    if (lat !== undefined && lat !== null) updates.lat = lat;
+    if (lon !== undefined && lon !== null) updates.lon = lon;
+    if (companyName?.trim()) updates.companyName = companyName.trim();
+    if (partitaIva?.trim()) updates.partitaIva = partitaIva.trim();
 
-    // Controllo se le nuove password coincidono
+    // Gestione password (se presente)
     if (newPassword || confirmPassword) {
       if (newPassword !== confirmPassword) {
         return res.status(400).json({ message: 'Le nuove password non coincidono' });
       }
-
-      // Hash della nuova password
+      if (newPassword.length < 8) {
+        return res.status(400).json({ message: 'La password deve contenere almeno 8 caratteri' });
+      }
       const hashedPassword = await bcrypt.hash(newPassword, 10);
       updates.password = hashedPassword;
     }
 
-    const user = await User.findByIdAndUpdate(req.user.userId, updates, { new: true }).select('-password');
+    const user = await User.findByIdAndUpdate(userId, updates, { new: true }).select('-password');
     if (!user) {
       return res.status(404).json({ message: 'Utente non trovato' });
     }
 
     res.status(200).json({ message: 'Profilo aggiornato con successo', user });
   } catch (error) {
-    res.status(500).json({ message: 'Errore durante l\'aggiornamento del profilo', error: error.message });
+    console.error("Errore durante l'aggiornamento del profilo:", error);
+    res.status(500).json({ message: 'Errore interno del server', error: error.message });
   }
 };
 
-// Recupera tutti gli organizer (verificati e non) con le loro location
+
+
 exports.getAllOrganizersWithLocations = async (req, res) => {
   try {
-    const organizers = await User.find({ role: 'organizer' })
-      .populate('locations', 'name address category maxSeats openingTime closingTime enabled') // Seleziona anche enabled
-      .select('-password');
-    res.status(200).json(organizers);
+    const organizers = await User.find({ role: 'organizer' }).select('-password');
+
+    const result = await Promise.all(organizers.map(async (org) => {
+      const locations = await Location.find({ organizer: org._id }).select('name address category maxSeats openingTime closingTime enabled');
+      return {
+        ...org.toObject(),
+        locations
+      };
+    }));
+
+    res.status(200).json(result);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Errore durante il recupero degli organizzatori', error: error.message });
   }
 };
+
 
 // Disabilita un organizer (setta verified a false)
 exports.disableOrganizer = async (req, res) => {

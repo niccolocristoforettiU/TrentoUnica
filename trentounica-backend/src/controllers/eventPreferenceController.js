@@ -65,3 +65,4 @@ exports.removePreference = async (req, res) => {
     res.status(500).json({ message: 'Errore nella rimozione preferenza', error: error.message });
   }
 };
+

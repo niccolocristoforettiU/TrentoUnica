@@ -22,14 +22,16 @@ API.interceptors.request.use((config) => {
 API.interceptors.response.use(
   response => response,
   error => {
-    if (error.response && error.response.status === 401) {
+    const isLoginCall = error.config?.url?.includes('/users/login');
+
+    if (error.response && error.response.status === 401 && !isLoginCall) {
       // Pulizia localStorage
       localStorage.removeItem('token');
       localStorage.removeItem('role');
       localStorage.removeItem('name');
       localStorage.removeItem('guestId');
 
-      // Reindirizza alla pagina d'errore
+      // Reindirizza alla pagina d'errore solo se NON è il login
       router.push({
         name: 'ErrorPage',
         query: { message: 'Sessione scaduta. Effettua di nuovo il login.' }
@@ -39,5 +41,6 @@ API.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
 
 export default API;

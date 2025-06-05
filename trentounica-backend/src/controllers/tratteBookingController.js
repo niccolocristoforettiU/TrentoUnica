@@ -80,10 +80,16 @@ const getClientTrattaBookings = async (req, res) => {
       status: 'confirmed'
     }).populate({
       path: 'tratta',
-      populate: { path: 'event', select: 'title date location' }
+      populate: {
+        path: 'event',
+        select: 'title date location',
+        populate: {
+          path: 'location',
+          select: 'name'
+        }
+      }
     });
 
-    // Aggiungi qrCodeData a ogni prenotazione
     const bookingsWithQR = bookings.map(booking => {
       const obj = booking.toObject();
       return {
@@ -98,6 +104,7 @@ const getClientTrattaBookings = async (req, res) => {
     res.status(500).json({ message: 'Errore del server' });
   }
 };
+
 
 
 const getTicketForTratta = async (req, res) => {

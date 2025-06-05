@@ -3,29 +3,23 @@ const router = express.Router();
 const locationController = require('../controllers/locationController');
 const { authenticate, authorizeRole } = require('../middlewares/authMiddleware');
 
-// Organizer: tutte le location
-router.get('/', authenticate, authorizeRole('organizer'), locationController.getAllLocations);
-
-// Organizer: solo le proprie location
+// Organizer
 router.get('/organizer', authenticate, authorizeRole('organizer'), locationController.getOrganizerLocations);
-
-// Creare una nuova location
 router.post('/', authenticate, authorizeRole('organizer'), locationController.createLocation);
-
-// Modificare una location
 router.put('/:id', authenticate, authorizeRole('organizer'), locationController.updateLocation);
-
-// Modificare orari e posti massimi di una location
+router.delete('/:id', authenticate, authorizeRole('organizer'), locationController.deleteLocation);
 router.patch('/:id/times-seats', authenticate, authorizeRole('organizer'), locationController.updateLocationTimesAndSeats);
 
-// Eliminare una location
-router.delete('/:id', authenticate, authorizeRole('organizer'), locationController.deleteLocation);
-
-// Admin: abilitare/disabilitare una location
+// Admin
 router.patch('/:id/status', authenticate, authorizeRole('admin'), locationController.toggleLocationStatus);
+router.get('/', authenticate, authorizeRole('admin'), locationController.getAllLocations);
 
-// Client: aggiungi/rimuovi location dalle preferenze
+// Client preferenze
 router.post('/:locationId/preference', authenticate, authorizeRole('client'), locationController.addLocationPreference);
 router.delete('/:locationId/preference', authenticate, authorizeRole('client'), locationController.removeLocationPreference);
+
+// Get all preferences of a client
+router.get('/preferences', authenticate, authorizeRole('client'), locationController.getUserLocationPreferences);
+
 
 module.exports = router;

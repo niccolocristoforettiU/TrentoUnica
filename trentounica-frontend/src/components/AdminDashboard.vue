@@ -25,6 +25,8 @@
               <td>
                 <ul>
                   <li v-for="loc in organizer.locations" :key="loc._id">
+                    <span v-if="loc.enabled === false" class="disabled-badge">🚫 In attesa approvazione</span>
+
                     {{ loc.name }} - {{ loc.address }} ({{ loc.category }})<br />
                     Capienza: {{ loc.maxSeats }}<br />
                     Orari: {{ loc.openingTime }} - {{ loc.closingTime }}
@@ -218,5 +220,11 @@ td ul li {
 
 .action-btn.red:hover {
   background-color: #b71c1c;
+}
+
+.disabled-badge {
+  color: #b71c1c;
+  font-size: 14px;
+  margin-top: -10px;
 }
 </style>

@@ -38,17 +38,11 @@ router.put('/verify/:userId', authenticate, authorizeRole('admin'), userControll
 // Rotta per ottenere gli organizzatori non verificati (solo admin)
 router.get('/organizers/pending', authenticate, authorizeRole('admin'), userController.getPendingOrganizers);
 
-// Rotte per la gestione delle location
-router.get('/locations', authenticate, authorizeRole('organizer'), locationController.getAllLocations);
-router.post('/locations', authenticate, authorizeRole('organizer'), locationController.createLocation);
-router.put('/locations/:id', authenticate, authorizeRole('organizer'), locationController.updateLocation);
-router.delete('/locations/:id', authenticate, authorizeRole('organizer'), locationController.deleteLocation);
-
-
 router.post('/forgot-password', userController.forgotPassword);
 router.post('/reset-password/:token', userController.resetPassword);
 
 // Rotta per inizializzare una sessione guest
 router.post('/guest/init', userController.initGuestSession);
+
 
 module.exports = router;

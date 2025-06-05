@@ -1,6 +1,10 @@
-const Location = require('../models/locationModel');
-const LocationPreference = require('../models/locationPreferenceModel');
+const Booking = require('../models/bookingModel');
 const Event = require('../models/eventModel');
+const EventPreference = require('../models/eventPreferenceModel');
+const Tratta = require('../models/trattaModel');
+const TrattaBooking = require('../models/trattaBooking');
+const LocationPreference = require('../models/locationPreferenceModel');
+const Location = require('../models/locationModel');
 
 // Ottenere tutte le location (solo per admin)
 const getAllLocations = async (req, res) => {
@@ -120,21 +124,6 @@ const updateLocationTimesAndSeats = async (req, res) => {
   }
 };
 
-// Eliminare una location
-const deleteLocation = async (req, res) => {
-  try {
-    const location = await Location.findOneAndDelete({ _id: req.params.id, organizer: req.user.userId });
-
-    if (!location) {
-      return res.status(404).json({ message: 'Location non trovata o non autorizzata' });
-    }
-
-    res.status(200).json({ message: 'Location eliminata con successo' });
-  } catch (error) {
-    res.status(500).json({ message: 'Errore nell\'eliminazione della location', error: error.message });
-  }
-};
-
 // Aggiungi una location alle preferenze dell'utente
 const addLocationPreference = async (req, res) => {
   try {
@@ -201,14 +190,75 @@ const toggleLocationStatus = async (req, res) => {
   }
 };
 
+// Ottenere tutte le location preferite di un utente
+const getUserLocationPreferences = async (req, res) => {
+  try {
+    const preferences = await LocationPreference.find({ user: req.user.userId }).populate('location');
+    const locations = preferences.map(pref => pref.location);
+    res.status(200).json(locations);
+  } catch (error) {
+    res.status(500).json({ message: 'Errore nel recupero delle preferenze', error: error.message });
+  }
+};
+
+
+
+const deleteLocation = async (req, res) => {
+  try {
+    const organizerId = req.user.userId;
+    const locationId = req.params.id;
+
+    // Verifica se la location esiste e appartiene all'organizer
+    const location = await Location.findOne({ _id: locationId, organizer: organizerId });
+    if (!location) {
+      return res.status(404).json({ message: 'Location non trovata o non autorizzata' });
+    }
+
+    // Trova gli eventi nella location
+    const events = await Event.find({ location: locationId });
+    const eventIds = events.map(event => event._id);
+
+    // Trova le tratte collegate agli eventi
+    const tratte = await Tratta.find({ event: { $in: eventIds } });
+    const trattaIds = tratte.map(t => t._id);
+
+    // Elimina le prenotazioni per eventi
+    await Booking.deleteMany({ event: { $in: eventIds } });
+
+    // Elimina preferenze per quegli eventi
+    await EventPreference.deleteMany({ event: { $in: eventIds } });
+
+    // Elimina prenotazioni tratte
+    await TrattaBooking.deleteMany({ tratta: { $in: trattaIds } });
+
+    // Elimina tratte
+    await Tratta.deleteMany({ _id: { $in: trattaIds } });
+
+    // Elimina eventi
+    await Event.deleteMany({ _id: { $in: eventIds } });
+
+    // Elimina location preferences
+    await LocationPreference.deleteMany({ location: locationId });
+
+    // Infine, elimina la location
+    await Location.deleteOne({ _id: locationId });
+
+    res.status(200).json({ message: 'Location e dati correlati eliminati con successo' });
+  } catch (error) {
+    console.error('Errore durante la cancellazione completa:', error);
+    res.status(500).json({ message: 'Errore nella cancellazione della location', error: error.message });
+  }
+};
+
 module.exports = {
   getAllLocations,
   getOrganizerLocations,
   createLocation,
   updateLocation,
   updateLocationTimesAndSeats,
-  deleteLocation,
   addLocationPreference,
   removeLocationPreference,
-  toggleLocationStatus
+  toggleLocationStatus,
+  getUserLocationPreferences,
+  deleteLocation
 };

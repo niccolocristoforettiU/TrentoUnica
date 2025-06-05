@@ -4,14 +4,13 @@
     <div class="tabs">
       <button :class="{ active: activeTab === 'eventi' }" @click="activeTab = 'eventi'">Prenotazioni Eventi</button>
       <button :class="{ active: activeTab === 'tratte' }" @click="activeTab = 'tratte'">Prenotazioni Tratte</button>
+      <button :class="{ active: activeTab === 'preferenze' }" @click="activeTab = 'preferenze'; loadPreferences()">Location Preferite</button>
     </div>
 
     <!-- EVENTI -->
     <div v-if="activeTab === 'eventi'">
       <h2>Le tue prenotazioni</h2>
-      <div v-if="bookings.length === 0" class="empty-message">
-        Nessuna prenotazione trovata.
-      </div>
+      <div v-if="bookings.length === 0" class="empty-message">Nessuna prenotazione trovata.</div>
       <div v-for="b in bookings" :key="b._id" class="booking-card">
         <div class="card-header">
           <h3>{{ b.event.title }}</h3>
@@ -20,13 +19,7 @@
         </div>
         <div class="qr-container">
           <qrcode-vue :value="b._id" :size="100" />
-          <button
-            v-if="b.event.price === 0"
-            @click="cancelBooking(b._id)"
-            class="cancel-button"
-          >
-            Annulla prenotazione
-          </button>
+          <button v-if="b.event.price === 0" @click="cancelBooking(b._id)" class="cancel-button">Annulla prenotazione</button>
         </div>
       </div>
     </div>
@@ -34,12 +27,10 @@
     <!-- TRATTE -->
     <div v-if="activeTab === 'tratte'">
       <h2>Le tue tratte</h2>
-      <div v-if="trattaBookings.length === 0" class="empty-message">
-        Nessuna tratta prenotata.
-      </div>
+      <div v-if="trattaBookings.length === 0" class="empty-message">Nessuna tratta prenotata.</div>
       <div v-for="tb in trattaBookings" :key="tb._id" class="booking-card">
         <div class="card-header">
-          <h3>Evento: {{ tb.tratta.event.title }}</h3>
+          <h3>Evento: <span v-if="tb.tratta?.event?.title">{{ tb.tratta.event.title }}</span><span v-else class="missing-event">Evento non disponibile</span></h3>
           <p><strong>Data:</strong> {{ new Date(tb.tratta.date).toLocaleDateString() }}</p>
           <p><strong>Partenza:</strong> {{ new Date(tb.tratta.departureTime).toLocaleString() }}</p>
           <p><strong>Durata stimata:</strong> {{ tb.tratta.estimatedDuration }} minuti</p>
@@ -47,13 +38,22 @@
         </div>
         <div class="qr-container">
           <qrcode-vue :value="tb._id" :size="100" />
-          <button
-            v-if="tb.tratta.status !== 'finished'"
-            @click="cancelTrattaBooking(tb._id)"
-            class="cancel-button"
-          >
-            Annulla prenotazione tratta
-          </button>
+          <button v-if="tb.tratta.status !== 'finished'" @click="cancelTrattaBooking(tb._id)" class="cancel-button">Annulla prenotazione tratta</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PREFERENZE -->
+    <div v-if="activeTab === 'preferenze'">
+      <h2>Le tue location preferite</h2>
+      <div v-if="preferences.length === 0" class="empty-message">Nessuna location preferita.</div>
+      <div v-for="loc in preferences" :key="loc._id" class="booking-card">
+        <div class="card-header">
+          <h3>{{ loc.name }}</h3>
+          <p>{{ loc.address }} - {{ loc.category }}</p>
+        </div>
+        <div class="qr-container">
+          <button @click="removePreference(loc._id)" class="cancel-button">Rimuovi preferenza</button>
         </div>
       </div>
     </div>
@@ -70,6 +70,7 @@ export default {
     return {
       bookings: [],
       trattaBookings: [],
+      preferences: [],
       activeTab: 'eventi'
     };
   },
@@ -80,70 +81,67 @@ export default {
   methods: {
     async loadBookings() {
       const res = await axios.get('/bookings/client', {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`
-        }
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       this.bookings = res.data;
     },
     async loadTrattaBookings() {
       const res = await axios.get('/trattabookings/client', {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`
-        }
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       this.trattaBookings = res.data;
     },
+    async loadPreferences() {
+      const res = await axios.get('/locations/preferences', {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      this.preferences = res.data;
+    },
     async cancelBooking(bookingId) {
       if (confirm('Sei sicuro di voler annullare la prenotazione? Verranno annullate anche le tratte collegate.')) {
-        try {
-          // Trova l'evento associato alla prenotazione
-          const booking = this.bookings.find(b => b._id === bookingId);
-          const eventId = booking?.event?._id;
+        const booking = this.bookings.find(b => b._id === bookingId);
+        const eventId = booking?.event?._id;
 
-          // Cancella la prenotazione dell'evento
-          await axios.delete(`/bookings/${bookingId}`, {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem('token')}`
-            }
-          });
+        await axios.delete(`/bookings/${bookingId}`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        });
 
-          // Se c'è un eventId, trova e cancella le tratte associate
-          if (eventId) {
-            const linkedTratte = this.trattaBookings.filter(tb => tb.tratta.event._id === eventId);
-            for (const tb of linkedTratte) {
-              await this.cancelTrattaBooking(tb._id, false); // passiamo false per non chiedere conferma ogni volta
-            }
+        if (eventId) {
+          const linkedTratte = this.trattaBookings.filter(tb => tb.tratta.event._id === eventId);
+          for (const tb of linkedTratte) {
+            await this.cancelTrattaBooking(tb._id, false);
           }
-
-          await this.loadBookings();
-          await this.loadTrattaBookings();
-          alert('Prenotazione evento e tratte collegate annullate.');
-
-        } catch (error) {
-          console.error('Errore durante l\'annullamento:', error);
-          alert('Errore durante l\'annullamento della prenotazione.');
         }
+
+        await this.loadBookings();
+        await this.loadTrattaBookings();
+        alert('Prenotazione annullata.');
       }
     },
-    async cancelTrattaBooking(bookingId, askConfirm = true) {
-      if (!askConfirm || confirm('Sei sicuro di voler annullare la tratta?')) {
-        try {
-          await axios.delete(`/trattabookings/${bookingId}`, {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem('token')}`
-            }
-          });
-          await this.loadTrattaBookings();
-        } catch (error) {
-          console.error('Errore durante l\'annullamento tratta:', error);
-          alert('Errore durante l\'annullamento della tratta.');
-        }
+    async cancelTrattaBooking(id, askConfirm = true) {
+      if (!askConfirm || confirm('Vuoi annullare questa tratta?')) {
+        await axios.delete(`/trattabookings/${id}`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        });
+        await this.loadTrattaBookings();
+      }
+    },
+    async removePreference(locationId) {
+      try {
+        await axios.delete(`/locations/${locationId}/preference`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        });
+        this.preferences = this.preferences.filter(p => p._id !== locationId);
+        alert('Preferenza rimossa.');
+      } catch (err) {
+        console.error(err);
+        alert('Errore durante la rimozione della preferenza.');
       }
     }
   }
 };
 </script>
+
 
 <style scoped>
 .booking-page {
