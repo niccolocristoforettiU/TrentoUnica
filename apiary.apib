@@ -1,17 +1,218 @@
 # TrentoUnica API
 
-Questo documento descrive le API del progetto **TrentoUnica**, un sistema per la gestione e la fruizione di eventi nella città di Trento. Le API sono strutturate per supportare funzionalità relative a utenti, eventi, prenotazioni, posizioni e calendario.
+  Questo documento descrive le API del progetto **TrentoUnica**, un sistema per la gestione e la fruizione di eventi nella città di Trento. Le API sono strutturate per supportare funzionalità relative a utenti, eventi, prenotazioni, posizioni e calendario.
 
+## Statistiche Admin [/admin/stats]
+
+### Flussi stimati per data e ora [GET /admin/stats/flows{?date,startHour,endHour}]
+Restituisce flussi stimati verso eventi basati su prenotazioni e preferenze.
+
++ Parameters
+    + date: `2025-06-01` (required, string) - Data di riferimento
+    + startHour: `10` (optional, integer) - Ora iniziale
+    + endHour: `18` (optional, integer) - Ora finale
+
++ Request
+    + Headers
+
+            Authorization: Bearer {token}
+
++ Response 200 (application/json)
+
+### Avvia generazione flussi asincrona [POST /admin/stats/flows/async]
+Avvia una generazione dei flussi in background per una data.
+
++ Request (application/json)
+    + Headers
+
+            Authorization: Bearer {token}
+    + Body
+
+            {
+                "date": "2025-06-01",
+                "startHour": 10,
+                "endHour": 18
+            }
+
++ Response 200 (application/json)
+
+        {
+            "jobId": "uuid-generato"
+        }
+
+### Stato avanzamento generazione flussi [GET /admin/stats/flows/async/{jobId}/progress]
+Controlla lo stato di un job asincrono.
+
++ Parameters
+    + jobId: `uuid-generato` (string)
+
++ Request
+    + Headers
+
+            Authorization: Bearer {token}
+
++ Response 200 (application/json)
+
+        {
+            "progress": 85,
+            "status": "in_progress"
+        }
+
+### Risultato generazione flussi [GET /admin/stats/flows/async/{jobId}/result]
+Recupera i flussi generati in un job completato.
+
++ Parameters
+    + jobId: `uuid-generato` (string)
+
++ Request
+    + Headers
+
+            Authorization: Bearer {token}
+
++ Response 200 (application/json)
+
+        {
+            "flows": [...]
+        }
+
+### Istogramma presenze per età [GET /admin/stats/histogram{?date}]
+Restituisce un istogramma di età delle presenze per ogni evento in una data.
+
++ Parameters
+    + date: `2025-06-01` (required, string)
+
++ Request
+    + Headers
+
+            Authorization: Bearer {token}
+
++ Response 200 (application/json)
+
+        {
+            "date": "2025-06-01",
+            "histogram": [...]
+        }
+## Prenotazioni Evento [/bookings]
+
+### Prenota un Evento [POST /bookings]
+Permette a un utente `client` autenticato di prenotare un evento.
+
++ Request (application/json)
+    + Headers
+
+            Authorization: Bearer {token}
+    + Body
+
+            {
+                "eventId": "evt123"
+            }
+
++ Response 200 (application/json)
+
+        {
+            "booking": {
+                "id": "booking123",
+                "eventId": "evt123",
+                "userId": "user456",
+                "status": "confirmed"
+            },
+            "event": {
+                "id": "evt123",
+                "title": "Concerto Jazz",
+                "date": "2025-06-01T21:00:00.000Z"
+            }
+        }
+
+### Annulla Prenotazione Evento [DELETE /bookings/{bookingId}]
+Annulla una prenotazione solo se l’evento è gratuito.
+
++ Parameters
+    + bookingId: `booking456` (string)
+
++ Request
+    + Headers
+
+            Authorization: Bearer {token}
+
++ Response 200 (application/json)
+
+        {
+            "message": "Prenotazione annullata con successo."
+        }
+
+### Prenotazioni Evento dell’Utente [GET /bookings/client]
+Restituisce tutte le prenotazioni evento confermate e pagate dell’utente.
+
++ Request
+    + Headers
+
+            Authorization: Bearer {token}
+
++ Response 200 (application/json)
+
+### Biglietto Evento [GET /bookings/ticket/{eventId}]
+Restituisce il biglietto per un evento (incluso il QR code).
+
++ Parameters
+    + eventId: `evt123` (string)
+
++ Request
+    + Headers
+
+            Authorization: Bearer {token}
+
++ Response 200 (application/json)
+
+        {
+            "hasBooking": true,
+            "ticket": {
+                "id": "bookingId",
+                "title": "Concerto Jazz",
+                "date": "2025-06-01T21:00:00.000Z",
+                "location": {
+                    "name": "Sala Eventi",
+                    "address": "Via Roma 3"
+                },
+                "qrCodeData": "bookingId"
+            }
+        }
+
+### Validazione Biglietto Evento [POST /bookings/validate]
+Permette all’organizer di validare un biglietto per il proprio evento.
+
++ Request (application/json)
+    + Headers
+
+            Authorization: Bearer {token}
+    + Body
+
+            {
+                "ticketId": "bookingId",
+                "eventId": "evt123"
+            }
+
++ Response 200 (application/json)
+
+        {
+            "valid": true,
+            "message": "Biglietto valido. Accesso consentito."
+        }
 
 ## Calendario [/calendar]
 
 ### Elenco eventi filtrati per data [GET /calendar]
-Restituisce gli eventi disponibili filtrati per intervallo di date e, opzionalmente, per categoria.
+Restituisce gli eventi disponibili filtrati per intervallo di date, categoria, oppure in base all’utente (organizer o client autenticato).
 
 + Parameters
     + startDate: `2025-05-01` (optional, string) - Data di inizio nel formato ISO.
     + endDate: `2025-06-01` (optional, string) - Data di fine nel formato ISO.
-    + category: `musica` (optional, string) - Categoria dell'evento.
+    + category: `musica` (optional, string) - Categoria della location.
+    + onlyMine: `true` (optional, string) - Solo eventi creati dall’organizer autenticato.
+    + onlyPreferred: `true` (optional, string) - Solo eventi preferiti dall’utente autenticato.
+    + onlyEventPreferred: `true` (optional, string) - Solo eventi per cui è stata espressa preferenza (anche duplicato funzionale).
+
++ Headers (solo per filtri avanzati)
+        Authorization: Bearer {token}
 
 + Response 200 (application/json)
 
@@ -132,6 +333,8 @@ Permette di cercare eventi sulla base di parametri testuali (es. nome, descrizio
 
 ## Utenti [/users]
 
+Questa sezione raccoglie tutti gli endpoint relativi alla gestione degli utenti, inclusi registrazione, autenticazione, gestione profilo e operazioni avanzate per admin e organizer.
+
 ### Registrazione [POST /users/register]
 Registra un nuovo utente (client o organizer).
 
@@ -139,10 +342,38 @@ Registra un nuovo utente (client o organizer).
     + Body
 
             {
-                "name": "Mario Rossi",
-                "email": "mario@example.com",
-                "password": "password123",
-                "role": "client"
+              "email": "utente@example.com",
+              "password": "password123",
+              "ripetiPassword": "password123",
+              "role": "client",
+              "name": "Mario Rossi",
+              "address": "Via Roma 1",
+              "birthDate": "1990-01-01",
+              "lat": 46.0701,
+              "lon": 11.119
+            }
+
+    + Body (Organizer example)
+
+            {
+              "email": "organizer@example.com",
+              "password": "password123",
+              "ripetiPassword": "password123",
+              "role": "organizer",
+              "companyName": "Eventi Trento",
+              "partitaIva": "12345678901",
+              "locations": [
+                {
+                  "name": "Sala Eventi",
+                  "address": "Via Milano 3",
+                  "openingTime": "09:00",
+                  "closingTime": "20:00",
+                  "maxSeats": 200,
+                  "category": "conferenza",
+                  "lat": 46.071,
+                  "lon": 11.120
+                }
+              ]
             }
 
 + Response 201 (application/json)
@@ -225,6 +456,287 @@ Restituisce un messaggio di benvenuto per l’organizer autenticato.
 
 + Response 200 (application/json)
 
+Invia un'email per il reset password con link contenente token.
+### Richiesta Reset Password [POST /users/forgot-password]
++ Request (application/json)
+    + Body
+        ```
+        {
+          "email": "utente@example.com"
+        }
+        ```
++ Response 200 (application/json)
+        ```
+        {
+          "message": "Email per il reset inviata"
+        }
+        ```
+
+Imposta una nuova password usando il token ricevuto per email.
+### Reset Password [POST /users/reset-password/{token}]
++ Parameters
+    + token: `abcd1234` (string) - Token ricevuto via email
++ Request (application/json)
+    + Body
+        ```
+        {
+          "newPassword": "nuovapassword123",
+          "confirmPassword": "nuovapassword123"
+        }
+        ```
++ Response 200 (application/json)
+        ```
+        {
+          "message": "Password reimpostata con successo"
+        }
+        ```
+
+Genera o restituisce un guest ID per sessioni anonime.
+### Inizializza Guest [POST /users/guest/init]
++ Request (application/json)
++ Response 200 (application/json)
+        ```
+        {
+          "guestId": "b3d5c0aa-1b23-4f75-85c5-ec0c3b2a5f41"
+        }
+        ```
+
+Permette ad un admin di disattivare un organizer (e cancellarne gli eventi).
+### Disabilita Organizer [PUT /users/disable/{userId}]
++ Parameters
+    + userId: `abc123` (string) - ID dell'organizzatore
++ Headers
+
+        Authorization: Bearer {token}
+
++ Response 200 (application/json)
+        ```
+        {
+          "message": "Organizzatore disabilitato con successo"
+        }
+        ```
+
+Recupera tutti gli organizer con le rispettive location (solo per admin).
+### Lista Organizer con Location [GET /users/organizers/all]
++ Headers
+
+        Authorization: Bearer {token}
+
++ Response 200 (application/json)
+        ```
+        [
+          {
+            "name": "Organizzatore A",
+            "email": "orga@example.com",
+            "companyName": "Company A",
+            "locations": [
+              {
+                "name": "Sala A",
+                "address": "Via A 1",
+                "category": "musica",
+                "maxSeats": 100,
+                "openingTime": "10:00",
+                "closingTime": "18:00",
+                "enabled": true
+              }
+            ]
+          }
+        ]
+        ```
+
+## Tratte [/tratte]
+
+### Tratte per evento [GET /tratte/event/{eventId}]
+Restituisce tutte le tratte attive associate a un evento.
+
++ Parameters
+    + eventId: `evt123` (string) - ID dell'evento
++ Headers
+
+        Authorization: Bearer {token}
+
++ Response 200 (application/json)
+
+### Stato attivo di una tratta [GET /tratte/{id}/active]
+Controlla se una tratta è attiva.
+
++ Parameters
+    + id: `trt123` (string) - ID della tratta
++ Headers
+
+        Authorization: Bearer {token}
+
++ Response 200 (application/json)
+        {
+          "active": true
+        }
+
+### Tratte per stato e data [GET /tratte/status/{status}/filter]
+Restituisce tratte filtrate per stato e (opzionalmente) per data.
+
++ Parameters
+    + status: `adminApproved` (string) - Stato della tratta
+    + startDate: `2025-06-01` (optional, string)
+    + endDate: `2025-06-30` (optional, string)
++ Headers
+
+        Authorization: Bearer {token}
+
++ Response 200 (application/json)
+
+### Genera tratte per evento [POST /tratte/generate/{eventId}]
+Genera automaticamente le tratte per un evento.
+
++ Parameters
+    + eventId: `evt123` (string) - ID dell'evento
++ Response 200 (application/json)
+
+### Aggiorna tratta (trasporti) [PUT /tratte/{id}/transport]
+Aggiorna informazioni di una tratta da parte del ruolo "trasporti".
+
++ Parameters
+    + id: `trt123` (string)
++ Request (application/json)
+    + Body
+        {
+          "departureTime": "2025-06-02T15:00:00Z",
+          "capacity": 20,
+          "estimatedDuration": 35,
+          "midpoint": {
+            "lat": 46.070,
+            "lon": 11.120
+          }
+        }
++ Response 200 (application/json)
+
+### Cambio stato (trasporti) [PUT /tratte/{id}/status/transport]
+Consente al trasportatore di aggiornare lo stato della tratta.
+
++ Parameters
+    + id: `trt123` (string)
++ Request (application/json)
+    + Body
+        {
+          "newStatus": "transportApproved"
+        }
++ Response 200 (application/json)
+
+### Cambio stato (admin) [PUT /tratte/{id}/status/admin]
+Consente all'admin di approvare o rifiutare una tratta già approvata dal trasporto.
+
++ Parameters
+    + id: `trt123` (string)
++ Headers
+
+        Authorization: Bearer {token}
+
++ Request (application/json)
+    + Body
+        {
+          "newStatus": "adminApproved"
+        }
++ Response 200 (application/json)
+
+### Ottieni indirizzo da coordinate [GET /tratte/reverse-geocode?lat=...&lon=...]
+Restituisce un indirizzo approssimato dato un punto geografico.
+
++ Headers
+
+        Authorization: Bearer {token}
+
++ Response 200 (application/json)
+        {
+          "address": "Via Roma, Trento"
+        }
+
+## Prenotazioni Tratte [/tratte-booking]
+
+### Prenota una Tratta [POST /tratte-booking]
+Permette a un utente `client` autenticato di prenotare una tratta.
+
++ Headers
+
+        Authorization: Bearer {token}
+
++ Request (application/json)
+    + Body
+        {
+          "trattaId": "tratta123"
+        }
+
++ Response 200 (application/json)
+        {
+          "message": "Prenotazione tratta confermata.",
+          "bookingId": "trbk123"
+        }
+
+### Annulla Prenotazione [DELETE /tratte-booking/{bookingId}]
+Annulla una prenotazione esistente.
+
++ Parameters
+    + bookingId: `booking456` (string) - ID della prenotazione
+
++ Headers
+
+        Authorization: Bearer {token}
+
++ Response 200 (application/json)
+        {
+          "message": "Prenotazione tratta annullata con successo."
+        }
+
+### Prenotazioni Cliente [GET /tratte-booking/client]
+Restituisce tutte le prenotazioni confermate dell’utente.
+
++ Headers
+
+        Authorization: Bearer {token}
+
++ Response 200 (application/json)
+
+### Biglietto Tratta [GET /tratte-booking/ticket/{trattaId}]
+Restituisce le informazioni del biglietto per una tratta (incluso il QR code).
+
++ Parameters
+    + trattaId: `tratta123` (string)
+
++ Headers
+
+        Authorization: Bearer {token}
+
++ Response 200 (application/json)
+        {
+          "hasBooking": true,
+          "ticket": {
+            "id": "booking456",
+            "title": "Evento X",
+            "date": "2025-06-10T18:00:00.000Z",
+            "location": {
+              "name": "Teatro Sociale"
+            },
+            "qrCodeData": "booking456"
+          }
+        }
+
+### Validazione Biglietto [POST /tratte-booking/validate]
+Consente al ruolo `trasporti` di validare un biglietto (check-in).
+
++ Headers
+
+        Authorization: Bearer {token}
+
++ Request (application/json)
+    + Body
+        {
+          "ticketId": "booking456",
+          "trattaId": "tratta123"
+        }
+
++ Response 200 (application/json)
+        {
+          "valid": true,
+          "message": "Biglietto valido. Accesso consentito."
+        }
 
 ## Location [/locations]
 
@@ -304,14 +816,129 @@ Modifica gli orari e la capienza massima di una location.
 
 + Response 200 (application/json)
 
-### Elimina Location [DELETE /locations/{id}]
-Elimina una location esistente.
+### Preferenze Location - Aggiungi [POST /locations/{locationId}/preference]
+Aggiunge una location alle preferenze dell’utente autenticato (client).
 
 + Parameters
-    + id: `loc123` (string) - ID della location
+    + locationId: `loc123` (string)
 
 + Headers
 
         Authorization: Bearer {token}
 
-+ Response 204
++ Response 200 (application/json)
+        {
+          "message": "Location aggiunta alle preferenze."
+        }
+
+### Preferenze Location - Rimuovi [DELETE /locations/{locationId}/preference]
+Rimuove una location dalle preferenze dell’utente autenticato (client).
+
++ Parameters
+    + locationId: `loc123` (string)
+
++ Headers
+
+        Authorization: Bearer {token}
+
++ Response 200 (application/json)
+        {
+          "message": "Location rimossa dalle preferenze."
+        }
+
+### Preferenze Location Utente [GET /locations/preferences]
+Restituisce tutte le location preferite dell’utente autenticato (client).
+
++ Headers
+
+        Authorization: Bearer {token}
+
++ Response 200 (application/json)
+
+### Abilita/Disabilita Location [PATCH /locations/{id}/status]
+Permette all’admin di abilitare o disabilitare una location.
+
++ Parameters
+    + id: `loc123` (string)
+
++ Headers
+
+        Authorization: Bearer {token}
+
++ Request (application/json)
+    + Body
+        {
+          "enabled": true
+        }
+
++ Response 200 (application/json)
+        {
+          "message": "Location attivata con successo"
+        }
+
+
+### Elimina Location [DELETE /locations/{id}]
+Elimina una location e tutti i dati correlati (eventi, tratte, prenotazioni).
+
++ Parameters
+    + id: `loc123` (string)
+
++ Headers
+
+        Authorization: Bearer {token}
+
++ Response 200 (application/json)
+        {
+          "message": "Location e dati correlati eliminati con successo"
+        }
+
+
+## Preferenze Eventi [/event-preference]
+
+### Aggiungi preferenza evento [POST /event-preference/{eventId}]
+Esprime una preferenza per un evento, disponibile anche per guest tramite `x-guest-id`.
+
++ Parameters
+    + eventId: `evt123` (string)
+
++ Headers
+
+        Authorization: Bearer {token} (opzionale)
+        x-guest-id: guest-uuid (opzionale)
+
++ Response 200 (application/json)
+        {
+          "message": "Preferenza registrata con successo."
+        }
+
+### Rimuovi preferenza evento [DELETE /event-preference/{eventId}]
+Rimuove la preferenza per un evento, disponibile anche per guest tramite `x-guest-id`.
+
++ Parameters
+    + eventId: `evt123` (string)
+
++ Headers
+
+        Authorization: Bearer {token} (opzionale)
+        x-guest-id: guest-uuid (opzionale)
+
++ Response 200 (application/json)
+        {
+          "message": "Preferenza rimossa con successo."
+        }
+
+### Verifica preferenza espressa [GET /event-preference/{eventId}]
+Verifica se un utente o guest ha espresso preferenza per un evento.
+
++ Parameters
+    + eventId: `evt123` (string)
+
++ Headers
+
+        Authorization: Bearer {token} (opzionale)
+        x-guest-id: guest-uuid (opzionale)
+
++ Response 200 (application/json)
+        {
+          "hasPreference": true
+        }
