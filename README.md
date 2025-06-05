@@ -22,7 +22,8 @@ TrentoUnica/
 │   ├── babel.config.js             --> Configurazione di Babel
 │   ├── vue.config.js               --> Configurazione del progetto Vue.js
 │   ├── jsconfig.json               --> Configurazione degli alias per il codice
-│   └── .gitignore                  --> File per ignorare node_modules e configurazioni locali
+│   ├── .gitignore                  --> File per ignorare node_modules e configurazioni locali
+│   └── .env.example                --> File di esempio per le variabili d'ambiente
 │
 ├── trentounica-backend/            --> Cartella del progetto Express (backend)
 │   ├── src/                        --> Codice sorgente del backend (Express)
