@@ -2,7 +2,7 @@ const Tratta = require('../models/trattaModel');
 const { generateTratte } = require('../utils/tratteUtils');
 const { getAddressFromCoordinates } = require('../utils/tratteUtils');
 
-// 🔹 Cambio stato da parte dei trasporti
+// Cambio stato da parte dei trasporti
 const updateTrattaStatusByTransport = async (req, res) => {
   try {
     const { id } = req.params;
@@ -22,7 +22,7 @@ const updateTrattaStatusByTransport = async (req, res) => {
       return res.status(400).json({ message: `Transizione non valida da ${current} a ${newStatus}` });
     }
 
-    // ✅ Block transition if it's not at least 1 day after the tratta date
+    // Block transition if it's not at least 1 day after the tratta date
     if (current === 'adminApproved' && newStatus === 'finished') {
       const now = new Date();
       const trattaDate = new Date(tratta.date);
@@ -92,7 +92,7 @@ const updateTrattaStatusByAdmin = async (req, res) => {
   }
 };
 
-// 🔹 GET tratte filtrate per stato e data
+// GET tratte filtrate per stato e data
 const getTratteByStatusAndDate = async (req, res) => {
   try {
     const { status } = req.params;
@@ -147,13 +147,13 @@ const updateTrattaByTransport = async (req, res) => {
       return res.status(404).json({ message: 'Tratta non trovata.' });
     }
 
-    // ✅ Verifica che la tratta sia nello stato modificabile
+    // Verifica che la tratta sia nello stato modificabile
     const modifiableStatuses = ['pending', 'transportApproved', 'adminApproved'];
     if (!modifiableStatuses.includes(tratta.status)) {
       return res.status(403).json({ message: 'Non puoi modificare questa tratta in questo stato.' });
     }
 
-    // ✅ Applica solo i campi ammessi alla modifica
+    // Applica solo i campi ammessi alla modifica
     const allowedFields = ['departureTime', 'capacity', 'midpoint', 'estimatedDuration']; // aggiorna con i campi che vuoi permettere
     allowedFields.forEach(field => {
       if (updates[field] !== undefined) {

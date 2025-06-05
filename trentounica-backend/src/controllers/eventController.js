@@ -4,7 +4,7 @@ const Booking = require('../models/bookingModel');
 const EventPreference = require('../models/eventPreferenceModel');
 const LocationPreference = require('../models/locationPreferenceModel');
 const Tratta = require('../models/trattaModel');
-const TrattaBooking = require('../models/trattaBooking');
+const TrattaBooking = require('../models/trattaBookingModel');
 const tratteUtils = require('../utils/tratteUtils');
 const { sendEventCancellationEmail, sendEventNotificationForLocation } = require('../services/emailService');
 
@@ -60,15 +60,15 @@ const createEvent = async (req, res) => {
 
     await event.save();
 
-    // 🟨 Recupera utenti che hanno espresso preferenza per questa location
+    // Recupera utenti che hanno espresso preferenza per questa location
     const locationPrefs = await LocationPreference.find({ location: locationId }).populate('user');
 
-    // 🟩 Deduplicazione
+    // Deduplicazione
     const uniqueUsers = Array.from(
       new Map(locationPrefs.filter(p => p.user?.email).map(p => [p.user.email, p.user])).values()
     );
 
-    // 🟦 Invia email a ogni utente
+    // Invia email a ogni utente
     for (const user of uniqueUsers) {
       await sendEventNotificationForLocation(user.email, user.name, event.title, loc.name, date);
     }
