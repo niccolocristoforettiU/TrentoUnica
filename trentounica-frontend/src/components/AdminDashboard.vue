@@ -21,20 +21,35 @@
             <tr v-for="organizer in organizers" :key="organizer._id">
               <td>{{ organizer.companyName }}</td>
               <td>{{ organizer.email }}</td>
-              <td>{{ organizer.verified ? "Sì" : "No" }}</td>
+              <td>
+                <span v-if="organizer.verified">
+                  Sì ✅ 
+                </span>
+                <span v-else>
+                  No ❌
+                </span>
+              </td>
               <td>
                 <ul>
                   <li v-for="loc in organizer.locations" :key="loc._id">
-                    <span v-if="loc.enabled === false" class="disabled-badge">🚫 In attesa approvazione</span>
-
+                    <!--<span v-if="loc.enabled === false" class="disabled-badge"> In attesa approvazione</span>-->
+                    <span v-if="loc.enabled === false" class="status-badge red">
+                      Non approvata 🚫
+                    </span>
+                    <span v-else class="status-badge green">
+                      Approvata✅
+                    </span><br>
                     {{ loc.name }} - {{ loc.address }} ({{ loc.category }})<br />
                     Capienza: {{ loc.maxSeats }}<br />
                     Orari: {{ loc.openingTime }} - {{ loc.closingTime }}
                     <div style="margin-top: 5px;">
-                      <label>
-                        <input type="checkbox" :checked="loc.enabled" @change="toggleLocation(loc._id, $event.target.checked)" />
-                        {{ loc.enabled ? 'Attiva' : 'Disabilitata' }}
-                      </label>
+                    <button
+                      class="action-btn small"
+                      :class="loc.enabled ? 'red' : 'green'"
+                      @click="toggleLocation(loc._id, !loc.enabled)"
+                    >
+                      {{ loc.enabled ? 'Disabilita' : 'Attiva' }}
+                    </button>
                     </div>
                   </li>
                 </ul>
@@ -227,4 +242,25 @@ td ul li {
   font-size: 14px;
   margin-top: -10px;
 }
+
+.action-btn.small {
+  padding: 4px 8px;
+  font-size: 12px;
+  border-radius: 4px;
+}
+
+.status-badge {
+  font-size: 14px;
+  display: inline-block;
+  margin-bottom: 4px;
+}
+
+.status-badge.green {
+  color: #2e7d32;
+}
+
+.status-badge.red {
+  color: #c62828;
+}
+
 </style>

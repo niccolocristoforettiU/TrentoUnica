@@ -1,5 +1,5 @@
 const Tratta = require('../models/trattaModel');
-const TrattaBooking = require('../models/trattaBooking');
+const TrattaBooking = require('../models/trattaBookingModel');
 
 const bookTratta = async (req, res) => {
   try {

@@ -132,7 +132,12 @@ exports.verifyOrganizer = async (req, res) => {
     await user.save();
 
     // Invia l'email di attivazione
-    await sendAccountActivationEmail(user.email, user.companyName || user.name);
+    try {
+      await sendAccountActivationEmail(user.email, user.companyName || user.name);
+    } catch (emailErr) {
+      console.error("Errore nell'invio email:", emailErr);
+    }
+    
     res.status(200).json({ message: 'organizzatore verificato con successo ed email inviata', user });
   } catch (error) {
     res.status(500).json({ message: 'Errore durante la verifica dell\'organizzatore', error: error.message });

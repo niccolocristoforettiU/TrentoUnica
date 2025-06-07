@@ -163,7 +163,7 @@ async function sendEventNotificationForLocation(to, name, eventTitle, locationNa
     }
 }
 
-async function sendTrattaAvailableEmailToUser(to, name, eventTitle, trattaDate, trattaDeparture, trattaMidpoint) {
+async function sendTrattaAvailableEmailToUser(to, name, eventTitle, trattaDate, trattaDeparture, eventLocation) {
     try {
         const accessToken = await oAuth2Client.getAccessToken();
 
@@ -189,7 +189,7 @@ async function sendTrattaAvailableEmailToUser(to, name, eventTitle, trattaDate, 
                 <ul>
                     <li><strong>Data:</strong> ${new Date(trattaDate).toLocaleString()}</li>
                     <li><strong>Punto di partenza:</strong> ${trattaDeparture}</li>
-                    <li><strong>Punto intermedio:</strong> ${trattaMidpoint || 'Non specificato'}</li>
+                    <li><strong>Punto di arrivo:</strong> ${eventLocation || 'Non specificato'}</li>
                 </ul>
                 <p>Vai sulla piattaforma per prenotare il tuo posto!</p>
                 <br>
@@ -204,8 +204,47 @@ async function sendTrattaAvailableEmailToUser(to, name, eventTitle, trattaDate, 
     }
 }
 
+async function sendLocationApprovedEmailToOrganizer(to, name, locationName, locationAddress) {
+    try {
+        const accessToken = await oAuth2Client.getAccessToken();
+
+        const transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+                type: 'OAuth2',
+                user: GMAIL_USER,
+                clientId: CLIENT_ID,
+                clientSecret: CLIENT_SECRET,
+                refreshToken: REFRESH_TOKEN,
+                accessToken: accessToken.token,
+            },
+        });
+
+        const mailOptions = {
+            from: `TrentoUnica <${GMAIL_USER}>`,
+            to,
+            subject: `La tua location "${locationName}" è stata approvata!`,
+            html: `
+                <h2>Ciao ${name || 'organizzatore'}!</h2>
+                <p>La tua location <strong>${locationName}</strong> è stata appena <span style="color:green"><strong>approvata</strong></span> dal team TrentoUnica.</p>
+                <p>📍 Indirizzo: <strong>${locationAddress}</strong></p>
+                <p>Ora puoi iniziare a creare eventi per questa location sulla piattaforma.</p>
+                <br>
+                <p>Grazie per aver scelto TrentoUnica!</p>
+                <p>Il team di TrentoUnica</p>
+            `
+        };
+
+        await transporter.sendMail(mailOptions);
+        console.log(`Email approvazione location inviata a ${to}`);
+    } catch (error) {
+        console.error("Errore invio email approvazione location:", error);
+    }
+}
 
 
 
 
-module.exports = { sendAccountActivationEmail, sendPasswordResetEmail, sendEventCancellationEmail, sendEventNotificationForLocation, sendTrattaAvailableEmailToUser };
+
+
+module.exports = { sendAccountActivationEmail, sendPasswordResetEmail, sendEventCancellationEmail, sendEventNotificationForLocation, sendTrattaAvailableEmailToUser, sendLocationApprovedEmailToOrganizer };

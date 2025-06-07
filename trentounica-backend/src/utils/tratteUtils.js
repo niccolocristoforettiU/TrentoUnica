@@ -3,6 +3,7 @@ const EventPreference = require('../models/eventPreferenceModel');
 const Event = require('../models/eventModel');
 const User = require('../models/userModel');
 const Tratta = require('../models/trattaModel');
+const { sendTrattaAvailableEmailToUser } = require('../services/emailService');
 
 const axios = require('axios');
 
@@ -160,6 +161,29 @@ async function generateTratte(eventId) {
 
         if (uniqueNewUsers.length > 0) {
           tratta.users.push(...uniqueNewUsers);
+          for (const userId of uniqueNewUsers) {
+            const user = await User.findById(userId);
+            if (!user) continue;
+
+            let trattaDeparture;
+            try {
+              const addressObj = await getAddressFromCoordinates(tratta.midpoint.lat, tratta.midpoint.lon);
+              trattaDeparture = addressObj?.address || `${tratta.midpoint.lat.toFixed(4)}, ${tratta.midpoint.lon.toFixed(4)}`;
+            } catch (err) {
+              console.error("Errore nel recupero indirizzo midpoint:", err.message);
+              trattaDeparture = `${tratta.midpoint.lat.toFixed(4)}, ${tratta.midpoint.lon.toFixed(4)}`;
+            }
+
+            await sendTrattaAvailableEmailToUser(
+              user.email,
+              user.name || 'utente',
+              event.title,
+              tratta.date,
+              trattaDeparture,
+              `${event.location.name} - ${event.location.address}`
+            );
+          }
+
           await tratta.save();
           updated++;
         }

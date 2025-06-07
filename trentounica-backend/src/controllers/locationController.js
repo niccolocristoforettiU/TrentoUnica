@@ -2,9 +2,10 @@ const Booking = require('../models/bookingModel');
 const Event = require('../models/eventModel');
 const EventPreference = require('../models/eventPreferenceModel');
 const Tratta = require('../models/trattaModel');
-const TrattaBooking = require('../models/trattaBooking');
+const TrattaBooking = require('../models/trattaBookingModel');
 const LocationPreference = require('../models/locationPreferenceModel');
 const Location = require('../models/locationModel');
+const { sendLocationApprovedEmailToOrganizer } = require('../services/emailService');
 
 // Ottenere tutte le location (solo per admin)
 const getAllLocations = async (req, res) => {
@@ -178,6 +179,20 @@ const toggleLocationStatus = async (req, res) => {
 
     if (!location) {
       return res.status(404).json({ message: 'Location non trovata' });
+    }
+
+    if (enabled) {
+      try {
+        const organizer = await location.populate('organizer', 'email companyName name');
+        await sendLocationApprovedEmailToOrganizer(
+          organizer.organizer.email,
+          organizer.organizer.companyName || organizer.organizer.name,
+          location.name,
+          location.address
+        );
+      } catch (emailErr) {
+        console.error("Errore nell'invio dell'email di approvazione location:", emailErr);
+      }
     }
 
     if (!enabled) {
