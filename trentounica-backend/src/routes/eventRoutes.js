@@ -26,7 +26,7 @@ router.get('/:id', (req, res, next) => eventController.getEventById(req, res, ne
 router.put('/:id', authenticate, authorizeRole('organizer'), (req, res, next) => eventController.updateEvent(req, res, next));
 
 // Eliminazione evento (solo organizer che ha creato l'evento)
-router.delete('/:id', authenticate, authorizeRole('organizer'), (req, res, next) => eventController.deleteEvent(req, res, next));
+router.delete('/:id', authenticate, authorizeRole('admin', 'organizer'), (req, res, next) => eventController.deleteEvent(req, res, next));
 
 
 // Esprimere e rimuovere preferenze sugli eventi (anche guest)

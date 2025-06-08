@@ -1,4 +1,5 @@
 const Tratta = require('../models/trattaModel');
+const TrattaBooking = require('../models/trattaBookingModel');
 const { generateTratte } = require('../utils/tratteUtils');
 const { getAddressFromCoordinates } = require('../utils/tratteUtils');
 
@@ -219,6 +220,40 @@ const getAddressByCoords = async (req, res) => {
 };
 
 
+const deleteTratta = async (req, res) => {
+  try {
+    const trattaId = req.params.id;
+
+    const tratta = await Tratta.findById(trattaId).populate('event');
+    if (!tratta) {
+      return res.status(404).json({ message: 'Tratta non trovata' });
+    }
+
+    // (Facoltativo) Se vuoi autorizzare solo admin o l'organizer dell'evento:
+    if (req.user.role !== 'admin') {
+      const eventOrganizer = tratta.event.organizer?.toString();
+      if (!eventOrganizer || eventOrganizer !== req.user.userId) {
+        return res.status(403).json({ message: 'Non sei autorizzato a eliminare questa tratta' });
+      }
+    }
+
+    // Elimina le prenotazioni della tratta
+    const deletedBookings = await TrattaBooking.deleteMany({ tratta: trattaId });
+    console.log(`Prenotazioni eliminate: ${deletedBookings.deletedCount}`);
+
+    // Elimina la tratta
+    await tratta.deleteOne();
+
+    res.status(200).json({ message: 'Tratta e prenotazioni correlate eliminate con successo' });
+  } catch (error) {
+    console.error('Errore nella cancellazione della tratta:', error);
+    res.status(500).json({ message: 'Errore durante l\'eliminazione della tratta', error: error.message });
+  }
+};
+
+
+
+
 module.exports = {
   updateTrattaStatusByTransport,
   updateTrattaStatusByAdmin,
@@ -227,5 +262,6 @@ module.exports = {
   updateTrattaByTransport,
   getTratteByEvent,
   getTrattaActiveStatus,
-  getAddressByCoords
+  getAddressByCoords,
+  deleteTratta
 };

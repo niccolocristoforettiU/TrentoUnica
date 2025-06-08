@@ -142,10 +142,14 @@ async function generateTratte(eventId) {
   for (const group of groupedUsers) {
     const midpoint = geographicMidpoint(group);
     const avgDistance = group.reduce((sum, u) => sum + haversineDistance(midpoint.lat, midpoint.lon, u.lat, u.lon), 0) / group.length;
-    const estimatedDuration = Math.ceil((avgDistance / 40) * 60);
+    // Calcolo tempo stimato (non usato per spostare la partenza ora)
+    const estimatedDuration = Math.ceil((avgDistance / 40) * 60); // in minuti
 
-    let departureTime = new Date(event.date.getTime() - (estimatedDuration * 2 * 60000));
-    departureTime = new Date(departureTime.getTime() + trattaIndex * 60 * 60000); // +1h ogni nuova tratta
+    // Calcola orario di partenza: la prima parte 30 minuti prima dell'evento
+    let departureTime = new Date(event.date.getTime() - 30 * 60000); // 30 min prima dell'evento
+
+    // Le successive tratte partono ogni 30 minuti
+    departureTime = new Date(departureTime.getTime() + trattaIndex * 30 * 60000);
 
     let matched = false;
 

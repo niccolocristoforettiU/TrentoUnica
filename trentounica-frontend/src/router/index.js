@@ -163,7 +163,12 @@ const routes = [
   },
   {
     path: '/:catchAll(.*)',
-    redirect: { name: 'ErrorPage', query: { message: 'Pagina non trovata.' } }
+    redirect: to => {
+      return {
+        path: '/error',
+        query: { message: 'Pagina non trovata.' }
+      };
+    }
   },
   {
     path: '/modifica-profilo',

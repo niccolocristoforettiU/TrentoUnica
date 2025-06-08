@@ -7,12 +7,14 @@ const { authenticate, authorizeRole } = require('../middlewares/authMiddleware')
 router.get('/organizer', authenticate, authorizeRole('organizer'), locationController.getOrganizerLocations);
 router.post('/', authenticate, authorizeRole('organizer'), locationController.createLocation);
 router.put('/:id', authenticate, authorizeRole('organizer'), locationController.updateLocation);
-router.delete('/:id', authenticate, authorizeRole('organizer'), locationController.deleteLocation);
 router.patch('/:id/times-seats', authenticate, authorizeRole('organizer'), locationController.updateLocationTimesAndSeats);
+router.delete('/:id', authenticate, authorizeRole('organizer'), locationController.deleteLocation);
 
 // Admin
 router.patch('/:id/status', authenticate, authorizeRole('admin'), locationController.toggleLocationStatus);
 router.get('/', authenticate, authorizeRole('admin'), locationController.getAllLocations);
+
+
 
 // Client preferenze
 router.post('/:locationId/preference', authenticate, authorizeRole('client'), locationController.addLocationPreference);

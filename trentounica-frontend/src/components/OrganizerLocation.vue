@@ -6,6 +6,9 @@
 
       <form @submit.prevent="saveLocations">
         <h3>Location Esistenti</h3>
+        <p v-if="existingLocations.length === 0" style="color: #888;">
+          Nessuna location trovata. Aggiungine una per iniziare.
+        </p>
         <div v-for="(loc, index) in existingLocations" :key="loc._id" class="location-entry">
           <input v-model="loc.name" type="text" placeholder="Nome Location" required />
           <AddressSearch @address-selected="(data) => updateLocationAddress(existingLocations, index, data)" />
@@ -65,7 +68,12 @@ export default {
       const res = await axios.get('/locations/organizer');
       this.existingLocations = res.data || [];
     } catch (err) {
-      console.error('Errore nel caricamento delle location:', err);
+      if (err.response && err.response.status === 404) {
+        // Nessuna location trovata: non è un errore grave
+        this.existingLocations = [];
+      } else {
+        console.error('Errore nel caricamento delle location:', err);
+      }
     }
   },
   methods: {
@@ -79,7 +87,10 @@ export default {
       if (isNew) {
         this.newLocations.splice(index, 1);
       } else {
-        const confirmed = confirm('⚠️ Sei sicuro di voler eliminare questa location?');
+        const confirmed = confirm(
+          '❗ Eliminando questa location verranno rimossi anche:\n- Eventi\n- Tratte\n- Prenotazioni\n- Preferenze\n\nSei sicuro di voler continuare?'
+        );
+
         if (!confirmed) return;
 
         const location = this.existingLocations[index];

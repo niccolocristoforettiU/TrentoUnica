@@ -163,9 +163,19 @@ export default {
 
         this.errorMessage = '';
       } catch (error) {
+        const msg = error.response?.data?.message || "Errore nella creazione/modifica dell'evento.";
+
+        if (msg.includes("Organizer non verificato")) {
+          this.errorMessage = "⚠️ Il tuo account organizer non è ancora verificato. Contatta l'amministratore.";
+        } else if (msg.includes("Location non valida")) {
+          this.errorMessage = "⚠️ La location selezionata non è abilitata o non ti appartiene.";
+        } else {
+          this.errorMessage = msg;
+        }
+
         this.successMessage = '';
-        this.errorMessage = error.response?.data?.message || "Errore nella creazione/modifica dell'evento.";
       }
+
     },
     resetForm() {
       this.event = {

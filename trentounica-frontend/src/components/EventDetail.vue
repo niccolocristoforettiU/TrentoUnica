@@ -377,7 +377,9 @@ export default {
         } else {
           await axios.post(`/events/${this.event._id}/preference`, {}, { headers });
           this.hasPreferred = true;
-          this.event.popularity++;  
+
+          const updatedEvent = await axios.get(`/events/${this.event._id}`);
+          this.event = updatedEvent.data;
         }
       } catch (error) {
         console.error("Errore nella gestione preferenza:", error);

@@ -128,8 +128,9 @@ const createBooking = async (req, res) => {
     const pref = await EventPreference.findOne({ user: userId, event: eventId });
     if (!pref) {
       await EventPreference.create({ user: userId, event: eventId });
+      await Event.findByIdAndUpdate(eventId, { $inc: { popularity: 1 } });
     }
-    await Event.findByIdAndUpdate(eventId, { $inc: { popularity: 1 } });
+    
 
     // Verifica tratta
     await generateTratte(eventId);

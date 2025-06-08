@@ -7,6 +7,38 @@ const LocationPreference = require('../models/locationPreferenceModel');
 const Location = require('../models/locationModel');
 const { sendLocationApprovedEmailToOrganizer } = require('../services/emailService');
 
+
+
+
+const cleanupLocationData = async (locationId) => {
+  // 1. Trova eventi legati alla location
+  const events = await Event.find({ location: locationId });
+  const eventIds = events.map(event => event._id);
+
+  // 2. Trova tratte legate agli eventi
+  const tratte = await Tratta.find({ event: { $in: eventIds } });
+  const trattaIds = tratte.map(t => t._id);
+
+  // 3. Elimina bookings tratta
+  await TrattaBooking.deleteMany({ tratta: { $in: trattaIds } });
+
+  // 4. Elimina tratte
+  await Tratta.deleteMany({ _id: { $in: trattaIds } });
+
+  // 5. Elimina bookings evento
+  await Booking.deleteMany({ event: { $in: eventIds } });
+
+  // 6. Elimina preferenze evento
+  await EventPreference.deleteMany({ event: { $in: eventIds } });
+
+  // 7. Elimina eventi
+  await Event.deleteMany({ _id: { $in: eventIds } });
+
+  // 8. Elimina preferenze location
+  await LocationPreference.deleteMany({ location: locationId });
+};
+
+
 // Ottenere tutte le location (solo per admin)
 const getAllLocations = async (req, res) => {
   try {
@@ -25,10 +57,6 @@ const getOrganizerLocations = async (req, res) => {
   try {
     const organizerId = req.user.userId;
     const locations = await Location.find({ organizer: organizerId });
-
-    if (locations.length === 0) {
-      return res.status(404).json({ message: 'Nessuna location trovata per questo organizer.' });
-    }
 
     res.status(200).json(locations);
   } catch (error) {
@@ -196,7 +224,7 @@ const toggleLocationStatus = async (req, res) => {
     }
 
     if (!enabled) {
-      await Event.deleteMany({ location: id });
+      await cleanupLocationData(id);
     }
 
     res.status(200).json({ message: `Location ${enabled ? 'attivata' : 'disabilitata'} con successo`, location });
@@ -223,47 +251,29 @@ const deleteLocation = async (req, res) => {
     const organizerId = req.user.userId;
     const locationId = req.params.id;
 
-    // Verifica se la location esiste e appartiene all'organizer
+    console.log(`Starting deletion process for location: ${locationId} by organizer: ${organizerId}`);
+
+    // 1. Check location ownership
     const location = await Location.findOne({ _id: locationId, organizer: organizerId });
     if (!location) {
+      console.warn(`Location not found or unauthorized for deletion: ${locationId}`);
       return res.status(404).json({ message: 'Location non trovata o non autorizzata' });
     }
 
-    // Trova gli eventi nella location
-    const events = await Event.find({ location: locationId });
-    const eventIds = events.map(event => event._id);
-
-    // Trova le tratte collegate agli eventi
-    const tratte = await Tratta.find({ event: { $in: eventIds } });
-    const trattaIds = tratte.map(t => t._id);
-
-    // Elimina le prenotazioni per eventi
-    await Booking.deleteMany({ event: { $in: eventIds } });
-
-    // Elimina preferenze per quegli eventi
-    await EventPreference.deleteMany({ event: { $in: eventIds } });
-
-    // Elimina prenotazioni tratte
-    await TrattaBooking.deleteMany({ tratta: { $in: trattaIds } });
-
-    // Elimina tratte
-    await Tratta.deleteMany({ _id: { $in: trattaIds } });
-
-    // Elimina eventi
-    await Event.deleteMany({ _id: { $in: eventIds } });
-
-    // Elimina location preferences
-    await LocationPreference.deleteMany({ location: locationId });
-
-    // Infine, elimina la location
+    await cleanupLocationData(locationId);
     await Location.deleteOne({ _id: locationId });
 
     res.status(200).json({ message: 'Location e dati correlati eliminati con successo' });
+
   } catch (error) {
-    console.error('Errore durante la cancellazione completa:', error);
-    res.status(500).json({ message: 'Errore nella cancellazione della location', error: error.message });
+    console.error('Errore durante la cancellazione completa della location:', error);
+    res.status(500).json({
+      message: 'Errore nella cancellazione della location',
+      error: error.message
+    });
   }
 };
+
 
 module.exports = {
   getAllLocations,
@@ -275,5 +285,6 @@ module.exports = {
   removeLocationPreference,
   toggleLocationStatus,
   getUserLocationPreferences,
-  deleteLocation
+  deleteLocation,
+  cleanupLocationData
 };

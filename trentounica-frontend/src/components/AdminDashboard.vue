@@ -123,6 +123,13 @@ export default {
       }
     },
     async toggleLocation(locationId, enabled) {
+      const message = enabled
+        ? '⚠️Sicuri di voler attivare la location? Vuoi procedere?'
+        : '❗ Disattivare questa location comporterà l\'eliminazione di tutti gli eventi, tratte, prenotazioni e preferenze associati.\nSei sicuro di voler procedere?';
+
+      const confirmed = confirm(message);
+      if (!confirmed) return;
+
       try {
         const token = localStorage.getItem("token");
         await axios.patch(`/locations/${locationId}/status`, { enabled }, {

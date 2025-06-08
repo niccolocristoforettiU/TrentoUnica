@@ -55,15 +55,12 @@ exports.authenticate = (req, res, next) => {
   }
 };
 
-exports.authorizeRole = (roles) => {
+exports.authorizeRole = (...roles) => {
   return async (req, res, next) => {
     try {
       const userRole = req.user.role;
 
-      // Supporta sia un ruolo singolo che un array di ruoli
-      const allowed = Array.isArray(roles) ? roles.includes(userRole) : roles === userRole;
-
-      if (!allowed) {
+      if (!roles.includes(userRole)) {
         return res.status(403).json({ message: 'Access denied. Insufficient permissions.' });
       }
 

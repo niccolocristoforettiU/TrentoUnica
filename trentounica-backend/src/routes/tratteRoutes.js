@@ -9,7 +9,8 @@ const {
   updateTrattaByTransport,
   getTratteByEvent,
   getTrattaActiveStatus,
-  getAddressByCoords
+  getAddressByCoords,
+  deleteTratta
 } = require('../controllers/tratteController');
 
 const { authenticate, authorizeRole } = require('../middlewares/authMiddleware');
@@ -39,5 +40,7 @@ router.get('/:id/active', authenticate, getTrattaActiveStatus);
 
 //GET - Indirizzo da coordinate
 router.get('/reverse-geocode', authenticate, getAddressByCoords);
+
+router.delete('/:id', authenticate, authorizeRole('admin', 'organizer'), deleteTratta);
 
 module.exports = router;

@@ -6,6 +6,8 @@ const LocationPreference = require('../models/locationPreferenceModel');
 const Tratta = require('../models/trattaModel');
 const TrattaBooking = require('../models/trattaBookingModel');
 const tratteUtils = require('../utils/tratteUtils');
+const User = require('../models/userModel');
+
 const { sendEventCancellationEmail, sendEventNotificationForLocation } = require('../services/emailService');
 
 // Elenco eventi (pubblici)
@@ -38,10 +40,16 @@ const createEvent = async (req, res) => {
     const { title, description, date, locationId, price, category, duration, bookingRequired, ageRestricted, minAge } = req.body;
     const userId = req.user.userId;
 
-    // Verifica che la location appartenga all'organizer
+    // Verifica che l'organizer sia verificato
+    const organizer = await User.findById(userId);
+    if (!organizer || !organizer.verified) {
+      return res.status(403).json({ message: 'Organizer non verificato. Non puoi creare eventi.' });
+    }
+
+    // Verifica che la location appartenga all'organizer ed è abilitata
     const loc = await Location.findOne({ _id: locationId, organizer: userId });
-    if (!loc) {
-      return res.status(400).json({ message: 'Location non valida o non gestita da questo organizer.' });
+    if (!loc || !loc.enabled) {
+      return res.status(403).json({ message: 'Location non valida, non gestita da te o non abilitata da un admin.' });
     }
 
     const event = new Event({
@@ -60,24 +68,24 @@ const createEvent = async (req, res) => {
 
     await event.save();
 
-    // Recupera utenti che hanno espresso preferenza per questa location
+    // Notifica utenti che hanno preferito la location
     const locationPrefs = await LocationPreference.find({ location: locationId }).populate('user');
-
-    // Deduplicazione
     const uniqueUsers = Array.from(
       new Map(locationPrefs.filter(p => p.user?.email).map(p => [p.user.email, p.user])).values()
     );
 
-    // Invia email a ogni utente
     for (const user of uniqueUsers) {
       await sendEventNotificationForLocation(user.email, user.name, event.title, loc.name, date);
     }
 
     res.status(201).json(event);
   } catch (error) {
+    console.error("Errore completo:", error);
     res.status(500).json({ message: 'Errore durante la creazione dell\'evento', error: error.message });
   }
+
 };
+
 
 
 // Ottenere tutte le location disponibili per la creazione degli eventi
