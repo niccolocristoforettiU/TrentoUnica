@@ -36,12 +36,12 @@ TrentoUnica/
 │   │   ├── utils/                  --> Utility functions (es. routing OSRM)
 │   │   ├── data/                   --> Dati geografici statici (es. ZTL GeoJSON)
 │   │   ├── test/                   --> Cartella contenente i test automatici
-│   │   ├── testSequencer.js        --> Sequencer personalizzato per ordinare l'esecuzione dei test
-│   │   ├── scripts/                --> Script di utilità per il backend
-│   │   └── jest.config.js          --> Configurazione di Jest per l'esecuzione dei test
+│   │   └── scripts/                --> Script di utilità per il backend
 │   │       ├── createAdmin.js      --> Script per creare un utente amministratore in MongoDB
 │   │       └── createTrasporti.js  --> Script per creare un utente organizzatore dei trasporti in MongoDB
 │   ├── index.js                    --> File principale del server Express
+│   ├── testSequencer.js            --> Sequencer personalizzato per ordinare l'esecuzione dei test
+│   ├── jest.config.js              --> Configurazione di Jest per l'esecuzione dei test
 │   ├── package.json                --> Configurazione delle dipendenze del backend
 │   ├── package-lock.json           --> Blocco delle dipendenze del backend
 │   ├── .gitignore                  --> File per ignorare node_modules e configurazioni locali
