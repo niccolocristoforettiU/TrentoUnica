@@ -112,6 +112,12 @@ export default {
           headers: { Authorization: `Bearer ${token}` }
         });
         this.locations = response.data;
+
+        // Se esiste solo una location, impostala automaticamente
+        if (this.locations.length === 1) {
+          this.event.locationId = this.locations[0]._id;
+          this.event.category = this.locations[0].category;
+        }
       } catch (error) {
         this.errorMessage = "Errore nel caricamento delle location.";
       }

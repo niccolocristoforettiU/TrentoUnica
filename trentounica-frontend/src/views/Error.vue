@@ -9,13 +9,12 @@
 <script>
 export default {
   name: "ErrorPage",
-  props: {
-    message: {
-      type: String,
-      default: "Si è verificato un errore imprevisto."
+  computed: {
+    message() {
+      return this.$route.query.message || "Si è verificato un errore imprevisto.";
     }
   }
-}
+};
 </script>
 
 <style scoped>

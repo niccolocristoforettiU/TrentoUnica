@@ -31,7 +31,7 @@ exports.register = async (req, res) => {
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(400).json({ message: 'Email già registrata' });
+      return res.status(200).json({ message: 'Utente già registrato, puoi effettuare il login.' });
     }
 
     // Creazione utente (aggiunti lat/lon per client)
