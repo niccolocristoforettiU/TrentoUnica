@@ -35,7 +35,10 @@ TrentoUnica/
 │   │   ├── services/               --> Servizi di utilità (es. invio email)
 │   │   ├── utils/                  --> Utility functions (es. routing OSRM)
 │   │   ├── data/                   --> Dati geografici statici (es. ZTL GeoJSON)
-│   │   └── scripts/                --> Script di utilità per il backend
+│   │   ├── test/                   --> Cartella contenente i test automatici
+│   │   ├── testSequencer.js        --> Sequencer personalizzato per ordinare l'esecuzione dei test
+│   │   ├── scripts/                --> Script di utilità per il backend
+│   │   └── jest.config.js          --> Configurazione di Jest per l'esecuzione dei test
 │   │       ├── createAdmin.js      --> Script per creare un utente amministratore in MongoDB
 │   │       └── createTrasporti.js  --> Script per creare un utente organizzatore dei trasporti in MongoDB
 │   ├── index.js                    --> File principale del server Express
