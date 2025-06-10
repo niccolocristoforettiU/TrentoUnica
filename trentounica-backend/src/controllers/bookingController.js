@@ -139,7 +139,7 @@ const createBooking = async (req, res) => {
       .populate('location', 'name address')
       .populate('organizer', 'companyName email');
 
-    return res.status(200).json({ booking: existing, event: updatedEvent });
+    return res.status(200).json({ booking, event: updatedEvent });
   } catch (error) {
     console.error("Errore nella creazione della prenotazione:", error);
     res.status(500).json({ message: 'Errore nella creazione della prenotazione' });
