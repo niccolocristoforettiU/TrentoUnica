@@ -45,7 +45,7 @@ export default {
       this.error = '';
       try {
         const token = this.$route.params.token;
-        const response = await axios.post(`http://localhost:5050/api/users/reset-password/${token}`, {
+        const response = await axios.post(`http://process.env.VUE_APP_API_URL/api/users/reset-password/${token}`, {
           newPassword: this.newPassword,
           confirmPassword: this.confirmPassword
         });

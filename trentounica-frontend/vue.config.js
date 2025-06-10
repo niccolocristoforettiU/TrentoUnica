@@ -7,7 +7,7 @@ module.exports = {
     port: 8080,
     proxy: {
       '^/api': {
-        target: 'http://localhost:5050',
+        target: 'http://process.env.VUE_APP_API_URL',
         changeOrigin: true,
       },
     },
