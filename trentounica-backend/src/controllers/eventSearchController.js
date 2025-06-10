@@ -62,6 +62,7 @@ async function searchEvents(req, res) {
 
         const events = await Event.find(filter)
             .populate('organizer', 'name email')
+            .populate('location', 'name address') 
             .sort(sortOption);
         //console.log("Eventi trovati:", events.map(e => ({ title: e.title, date: e.date })));
 
