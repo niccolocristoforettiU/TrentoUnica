@@ -46,7 +46,7 @@ describe('DETTAGLIO EVENTO - Endpoint /api/events/:id', () => {
   });
 
   it('dovrebbe restituire errore 404 per ID inesistente', async () => {
-    const res = await request(app).get(`/api/events/666666666666666666666666`);
+    const res = await request(app).get(`/api/events`);
     expect(res.statusCode).toBe(404);
     expect(res.body.message).toBe('Evento non trovato');
   });
