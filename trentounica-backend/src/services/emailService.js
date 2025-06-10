@@ -64,7 +64,7 @@ async function sendPasswordResetEmail(to, token) {
             },
         });
 
-        const resetLink = `http://localhost:8080/reset-password/${token}`; // Cambia con URL reale se necessario
+        const resetLink = `http://trentounica.onrender.com/reset-password/${token}`; // Cambia con URL reale se necessario
 
         const mailOptions = {
             from: `TrentoUnica <${GMAIL_USER}>`,

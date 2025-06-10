@@ -55,7 +55,7 @@ exports.getICalendar = async (req, res) => {
         summary: event.title,
         description: event.description,
         location: event.location ? event.location.name : "Senza location",
-        url: `http://localhost:8080/events/${event._id}`,
+        url: `http://trentounica.onrender.com/events/${event._id}`,
       });
     });
 
@@ -82,7 +82,7 @@ exports.getSingleEventICalendar = async (req, res) => {
       summary: event.title,
       description: event.description,
       location: event.location?.name || "Senza location",
-      url: `http://localhost:8080/events/${event._id}`,
+      url: `http://trentounica.onrender.com/events/${event._id}`,
     });
 
     res.setHeader('Content-Type', 'text/calendar; charset=utf-8');
