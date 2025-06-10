@@ -3,7 +3,7 @@ import axios from 'axios';
 import router from '@/router';
 
 const API = axios.create({
-  baseURL: 'http://process.env.VUE_APP_API_URL/api', // URL del tuo backend Express
+  baseURL: `${process.env.VUE_APP_API_URL}/api`, // URL del tuo backend Express
   headers: {
     'Content-Type': 'application/json',
   },

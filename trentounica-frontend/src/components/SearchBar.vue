@@ -88,7 +88,7 @@ export default {
     async fetchEvents() {
       try {
         const token = localStorage.getItem("token");
-        const response = await axios.get("http://process.env.VUE_APP_API_URL/api/search", {
+        const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/search`, {
           headers: { Authorization: `Bearer ${token}` },
           params: {
             query: this.searchQuery,

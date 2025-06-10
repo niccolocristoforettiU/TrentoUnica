@@ -27,7 +27,7 @@ export default {
       this.message = '';
       this.error = '';
       try {
-        const res = await axios.post('http://process.env.VUE_APP_API_URL/api/users/forgot-password', {
+        const res = await axios.post(`${process.env.VUE_APP_API_URL}/api/users/forgot-password`, {
           email: this.email
         });
         this.message = res.data.message;

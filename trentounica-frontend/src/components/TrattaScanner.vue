@@ -50,7 +50,7 @@ export default {
       const token = localStorage.getItem('token');
 
       try {
-        const response = await fetch('http://process.env.VUE_APP_API_URL/api/trattabookings/validate', {
+        const response = await fetch(`${process.env.VUE_APP_API_URL}/api/trattabookings/validate`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

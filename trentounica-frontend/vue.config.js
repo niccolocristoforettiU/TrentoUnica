@@ -7,12 +7,12 @@ module.exports = {
     port: 8080,
     proxy: {
       '^/api': {
-        target: 'http://process.env.VUE_APP_API_URL',
+        target: `${process.env.VUE_APP_API_URL}`,
         changeOrigin: true,
       },
     },
     client: {
-      webSocketURL: 'ws://localhost:8080/ws' // 👈 aggiunto per evitare errore su IP sbagliato
+      webSocketURL: 'ws://trentounica.onrender.com/ws' // 👈 aggiunto per evitare errore su IP sbagliato
     }
   },
   configureWebpack: {
