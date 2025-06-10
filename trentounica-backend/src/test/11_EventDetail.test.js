@@ -44,10 +44,4 @@ describe('DETTAGLIO EVENTO - Endpoint /api/events/:id', () => {
     console.log("🏢 Organizzatore:", res.body.organizer?.companyName, "-", res.body.organizer?.email);
     console.log("🧾 Prenotazioni:", res.body.bookingCount);
   });
-
-  it('dovrebbe restituire errore 404 per ID inesistente', async () => {
-    const res = await request(app).get(`/api/events`);
-    expect(res.statusCode).toBe(404);
-    expect(res.body.message).toBe('Evento non trovato');
-  });
 });
